@@ -17,6 +17,9 @@ export default async function VerifyEmailPage({
         <CardHeader><CardTitle>Invalid link</CardTitle></CardHeader>
         <CardContent>
           <p className="text-sm text-destructive">This verification link is invalid.</p>
+          <p className="mt-4 text-sm text-center">
+            <Link href="/login" className="underline underline-offset-4">Back to sign in</Link>
+          </p>
         </CardContent>
       </Card>
     )
