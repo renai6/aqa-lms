@@ -9,11 +9,13 @@ import { TokenType } from '@/app/generated/prisma'
 type ResetState = { error: string | null }
 
 export async function resetPasswordAction(_prev: ResetState, formData: FormData): Promise<ResetState> {
-  const token = formData.get('token') as string
-  const password = formData.get('password') as string
-  const confirm = formData.get('confirm') as string
+  const token = formData.get('token')
+  const password = formData.get('password')
+  const confirm = formData.get('confirm')
 
-  if (!token) return { error: 'This reset link is invalid.' }
+  if (typeof token !== 'string' || !token) return { error: 'This reset link is invalid.' }
+  if (typeof password !== 'string' || typeof confirm !== 'string' || !password || !confirm)
+    return { error: 'Invalid submission.' }
   if (password !== confirm) return { error: 'Passwords do not match.' }
   if (password.length < 8) return { error: 'Password must be at least 8 characters.' }
 
