@@ -19,6 +19,8 @@ export async function clearSession() {
   cookieStore.delete('session')
 }
 
+// Reads the user identity forwarded by middleware via request headers.
+// Only works in server components and server actions — not in middleware or Edge routes.
 export async function getSession(): Promise<{ userId: string; role: UserRole } | null> {
   const headersList = await headers()
   const userId = headersList.get('x-user-id')
