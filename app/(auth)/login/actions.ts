@@ -16,10 +16,13 @@ const DASHBOARDS: Record<UserRole, string> = {
 }
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const email = (formData.get('email') as string).trim().toLowerCase()
-  const password = formData.get('password') as string
+  const email = formData.get('email')
+  const password = formData.get('password')
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+    return { error: 'Invalid email or password.' }
+  }
 
-  const user = await db.user.findUnique({ where: { email } })
+  const user = await db.user.findUnique({ where: { email: email.trim().toLowerCase() } })
 
   if (!user || !(await comparePassword(password, user.passwordHash))) {
     return { error: 'Invalid email or password.' }
