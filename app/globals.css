@@ -135,6 +135,7 @@
 }
 
 .highlight-crimson {
+  display: inline-block;
   background: linear-gradient(
     90deg,
     oklch(0.525 0.223 3.958),
