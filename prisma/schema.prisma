@@ -83,11 +83,13 @@ model User {
 model VerificationToken {
   id        String    @id @default(cuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String    @unique
   type      TokenType
   expiresAt DateTime
   createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 //
