@@ -1,16 +1,19 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     environment: 'node',
     globals: true,
     passWithNoTests: true,
+    setupFiles: ['@testing-library/jest-dom/vitest'],
+    environmentMatchGlobs: [
+      ['**/*.component.test.tsx', 'jsdom'],
+      ['**/components/**/*.test.tsx', 'jsdom'],
+    ],
   },
   resolve: {
     alias: {
