@@ -10,6 +10,10 @@ export default defineConfig({
     globals: true,
     passWithNoTests: true,
     setupFiles: ['@testing-library/jest-dom/vitest'],
+    environmentMatchGlobs: [
+      ['**/*.component.test.tsx', 'jsdom'],
+      ['**/components/**/*.test.tsx', 'jsdom'],
+    ],
   },
   resolve: {
     alias: {
