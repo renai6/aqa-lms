@@ -1,0 +1,368 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//
+// ENUMS
+//
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AssessmentType {
+  QUIZ
+  EXAM
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+//
+// USERS & AUTH
+//
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+
+  firstName   String
+  lastName    String
+  displayName String?
+
+  role     UserRole @default(STUDENT)
+  isActive Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments         Enrollment[]
+  attempts            AssessmentAttempt[]
+  grades              Grade[]
+  certificates        Certificate[]
+  subjectAssignments  SubjectTeacher[]
+  gradedAttempts      AssessmentAttempt[] @relation("GradedBy")
+  enrollmentRequests  EnrollmentRequest[]
+  verificationTokens  VerificationToken[]
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+}
+
+//
+// ENROLLMENT REQUEST (BEFORE USER CREATION)
+//
+
+model EnrollmentRequest {
+  id String @id @default(cuid())
+
+  email     String
+  firstName String
+  lastName  String
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  paymentProofUrl String?
+
+  status EnrollmentStatus @default(PENDING)
+
+  adminRemarks String?
+
+  // Linked once the account is created on approval
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//
+// COURSE STRUCTURE
+//
+
+model Course {
+  id String @id @default(cuid())
+
+  title       String
+  description String?
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subjects     Subject[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+  requests     EnrollmentRequest[]
+}
+
+model Subject {
+  id String @id @default(cuid())
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  title       String
+  description String?
+
+  order Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessons     Lesson[]
+  assessments Assessment[]
+  grades      Grade[]
+  teachers    SubjectTeacher[]
+}
+
+model SubjectTeacher {
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  assignedAt DateTime @default(now())
+
+  @@id([subjectId, userId])
+}
+
+model Lesson {
+  id String @id @default(cuid())
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  title       String
+  description String?
+
+  order Int
+
+  materialUrl  String?
+  recordingUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//
+// ENROLLMENT (ACTIVE STUDENTS)
+//
+
+model Enrollment {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  progress Float @default(0)
+
+  @@unique([userId, courseId])
+}
+
+//
+// ASSESSMENTS
+//
+
+model Assessment {
+  id String @id @default(cuid())
+
+  title String
+  type  AssessmentType
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  durationMins Int?
+  passingScore Float?
+  maxAttempts  Int?
+
+  // totalPoints is derived: SUM(Question.points)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions Question[]
+  attempts  AssessmentAttempt[]
+}
+
+model Question {
+  id String @id @default(cuid())
+
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+  questionText String
+  type         QuestionType
+
+  points Int
+  order  Int
+
+  options QuestionOption[]
+  answers StudentAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuestionOption {
+  id String @id @default(cuid())
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  label String
+  value String
+
+  isCorrect Boolean @default(false)
+}
+
+//
+// STUDENT ATTEMPTS + ANSWERS
+//
+
+model AssessmentAttempt {
+  id String @id @default(cuid())
+
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  status AttemptStatus @default(IN_PROGRESS)
+
+  score Float?
+
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  // Set when a teacher/admin grades essay answers
+  gradedById String?
+  gradedBy   User?     @relation("GradedBy", fields: [gradedById], references: [id])
+  gradedAt   DateTime?
+
+  answers StudentAnswer[]
+}
+
+model StudentAnswer {
+  id String @id @default(cuid())
+
+  attemptId String
+  attempt   AssessmentAttempt @relation(fields: [attemptId], references: [id])
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  answer String
+
+  // Null for essays until manually graded
+  isCorrect    Boolean?
+  pointsEarned Float?
+}
+
+//
+// GRADES
+//
+
+model Grade {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  finalGrade Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, subjectId])
+}
+
+//
+// CERTIFICATES
+//
+
+model Certificate {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  certificateNo String  @unique
+  pdfUrl        String?
+
+  issuedAt DateTime @default(now())
+}
+
+//
+// ANNOUNCEMENTS
+//
+
+model Announcement {
+  id String @id @default(cuid())
+
+  title   String
+  content String
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
