@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session')?.value
   const payload = token ? await verifySessionToken(token) : null
 
-  if (AUTH_PATHS.some((p) => pathname.startsWith(p)) && payload) {
+  if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/')) && payload) {
     return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
   }
 
@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
   if (!payload) {
     const res = NextResponse.redirect(new URL('/login', request.url))
-    res.cookies.delete('session')
+    if (token) res.cookies.delete('session')
     return res
   }
 
