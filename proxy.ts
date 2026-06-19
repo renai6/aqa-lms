@@ -17,7 +17,7 @@ const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
 
 const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password', '/verify-email']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('session')?.value
   const payload = token ? await verifySessionToken(token) : null
