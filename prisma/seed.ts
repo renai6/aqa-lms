@@ -3,8 +3,15 @@ import { PrismaClient } from '../app/generated/prisma/client.js'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcryptjs'
 
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) throw new Error('DATABASE_URL environment variable is not set')
+
+const email = process.env.SEED_ADMIN_EMAIL
+const password = process.env.SEED_ADMIN_PASSWORD
+if (!email || !password) throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set')
+
 const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+  adapter: new PrismaPg({ connectionString }),
 })
 
 async function main() {
@@ -12,13 +19,6 @@ async function main() {
   if (existing) {
     console.log('Super admin already exists — skipping.')
     return
-  }
-
-  const email = process.env.SEED_ADMIN_EMAIL
-  const password = process.env.SEED_ADMIN_PASSWORD
-
-  if (!email || !password) {
-    throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set in .env')
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
