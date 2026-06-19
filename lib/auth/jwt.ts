@@ -2,7 +2,9 @@ import { SignJWT, jwtVerify } from 'jose'
 import type { SessionPayload } from './types'
 
 function getSecret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET!)
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set')
+  return new TextEncoder().encode(secret)
 }
 
 export async function signToken(payload: SessionPayload): Promise<string> {
