@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 
@@ -30,21 +30,13 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // 4. Create Supabase admin client (server-side only, uses service role key)
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: { persistSession: false },
-    }
-  )
-
-  // 5. Generate signed URL with 5-minute TTL (300 seconds)
-  const { data, error } = await supabase.storage
+  // 4. Generate signed URL with 5-minute TTL (300 seconds)
+  const { data, error } = await supabaseAdmin.storage
     .from(process.env.SUPABASE_STORAGE_BUCKET!)
     .createSignedUrl(enrollmentRequest.paymentProofUrl, 300)
 
   if (error) {
+    console.error('[proof/route] Supabase signed URL error:', error)
     return NextResponse.json(
       { error: 'Failed to generate signed URL' },
       { status: 500 }
