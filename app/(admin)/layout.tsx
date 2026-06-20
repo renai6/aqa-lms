@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import {
   LayoutDashboard,
   Users,
@@ -15,37 +14,37 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       {/* Sidebar */}
       <aside className="w-64 border-r border-sidebar-border flex flex-col bg-sidebar">
         {/* Logo/brand area */}
         <div className="px-6 py-8 border-b border-sidebar-border">
-          <h1 className="text-lg font-bold text-sidebar-foreground">
+          <p className="text-lg font-bold text-sidebar-foreground">
             Al-Qur&apos;an Academy
-          </h1>
+          </p>
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 flex flex-col gap-2 p-4">
+        <nav aria-label="Admin navigation" className="flex-1 flex flex-col gap-2 p-4">
           <NavLink
             href="/admin/dashboard"
-            icon={<LayoutDashboard className="w-5 h-5" />}
+            icon={<LayoutDashboard className="w-5 h-5" aria-hidden="true" />}
             label="Dashboard"
           />
           <NavLink
             href="/admin/enrollments"
-            icon={<Users className="w-5 h-5" />}
+            icon={<Users className="w-5 h-5" aria-hidden="true" />}
             label="Enrollments"
           />
           <NavLink
             href="/admin/courses"
-            icon={<BookOpen className="w-5 h-5" />}
+            icon={<BookOpen className="w-5 h-5" aria-hidden="true" />}
             label="Courses"
             disabled
           />
           <NavLink
             href="/admin/reports"
-            icon={<BarChart2 className="w-5 h-5" />}
+            icon={<BarChart2 className="w-5 h-5" aria-hidden="true" />}
             label="Reports"
             disabled
           />
@@ -53,13 +52,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Bottom: logout */}
         <div className="border-t border-sidebar-border p-4">
-          <Link
+          <a
             href="/api/auth/logout"
             className="flex items-center gap-3 px-4 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5" aria-hidden="true" />
             <span>Logout</span>
-          </Link>
+          </a>
         </div>
       </aside>
 

@@ -20,6 +20,8 @@ export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
   if (disabled) {
     return (
       <span
+        role="link"
+        aria-disabled="true"
         className={cn(
           baseClasses,
           'text-muted-foreground cursor-not-allowed opacity-50'
