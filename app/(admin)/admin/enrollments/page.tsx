@@ -8,6 +8,13 @@ type Props = {
   searchParams: Promise<{ tab?: string }>
 }
 
+// Module-level date formatter
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
+
 export const metadata = { title: 'Enrollments — AQA Admin' }
 
 export default async function EnrollmentsPage({ searchParams }: Props) {
@@ -25,21 +32,13 @@ export default async function EnrollmentsPage({ searchParams }: Props) {
 
   // Tab config
   const tabs = [
-    { label: 'Pending', value: 'pending' as const },
-    { label: 'Approved', value: 'approved' as const },
-    { label: 'Rejected', value: 'rejected' as const },
+    { label: 'Pending', value: 'pending' },
+    { label: 'Approved', value: 'approved' },
+    { label: 'Rejected', value: 'rejected' },
   ]
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date)
-  }
-
-  const getStatusBadge = (status: EnrollmentStatus) => {
-    switch (status) {
+  const getStatusBadge = (enrollmentStatus: EnrollmentStatus) => {
+    switch (enrollmentStatus) {
       case 'PENDING':
         return <Badge variant="outline">Pending</Badge>
       case 'APPROVED':
@@ -101,22 +100,22 @@ export default async function EnrollmentsPage({ searchParams }: Props) {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Name
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Email
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Course
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Submitted
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Status
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"></th>
+                <th scope="col" aria-label="Actions" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -130,7 +129,7 @@ export default async function EnrollmentsPage({ searchParams }: Props) {
                   </td>
                   <td className="px-4 py-3">{request.email}</td>
                   <td className="px-4 py-3">{request.course.title}</td>
-                  <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
+                  <td className="px-4 py-3">{dateFormatter.format(request.createdAt)}</td>
                   <td className="px-4 py-3">{getStatusBadge(request.status)}</td>
                   <td className="px-4 py-3">
                     <Link

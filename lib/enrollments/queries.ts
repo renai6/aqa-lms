@@ -8,11 +8,11 @@ export type EnrollmentRequestRow = {
   email: string
   status: EnrollmentStatus
   createdAt: Date
-  courseId: string
   course: { title: string }
 }
 
 export type EnrollmentRequestDetail = EnrollmentRequestRow & {
+  courseId: string
   paymentProofUrl: string | null
   adminRemarks: string | null
   userId: string | null
@@ -32,7 +32,6 @@ export async function getEnrollmentRequestsByStatus(
       email: true,
       status: true,
       createdAt: true,
-      courseId: true,
       course: {
         select: {
           title: true,
