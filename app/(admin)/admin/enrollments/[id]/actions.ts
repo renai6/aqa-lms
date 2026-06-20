@@ -25,46 +25,69 @@ export async function approveEnrollmentAction(
   if (!session) return { error: 'Unauthorized' }
   if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
 
-  // 3. Fetch the enrollment request
+  // 3. Fetch the enrollment request (to get email, names, courseId etc.)
   const request = await db.enrollmentRequest.findUnique({
     where: { id },
     include: { course: { select: { title: true } } },
   })
   if (!request) return { error: 'Enrollment request not found.' }
-  if (request.status !== 'PENDING') return { error: 'This request has already been processed.' }
 
-  // 4. Check for existing user with same email
-  const existingUser = await db.user.findUnique({ where: { email: request.email } })
-  if (existingUser) return { error: 'A user with this email already exists.' }
-
-  // 5. Generate and hash temp password
+  // 4. Generate and hash temp password
   const tempPassword = generateTempPassword()
   const hashedPassword = await hashPassword(tempPassword)
 
-  // 6. Create user, enrollment, and update request in a transaction
-  await db.$transaction(async (tx) => {
-    const newUser = await tx.user.create({
-      data: {
-        email: request.email,
-        firstName: request.firstName,
-        lastName: request.lastName,
-        passwordHash: hashedPassword,
-        role: 'STUDENT',
-        isActive: true,
-        mustChangePassword: true,
-      },
+  // 5. Atomically check PENDING status, create user, enrollment, and update request
+  let newUser: { id: string }
+  try {
+    newUser = await db.$transaction(async (tx) => {
+      // Atomic PENDING check — updateMany returns count; if 0, someone beat us to it
+      const updated = await tx.enrollmentRequest.updateMany({
+        where: { id, status: 'PENDING' },
+        data: { status: 'APPROVED' },
+      })
+      if (updated.count === 0) {
+        throw new Error('ALREADY_PROCESSED')
+      }
+
+      const user = await tx.user.create({
+        data: {
+          email: request.email,
+          firstName: request.firstName,
+          lastName: request.lastName,
+          passwordHash: hashedPassword,
+          role: 'STUDENT',
+          isActive: true,
+          mustChangePassword: true,
+        },
+      })
+
+      await tx.enrollment.create({
+        data: { userId: user.id, courseId: request.courseId },
+      })
+
+      // Link the new user to the enrollment request
+      await tx.enrollmentRequest.update({
+        where: { id },
+        data: { userId: user.id },
+      })
+
+      return user
     })
-    await tx.enrollment.create({
-      data: {
-        userId: newUser.id,
-        courseId: request.courseId,
-      },
-    })
-    await tx.enrollmentRequest.update({
-      where: { id },
-      data: { status: 'APPROVED', userId: newUser.id },
-    })
-  })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (msg === 'ALREADY_PROCESSED') {
+      return { error: 'This request has already been processed.' }
+    }
+    // Prisma unique constraint on User.email
+    if (msg.includes('P2002') || msg.includes('Unique constraint')) {
+      return { error: 'A user with this email already exists.' }
+    }
+    console.error('[approveEnrollment] Transaction error:', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
+
+  // 6. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
+  revalidatePath('/admin/enrollments')
 
   // 7. Send approval email — do NOT rollback if this fails, account already exists
   try {
@@ -82,10 +105,7 @@ export async function approveEnrollmentAction(
     }
   }
 
-  // 8. Revalidate enrollments list
-  revalidatePath('/admin/enrollments')
-
-  // 9. Return success
+  // 8. Return success
   return { error: null, success: true }
 }
 
@@ -93,20 +113,19 @@ export async function rejectEnrollmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  // 1. Read id and reason
+  // 1. Read and validate id — first check before any other validation
   const id = formData.get('id')
-  const reasonRaw = formData.get('reason')
+  if (typeof id !== 'string' || !id) {
+    return { error: 'Invalid enrollment request ID.' }
+  }
 
   // 2. Validate reason with Zod
+  const reasonRaw = formData.get('reason')
   const reasonResult = z.string().min(1, 'A reason is required.').safeParse(reasonRaw)
   if (!reasonResult.success) {
     return { error: reasonResult.error.issues[0]?.message ?? 'A reason is required.' }
   }
   const reason = reasonResult.data
-
-  if (typeof id !== 'string' || !id) {
-    return { error: 'Invalid enrollment request ID.' }
-  }
 
   // 3. Auth check
   const session = await getSession()
@@ -122,12 +141,20 @@ export async function rejectEnrollmentAction(
   if (request.status !== 'PENDING') return { error: 'This request has already been processed.' }
 
   // 5. Update status to REJECTED with admin remarks
-  await db.enrollmentRequest.update({
-    where: { id },
-    data: { status: 'REJECTED', adminRemarks: reason },
-  })
+  try {
+    await db.enrollmentRequest.update({
+      where: { id },
+      data: { status: 'REJECTED', adminRemarks: reason },
+    })
+  } catch (err) {
+    console.error('[rejectEnrollment] DB error:', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
 
-  // 6. Send rejection email — do NOT rollback if this fails, rejection is already recorded
+  // 6. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
+  revalidatePath('/admin/enrollments')
+
+  // 7. Send rejection email — do NOT rollback if this fails, rejection is already recorded
   try {
     await sendEnrollmentRejectionEmail({
       to: request.email,
@@ -142,9 +169,6 @@ export async function rejectEnrollmentAction(
       success: true,
     }
   }
-
-  // 7. Revalidate enrollments list
-  revalidatePath('/admin/enrollments')
 
   // 8. Return success
   return { error: null, success: true }
