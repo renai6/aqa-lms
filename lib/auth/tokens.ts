@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto'
 import { db } from '@/lib/db'
-import type { TokenType } from '@/app/generated/prisma/index'
+import type { TokenType } from '@prisma/client'
 
 const TOKEN_EXPIRY_MS: Record<string, number> = {
   EMAIL_VERIFICATION: 24 * 60 * 60 * 1000,

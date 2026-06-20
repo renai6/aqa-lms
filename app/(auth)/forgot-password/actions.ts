@@ -3,7 +3,7 @@
 import { db } from '@/lib/db'
 import { createVerificationToken } from '@/lib/auth/tokens'
 import { sendPasswordResetEmail } from '@/lib/auth/email'
-import { TokenType } from '@/app/generated/prisma/index'
+import { TokenType } from '@prisma/client'
 
 type ForgotState = { submitted: boolean }
 
