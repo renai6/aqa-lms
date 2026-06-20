@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "postinstall": "prisma migrate deploy &&prisma generate",
-    "vercel-build": "next build"
+    "postinstall": "npx prisma generate",
+    "vercel-build": "npx prisma migrate deploy && npx prisma generate && next build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
