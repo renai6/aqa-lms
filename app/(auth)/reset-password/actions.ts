@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { verifyAndConsumeToken } from '@/lib/auth/tokens'
 import { hashPassword } from '@/lib/auth/password'
-import { TokenType } from '@/app/generated/prisma'
+import { TokenType } from '@/app/generated/prisma/index'
 
 type ResetState = { error: string | null }
 

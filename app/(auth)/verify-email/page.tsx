@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { verifyAndConsumeToken } from '@/lib/auth/tokens'
-import { TokenType } from '@/app/generated/prisma'
+import { TokenType } from '@/app/generated/prisma/index'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function VerifyEmailPage({
