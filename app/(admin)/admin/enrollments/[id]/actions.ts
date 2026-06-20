@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
@@ -105,8 +106,8 @@ export async function approveEnrollmentAction(
     }
   }
 
-  // 8. Return success
-  return { error: null, success: true }
+  // 8. Redirect to list on success
+  redirect('/admin/enrollments')
 }
 
 export async function rejectEnrollmentAction(
@@ -174,6 +175,6 @@ export async function rejectEnrollmentAction(
     }
   }
 
-  // 8. Return success
-  return { error: null, success: true }
+  // 8. Redirect to list on success
+  redirect('/admin/enrollments')
 }

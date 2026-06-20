@@ -30,6 +30,9 @@ export async function proxy(request: NextRequest) {
       if (token) res.cookies.delete('session')
       return res
     }
+    if (!payload.mustChangePassword) {
+      return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+    }
     const res = NextResponse.next()
     res.headers.set('x-user-id', payload.sub)
     res.headers.set('x-user-role', payload.role)
