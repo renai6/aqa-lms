@@ -17,6 +17,9 @@ const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
 
 const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password', '/verify-email']
 
+// Paths that require any authenticated session (no role restriction)
+const AUTHENTICATED_PATHS = ['/change-password']
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('session')?.value
@@ -24,6 +27,19 @@ export async function proxy(request: NextRequest) {
 
   if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/')) && payload) {
     return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+  }
+
+  // Authenticated-only paths: require a session but no role restriction
+  if (AUTHENTICATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    if (!payload) {
+      const res = NextResponse.redirect(new URL('/login', request.url))
+      if (token) res.cookies.delete('session')
+      return res
+    }
+    const res = NextResponse.next()
+    res.headers.set('x-user-id', payload.sub)
+    res.headers.set('x-user-role', payload.role)
+    return res
   }
 
   const match = PROTECTED.find((p) => pathname.startsWith(p.prefix))
@@ -54,5 +70,6 @@ export const config = {
     '/forgot-password',
     '/reset-password',
     '/verify-email',
+    '/change-password',
   ],
 }
