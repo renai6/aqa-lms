@@ -132,23 +132,27 @@ export async function rejectEnrollmentAction(
   if (!session) return { error: 'Unauthorized' }
   if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
 
-  // 4. Fetch the enrollment request
+  // 4. Fetch the enrollment request (needed for email fields)
   const request = await db.enrollmentRequest.findUnique({
     where: { id },
     include: { course: { select: { title: true } } },
   })
   if (!request) return { error: 'Enrollment request not found.' }
-  if (request.status !== 'PENDING') return { error: 'This request has already been processed.' }
 
-  // 5. Update status to REJECTED with admin remarks
+  // 5. Atomically update status to REJECTED — updateMany with PENDING guard prevents double-processing
+  let updateResult: { count: number }
   try {
-    await db.enrollmentRequest.update({
-      where: { id },
+    updateResult = await db.enrollmentRequest.updateMany({
+      where: { id, status: 'PENDING' },
       data: { status: 'REJECTED', adminRemarks: reason },
     })
   } catch (err) {
     console.error('[rejectEnrollment] DB error:', err)
     return { error: 'A database error occurred. Please try again.' }
+  }
+
+  if (updateResult.count === 0) {
+    return { error: 'This request has already been processed.' }
   }
 
   // 6. Revalidate enrollments list — DB is committed, cache must be updated regardless of email

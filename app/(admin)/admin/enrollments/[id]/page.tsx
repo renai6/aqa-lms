@@ -17,24 +17,36 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+type EnrollmentRequest = Awaited<ReturnType<typeof getEnrollmentRequestById>>
+
+function StatusBadge({ status }: { status: NonNullable<EnrollmentRequest>['status'] }) {
+  if (status === 'APPROVED') {
+    return (
+      <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
+    )
+  }
+  if (status === 'REJECTED') {
+    return <Badge variant="destructive">Rejected</Badge>
+  }
+  return <Badge variant="outline">Pending</Badge>
+}
+
+export async function generateMetadata({ params }: Props) {
+  const { id } = await params
+  const request = await getEnrollmentRequestById(id)
+  return {
+    title: request
+      ? `${request.firstName} ${request.lastName} — Enrollment — AQA Admin`
+      : 'Enrollment — AQA Admin',
+  }
+}
+
 export default async function EnrollmentDetailPage({ params }: Props) {
   const { id } = await params
   const request = await getEnrollmentRequestById(id)
   if (!request) notFound()
 
   const isPending = request.status === 'PENDING'
-
-  function StatusBadge() {
-    if (request!.status === 'APPROVED') {
-      return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
-      )
-    }
-    if (request!.status === 'REJECTED') {
-      return <Badge variant="destructive">Rejected</Badge>
-    }
-    return <Badge variant="outline">Pending</Badge>
-  }
 
   return (
     <div className="p-6 max-w-4xl space-y-6">
@@ -50,7 +62,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
         <h1 className="text-2xl font-semibold">
           {request.firstName} {request.lastName}
         </h1>
-        <StatusBadge />
+        <StatusBadge status={request.status} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
