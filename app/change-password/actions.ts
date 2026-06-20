@@ -3,8 +3,10 @@
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/auth/session'
+import { getSession, createSession } from '@/lib/auth/session'
 import { hashPassword } from '@/lib/auth/password'
+import type { UserRole } from '@/lib/auth/types'
+import { ROLE_DASHBOARDS } from '@/lib/auth/dashboards'
 
 type ActionState = { error: string | null }
 
@@ -38,16 +40,18 @@ export async function changePasswordAction(
   const { password } = result.data
   const passwordHash = await hashPassword(password)
 
+  const user = await db.user.findUnique({
+    where: { id: session.userId },
+    select: { email: true },
+  })
+  if (!user) return { error: 'User not found.' }
+
   await db.user.update({
     where: { id: session.userId },
     data: { passwordHash, mustChangePassword: false },
   })
 
-  const DASHBOARDS: Record<string, string> = {
-    SUPER_ADMIN: '/admin/dashboard',
-    ADMIN: '/admin/dashboard',
-    TEACHER: '/teacher/dashboard',
-    STUDENT: '/student/dashboard',
-  }
-  redirect(DASHBOARDS[session.role] ?? '/login')
+  await createSession({ id: session.userId, role: session.role as UserRole, email: user.email, mustChangePassword: false })
+
+  redirect(ROLE_DASHBOARDS[session.role as UserRole] ?? '/login')
 }

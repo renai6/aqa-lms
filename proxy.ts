@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySessionToken } from '@/lib/auth/jwt'
 import type { UserRole } from '@/lib/auth/types'
-
-const ROLE_DASHBOARDS: Record<UserRole, string> = {
-  SUPER_ADMIN: '/admin/dashboard',
-  ADMIN: '/admin/dashboard',
-  TEACHER: '/teacher/dashboard',
-  STUDENT: '/student/dashboard',
-}
+import { ROLE_DASHBOARDS } from '@/lib/auth/dashboards'
 
 const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
   { prefix: '/admin', roles: ['SUPER_ADMIN', 'ADMIN'] },
@@ -53,6 +47,10 @@ export async function proxy(request: NextRequest) {
 
   if (!match.roles.includes(payload.role)) {
     return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+  }
+
+  if (payload.mustChangePassword) {
+    return NextResponse.redirect(new URL('/change-password', request.url))
   }
 
   const res = NextResponse.next()

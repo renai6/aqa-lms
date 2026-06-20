@@ -4,16 +4,9 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { comparePassword } from '@/lib/auth/password'
 import { createSession } from '@/lib/auth/session'
-import type { UserRole } from '@/lib/auth/types'
+import { ROLE_DASHBOARDS } from '@/lib/auth/dashboards'
 
 type LoginState = { error: string | null }
-
-const DASHBOARDS: Record<UserRole, string> = {
-  SUPER_ADMIN: '/admin/dashboard',
-  ADMIN: '/admin/dashboard',
-  TEACHER: '/teacher/dashboard',
-  STUDENT: '/student/dashboard',
-}
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = formData.get('email')
@@ -32,10 +25,10 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     return { error: 'Account not verified. Check your email for a verification link.' }
   }
 
-  await createSession({ id: user.id, role: user.role, email: user.email })
+  await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: user.mustChangePassword })
 
   if (user.mustChangePassword) {
     redirect('/change-password')
   }
-  redirect(DASHBOARDS[user.role])
+  redirect(ROLE_DASHBOARDS[user.role])
 }
