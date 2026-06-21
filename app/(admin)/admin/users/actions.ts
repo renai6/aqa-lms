@@ -64,10 +64,16 @@ export async function createUserAction(
         mustChangePassword: true,
       },
     })
-    await sendCredentialsEmail(email, firstName, tempPassword)
   } catch (err) {
     console.error('[createUser]', err)
     return { error: 'Failed to create user. Please try again.' }
+  }
+
+  try {
+    await sendCredentialsEmail(email, firstName, tempPassword)
+  } catch (err) {
+    console.error('[createUser:email]', err)
+    // User created successfully; email failure is non-fatal
   }
 
   revalidatePath('/admin/users')
