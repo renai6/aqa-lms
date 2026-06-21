@@ -5,6 +5,7 @@
 
 generator client {
   provider      = "prisma-client-js"
+  output        = "../app/generated/prisma"
   binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
@@ -49,6 +50,16 @@ enum AttemptStatus {
 enum TokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
 
 //
@@ -162,6 +173,7 @@ model Subject {
   assessments Assessment[]
   grades      Grade[]
   teachers    SubjectTeacher[]
+  schedules   SubjectSchedule[]
 }
 
 model SubjectTeacher {
@@ -174,6 +186,17 @@ model SubjectTeacher {
   assignedAt DateTime @default(now())
 
   @@id([subjectId, userId])
+}
+
+model SubjectSchedule {
+  id        String    @id @default(cuid())
+  subjectId String
+  subject   Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  day       DayOfWeek
+  startTime String
+  endTime   String
+
+  @@index([subjectId])
 }
 
 model Lesson {

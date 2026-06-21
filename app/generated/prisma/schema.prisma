@@ -52,6 +52,16 @@ enum TokenType {
   PASSWORD_RESET
 }
 
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
 //
 // USERS & AUTH
 //
@@ -65,8 +75,9 @@ model User {
   lastName    String
   displayName String?
 
-  role     UserRole @default(STUDENT)
-  isActive Boolean  @default(true)
+  role               UserRole @default(STUDENT)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -131,7 +142,8 @@ model Course {
   title       String
   description String?
 
-  isPublished Boolean @default(false)
+  isPublished  Boolean @default(false)
+  passingGrade Float   @default(75.0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,6 +164,7 @@ model Subject {
   description String?
 
   order Int
+  units Int @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -160,6 +173,7 @@ model Subject {
   assessments Assessment[]
   grades      Grade[]
   teachers    SubjectTeacher[]
+  schedules   SubjectSchedule[]
 }
 
 model SubjectTeacher {
@@ -172,6 +186,17 @@ model SubjectTeacher {
   assignedAt DateTime @default(now())
 
   @@id([subjectId, userId])
+}
+
+model SubjectSchedule {
+  id        String    @id @default(cuid())
+  subjectId String
+  subject   Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  day       DayOfWeek
+  startTime String
+  endTime   String
+
+  @@index([subjectId])
 }
 
 model Lesson {
@@ -229,6 +254,7 @@ model Assessment {
   durationMins Int?
   passingScore Float?
   maxAttempts  Int?
+  weight       Float  @default(1.0)
 
   // totalPoints is derived: SUM(Question.points)
 
