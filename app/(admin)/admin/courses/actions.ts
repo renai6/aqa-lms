@@ -169,6 +169,9 @@ export async function uploadCourseImageAction(
   const courseId = formData.get('courseId')
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
+  const courseExists = await db.course.findUnique({ where: { id: courseId }, select: { id: true } })
+  if (!courseExists) return { error: 'Course not found.' }
+
   const file = formData.get('file')
   if (!(file instanceof File) || file.size === 0) return { error: 'Please select an image file.' }
 
@@ -208,6 +211,7 @@ export async function uploadCourseImageAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
+  revalidatePath('/admin/courses')
   revalidatePath('/admin/courses/' + courseId)
   revalidatePath('/courses')
   return { error: null, success: true }
@@ -230,15 +234,9 @@ export async function removeCourseImageAction(
   })
   if (!course?.imageUrl) return { error: 'No image to remove.' }
 
-  const ext = course.imageUrl.split('.').pop()
+  const ext = new URL(course.imageUrl).pathname.split('.').pop()
   const storagePath = `courses/${courseId}/image.${ext}`
   const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!
-
-  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove([storagePath])
-  if (removeError) {
-    console.error('[removeCourseImage]', removeError)
-    return { error: 'Failed to remove image. Please try again.' }
-  }
 
   try {
     await db.course.update({ where: { id: courseId }, data: { imageUrl: null } })
@@ -247,6 +245,13 @@ export async function removeCourseImageAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
+  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove([storagePath])
+  if (removeError) {
+    console.error('[removeCourseImage]', removeError)
+    return { error: 'Failed to remove image. Please try again.' }
+  }
+
+  revalidatePath('/admin/courses')
   revalidatePath('/admin/courses/' + courseId)
   revalidatePath('/courses')
   return { error: null, success: true }
