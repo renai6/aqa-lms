@@ -193,8 +193,8 @@ model SubjectSchedule {
   subjectId String
   subject   Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   day       DayOfWeek
-  startTime String
-  endTime   String
+  startTime String // "HH:MM" 24-hour, e.g. "19:00"
+  endTime   String // "HH:MM" 24-hour, e.g. "21:00"
 
   @@index([subjectId])
 }
