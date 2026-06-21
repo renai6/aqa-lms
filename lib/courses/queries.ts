@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { DayOfWeek } from '@/app/generated/prisma'
 
 export type CourseRow = {
   id: string
@@ -45,6 +46,13 @@ export type TeacherRow = {
   user: { id: string; firstName: string; lastName: string; email: string }
 }
 
+export type ScheduleRow = {
+  id: string
+  day: DayOfWeek
+  startTime: string
+  endTime: string
+}
+
 export type SubjectDetail = {
   id: string
   courseId: string
@@ -57,6 +65,7 @@ export type SubjectDetail = {
   course: { title: string }
   lessons: LessonRow[]
   teachers: TeacherRow[]
+  schedules: ScheduleRow[]
 }
 
 export type LessonDetail = {
@@ -161,6 +170,14 @@ export async function getSubjectById(sid: string): Promise<SubjectDetail | null>
               email: true,
             },
           },
+        },
+      },
+      schedules: {
+        select: {
+          id: true,
+          day: true,
+          startTime: true,
+          endTime: true,
         },
       },
     },
