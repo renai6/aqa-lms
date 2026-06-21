@@ -258,7 +258,7 @@ export async function removeScheduleAction(
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
   try {
-    await db.subjectSchedule.delete({ where: { id: scheduleId } })
+    await db.subjectSchedule.delete({ where: { id: scheduleId, subjectId } })
   } catch (err) {
     console.error('[removeSchedule]', err)
     return { error: 'A database error occurred. Please try again.' }
