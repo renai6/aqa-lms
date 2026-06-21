@@ -169,7 +169,7 @@ export async function uploadCourseImageAction(
   const courseId = formData.get('courseId')
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
-  const courseExists = await db.course.findUnique({ where: { id: courseId }, select: { id: true } })
+  const courseExists = await db.course.findUnique({ where: { id: courseId }, select: { id: true, imageUrl: true } })
   if (!courseExists) return { error: 'Course not found.' }
 
   const file = formData.get('file')
@@ -189,9 +189,23 @@ export async function uploadCourseImageAction(
     return { error: 'File content does not match its declared type.' }
   }
 
+  if (file.type === 'image/webp') {
+    const webpMarker = [0x57, 0x45, 0x42, 0x50]
+    if (!webpMarker.every((byte, i) => buffer[i + 8] === byte)) {
+      return { error: 'File content does not match its declared type.' }
+    }
+  }
+
   const ext = MIME_EXTS[file.type as keyof typeof MIME_EXTS]
   const storagePath = `courses/${courseId}/image.${ext}`
   const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!
+
+  if (courseExists.imageUrl) {
+    const oldExt = new URL(courseExists.imageUrl).pathname.split('.').pop()
+    if (oldExt && oldExt !== ext) {
+      await supabaseAdmin.storage.from(bucket).remove([`courses/${courseId}/image.${oldExt}`])
+    }
+  }
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from(bucket)
@@ -238,17 +252,17 @@ export async function removeCourseImageAction(
   const storagePath = `courses/${courseId}/image.${ext}`
   const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!
 
+  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove([storagePath])
+  if (removeError) {
+    console.error('[removeCourseImage]', removeError)
+    return { error: 'Failed to remove image. Please try again.' }
+  }
+
   try {
     await db.course.update({ where: { id: courseId }, data: { imageUrl: null } })
   } catch (err) {
     console.error('[removeCourseImage] db', err)
     return { error: 'A database error occurred. Please try again.' }
-  }
-
-  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove([storagePath])
-  if (removeError) {
-    console.error('[removeCourseImage]', removeError)
-    return { error: 'Failed to remove image. Please try again.' }
   }
 
   revalidatePath('/admin/courses')
