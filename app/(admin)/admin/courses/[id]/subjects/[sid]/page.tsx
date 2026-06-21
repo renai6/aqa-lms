@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EditSubjectForm } from './edit-subject-form'
 import { DeleteSubjectButton } from './delete-subject-button'
 import { TeacherAssignmentPanel } from './teacher-assignment-panel'
+import { SchedulePanel } from './schedule-panel'
 import { AddLessonForm } from './add-lesson-form'
 import { DeleteLessonButton } from './delete-lesson-button'
 
@@ -49,6 +50,11 @@ export default async function SubjectDetailPage({ params }: Props) {
             courseId={id}
             currentTeachers={subject.teachers}
             allTeachers={allTeachers}
+          />
+          <SchedulePanel
+            subjectId={sid}
+            courseId={id}
+            schedules={subject.schedules}
           />
           <DeleteSubjectButton subjectId={sid} courseId={id} subjectTitle={subject.title} />
         </div>
