@@ -40,7 +40,7 @@ export async function sendCredentialsEmail(
       <p>Hi ${esc(firstName)},</p>
       <p>Your account has been created on the AQA Learning Management System.</p>
       <p><strong>Email:</strong> ${to}<br/>
-      <strong>Temporary Password:</strong> ${tempPassword}</p>
+      <strong>Temporary Password:</strong> ${esc(tempPassword)}</p>
       <p>Please <a href="${loginUrl}">log in</a> and change your password on first login.</p>
     `,
   })

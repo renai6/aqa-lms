@@ -91,12 +91,16 @@ export async function toggleUserActiveAction(
   const userId = formData.get('userId')
   if (typeof userId !== 'string' || !userId) return { error: 'Invalid user ID.' }
 
-  const currentIsActive = formData.get('currentIsActive') === 'true'
+  const target = await db.user.findUnique({ where: { id: userId }, select: { isActive: true, role: true } })
+  if (!target) return { error: 'User not found.' }
+  if (target.role !== 'ADMIN' && target.role !== 'TEACHER') {
+    return { error: 'Forbidden.' }
+  }
 
   try {
     await db.user.update({
       where: { id: userId },
-      data: { isActive: !currentIsActive },
+      data: { isActive: !target.isActive },
     })
   } catch (err) {
     console.error('[toggleUserActive]', err)

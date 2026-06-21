@@ -7,20 +7,21 @@ import { Button } from '@/components/ui/button'
 type Props = {
   userId: string
   isActive: boolean
+  userName: string
 }
 
-export function ToggleActiveButton({ userId, isActive }: Props) {
+export function ToggleActiveButton({ userId, isActive, userName }: Props) {
   const [state, formAction, isPending] = useActionState(toggleUserActiveAction, { error: null })
 
   return (
     <form action={formAction}>
       <input type="hidden" name="userId" value={userId} />
-      <input type="hidden" name="currentIsActive" value={String(isActive)} />
       <Button
         type="submit"
         variant="ghost"
         size="sm"
         disabled={isPending}
+        aria-label={isActive ? `Deactivate ${userName}` : `Reactivate ${userName}`}
         className={
           isActive
             ? 'text-destructive hover:text-destructive h-7 px-2'

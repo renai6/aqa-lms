@@ -45,7 +45,7 @@ export function UserTable({ users, role }: Props) {
                 {u.createdAt.toLocaleDateString()}
               </td>
               <td className="px-4 py-3">
-                <ToggleActiveButton userId={u.id} isActive={u.isActive} />
+                <ToggleActiveButton userId={u.id} isActive={u.isActive} userName={`${u.firstName} ${u.lastName}`} />
               </td>
             </tr>
           ))}
