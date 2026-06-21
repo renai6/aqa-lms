@@ -30,12 +30,14 @@ export async function sendCredentialsEmail(
   tempPassword: string,
 ) {
   const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to,
     subject: 'Your AQA LMS account credentials',
     html: `
-      <p>Hi ${firstName},</p>
+      <p>Hi ${esc(firstName)},</p>
       <p>Your account has been created on the AQA Learning Management System.</p>
       <p><strong>Email:</strong> ${to}<br/>
       <strong>Temporary Password:</strong> ${tempPassword}</p>
