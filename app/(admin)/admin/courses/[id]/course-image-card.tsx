@@ -37,7 +37,6 @@ export function CourseImageCard({ courseId, imageUrl }: Props) {
               <Button
                 type="submit"
                 variant="destructive"
-                size="sm"
                 disabled={isRemoving}
                 className="w-full"
               >
@@ -47,6 +46,9 @@ export function CourseImageCard({ courseId, imageUrl }: Props) {
             {removeState.error && (
               <p className="text-sm text-destructive">{removeState.error}</p>
             )}
+            {removeState.success && !removeState.error && (
+              <p className="text-sm text-green-600">Image removed.</p>
+            )}
           </div>
         )}
         <form action={uploadAction} className="space-y-3">
@@ -55,6 +57,7 @@ export function CourseImageCard({ courseId, imageUrl }: Props) {
             type="file"
             name="file"
             accept="image/jpeg,image/png,image/webp"
+            aria-label="Course image file"
             className="text-sm w-full"
             required
           />
