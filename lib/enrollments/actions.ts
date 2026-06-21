@@ -103,7 +103,12 @@ export async function uploadProofAction(
     return { error: 'This enrollment request has already been processed.' }
   }
 
-  const storagePath = `proof/${requestId}/${file.name}`
+  const EXT: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+  const storagePath = `proof/${requestId}/proof.${EXT[file.type]}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
   const { error: uploadError } = await supabaseAdmin.storage
