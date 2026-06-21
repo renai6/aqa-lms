@@ -20,21 +20,30 @@ export default async function CoursesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
-            <div key={course.id} className="border rounded-lg p-6 space-y-4 flex flex-col">
-              <div className="flex-1 space-y-2">
-                <h2 className="text-lg font-semibold">{course.title}</h2>
-                {course.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {course.description}
-                  </p>
-                )}
+            <div key={course.id} className="border rounded-lg overflow-hidden flex flex-col">
+              {course.imageUrl && (
+                <img
+                  src={course.imageUrl}
+                  alt={course.title}
+                  className="w-full aspect-video object-cover"
+                />
+              )}
+              <div className="p-6 space-y-4 flex-1 flex flex-col">
+                <div className="flex-1 space-y-2">
+                  <h2 className="text-lg font-semibold">{course.title}</h2>
+                  {course.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {course.description}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/courses/${course.id}/enroll`}
+                  className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Enroll Now
+                </Link>
               </div>
-              <Link
-                href={`/courses/${course.id}/enroll`}
-                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
-              >
-                Enroll Now
-              </Link>
             </div>
           ))}
         </div>
