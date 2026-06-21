@@ -5,6 +5,7 @@ export type CourseRow = {
   id: string
   title: string
   description: string | null
+  imageUrl: string | null
   isPublished: boolean
   passingGrade: number
   createdAt: Date
@@ -24,6 +25,7 @@ export type CourseDetail = {
   id: string
   title: string
   description: string | null
+  imageUrl: string | null
   isPublished: boolean
   passingGrade: number
   createdAt: Date
@@ -88,12 +90,13 @@ export type TeacherOption = {
 }
 
 export async function getCourses(): Promise<CourseRow[]> {
-  return db.course.findMany({
+  return (await db.course.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
       title: true,
       description: true,
+      imageUrl: true,
       isPublished: true,
       passingGrade: true,
       createdAt: true,
@@ -101,16 +104,17 @@ export async function getCourses(): Promise<CourseRow[]> {
         select: { subjects: true },
       },
     },
-  })
+  })) as unknown as CourseRow[]
 }
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
-  return db.course.findUnique({
+  return (await db.course.findUnique({
     where: { id },
     select: {
       id: true,
       title: true,
       description: true,
+      imageUrl: true,
       isPublished: true,
       passingGrade: true,
       createdAt: true,
@@ -129,7 +133,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
         },
       },
     },
-  })
+  })) as unknown as (CourseDetail | null)
 }
 
 export async function getSubjectById(sid: string): Promise<SubjectDetail | null> {

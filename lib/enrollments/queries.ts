@@ -5,23 +5,24 @@ export type PublishedCourseRow = {
   id: string
   title: string
   description: string | null
+  imageUrl: string | null
 }
 
 export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
-  return db.course.findMany({
+  return (await db.course.findMany({
     where: { isPublished: true },
     orderBy: { title: 'asc' },
-    select: { id: true, title: true, description: true },
-  })
+    select: { id: true, title: true, description: true, imageUrl: true },
+  })) as unknown as PublishedCourseRow[]
 }
 
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
     where: { id },
-    select: { id: true, title: true, description: true, isPublished: true },
+    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true },
   })
   if (!course?.isPublished) return null
-  return { id: course.id, title: course.title, description: course.description }
+  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl }
 }
 
 export type EnrollmentRequestRow = {

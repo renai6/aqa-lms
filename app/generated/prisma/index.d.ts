@@ -6367,6 +6367,7 @@ export namespace Prisma {
     id: string | null
     title: string | null
     description: string | null
+    imageUrl: string | null
     isPublished: boolean | null
     passingGrade: number | null
     createdAt: Date | null
@@ -6377,6 +6378,7 @@ export namespace Prisma {
     id: string | null
     title: string | null
     description: string | null
+    imageUrl: string | null
     isPublished: boolean | null
     passingGrade: number | null
     createdAt: Date | null
@@ -6387,6 +6389,7 @@ export namespace Prisma {
     id: number
     title: number
     description: number
+    imageUrl: number
     isPublished: number
     passingGrade: number
     createdAt: number
@@ -6407,6 +6410,7 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    imageUrl?: true
     isPublished?: true
     passingGrade?: true
     createdAt?: true
@@ -6417,6 +6421,7 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    imageUrl?: true
     isPublished?: true
     passingGrade?: true
     createdAt?: true
@@ -6427,6 +6432,7 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    imageUrl?: true
     isPublished?: true
     passingGrade?: true
     createdAt?: true
@@ -6524,6 +6530,7 @@ export namespace Prisma {
     id: string
     title: string
     description: string | null
+    imageUrl: string | null
     isPublished: boolean
     passingGrade: number
     createdAt: Date
@@ -6553,6 +6560,7 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    imageUrl?: boolean
     isPublished?: boolean
     passingGrade?: boolean
     createdAt?: boolean
@@ -6568,6 +6576,7 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    imageUrl?: boolean
     isPublished?: boolean
     passingGrade?: boolean
     createdAt?: boolean
@@ -6578,6 +6587,7 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    imageUrl?: boolean
     isPublished?: boolean
     passingGrade?: boolean
     createdAt?: boolean
@@ -6588,13 +6598,14 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    imageUrl?: boolean
     isPublished?: boolean
     passingGrade?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CourseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "isPublished" | "passingGrade" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
+  export type CourseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "imageUrl" | "isPublished" | "passingGrade" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
   export type CourseInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     subjects?: boolean | Course$subjectsArgs<ExtArgs>
     enrollments?: boolean | Course$enrollmentsArgs<ExtArgs>
@@ -6617,6 +6628,7 @@ export namespace Prisma {
       id: string
       title: string
       description: string | null
+      imageUrl: string | null
       isPublished: boolean
       passingGrade: number
       createdAt: Date
@@ -7051,6 +7063,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Course", 'String'>
     readonly title: FieldRef<"Course", 'String'>
     readonly description: FieldRef<"Course", 'String'>
+    readonly imageUrl: FieldRef<"Course", 'String'>
     readonly isPublished: FieldRef<"Course", 'Boolean'>
     readonly passingGrade: FieldRef<"Course", 'Float'>
     readonly createdAt: FieldRef<"Course", 'DateTime'>
@@ -22323,6 +22336,7 @@ export namespace Prisma {
     id: 'id',
     title: 'title',
     description: 'description',
+    imageUrl: 'imageUrl',
     isPublished: 'isPublished',
     passingGrade: 'passingGrade',
     createdAt: 'createdAt',
@@ -22951,6 +22965,7 @@ export namespace Prisma {
     id?: StringFilter<"Course"> | string
     title?: StringFilter<"Course"> | string
     description?: StringNullableFilter<"Course"> | string | null
+    imageUrl?: StringNullableFilter<"Course"> | string | null
     isPublished?: BoolFilter<"Course"> | boolean
     passingGrade?: FloatFilter<"Course"> | number
     createdAt?: DateTimeFilter<"Course"> | Date | string
@@ -22965,6 +22980,7 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    imageUrl?: SortOrderInput | SortOrder
     isPublished?: SortOrder
     passingGrade?: SortOrder
     createdAt?: SortOrder
@@ -22982,6 +22998,7 @@ export namespace Prisma {
     NOT?: CourseWhereInput | CourseWhereInput[]
     title?: StringFilter<"Course"> | string
     description?: StringNullableFilter<"Course"> | string | null
+    imageUrl?: StringNullableFilter<"Course"> | string | null
     isPublished?: BoolFilter<"Course"> | boolean
     passingGrade?: FloatFilter<"Course"> | number
     createdAt?: DateTimeFilter<"Course"> | Date | string
@@ -22996,6 +23013,7 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    imageUrl?: SortOrderInput | SortOrder
     isPublished?: SortOrder
     passingGrade?: SortOrder
     createdAt?: SortOrder
@@ -23014,6 +23032,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Course"> | string
     title?: StringWithAggregatesFilter<"Course"> | string
     description?: StringNullableWithAggregatesFilter<"Course"> | string | null
+    imageUrl?: StringNullableWithAggregatesFilter<"Course"> | string | null
     isPublished?: BoolWithAggregatesFilter<"Course"> | boolean
     passingGrade?: FloatWithAggregatesFilter<"Course"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Course"> | Date | string
@@ -24204,6 +24223,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -24218,6 +24238,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -24232,6 +24253,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24246,6 +24268,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24260,6 +24283,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -24270,6 +24294,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24280,6 +24305,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25570,6 +25596,7 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    imageUrl?: SortOrder
     isPublished?: SortOrder
     passingGrade?: SortOrder
     createdAt?: SortOrder
@@ -25584,6 +25611,7 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    imageUrl?: SortOrder
     isPublished?: SortOrder
     passingGrade?: SortOrder
     createdAt?: SortOrder
@@ -25594,6 +25622,7 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    imageUrl?: SortOrder
     isPublished?: SortOrder
     passingGrade?: SortOrder
     createdAt?: SortOrder
@@ -28588,6 +28617,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -28601,6 +28631,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -28677,6 +28708,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -28690,6 +28722,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -28962,6 +28995,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -28975,6 +29009,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -29144,6 +29179,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29157,6 +29193,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29667,6 +29704,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -29680,6 +29718,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -29762,6 +29801,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29775,6 +29815,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30884,6 +30925,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -30897,6 +30939,7 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    imageUrl?: string | null
     isPublished?: boolean
     passingGrade?: number
     createdAt?: Date | string
@@ -30979,6 +31022,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30992,6 +31036,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    imageUrl?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
     passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
