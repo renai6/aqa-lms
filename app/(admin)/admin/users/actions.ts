@@ -91,6 +91,8 @@ export async function toggleUserActiveAction(
   const userId = formData.get('userId')
   if (typeof userId !== 'string' || !userId) return { error: 'Invalid user ID.' }
 
+  if (userId === session.userId) return { error: 'You cannot deactivate your own account.' }
+
   const target = await db.user.findUnique({ where: { id: userId }, select: { isActive: true, role: true } })
   if (!target) return { error: 'User not found.' }
   if (target.role !== 'ADMIN' && target.role !== 'TEACHER') {

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getUsersByRole } from '@/lib/users/queries'
 import { TabSwitcher } from './tab-switcher'
 import { UserTable } from './user-table'
@@ -18,7 +19,9 @@ export default async function UsersPage({ searchParams }: Props) {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
       <h1 className="text-2xl font-semibold">Users</h1>
-      <TabSwitcher activeTab={activeTab} />
+      <Suspense fallback={null}>
+        <TabSwitcher activeTab={activeTab} />
+      </Suspense>
       <UserTable users={users} role={activeTab} />
       <CreateUserForm role={role} roleLabel={roleLabel} />
     </div>
