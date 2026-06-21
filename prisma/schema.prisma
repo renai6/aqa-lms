@@ -141,6 +141,7 @@ model Course {
 
   title       String
   description String?
+  imageUrl    String?
 
   isPublished  Boolean @default(false)
   passingGrade Float   @default(75.0)
