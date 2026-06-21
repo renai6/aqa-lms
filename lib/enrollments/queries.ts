@@ -16,10 +16,12 @@ export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
 }
 
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
-  return db.course.findFirst({
-    where: { id, isPublished: true },
-    select: { id: true, title: true, description: true },
+  const course = await db.course.findUnique({
+    where: { id },
+    select: { id: true, title: true, description: true, isPublished: true },
   })
+  if (!course?.isPublished) return null
+  return { id: course.id, title: course.title, description: course.description }
 }
 
 export type EnrollmentRequestRow = {
