@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { DayOfWeek } from '@/app/generated/prisma'
+import { DayOfWeek } from '@prisma/client'
 
 export type CourseRow = {
   id: string
@@ -90,7 +90,7 @@ export type TeacherOption = {
 }
 
 export async function getCourses(): Promise<CourseRow[]> {
-  return (await db.course.findMany({
+  return db.course.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -104,11 +104,11 @@ export async function getCourses(): Promise<CourseRow[]> {
         select: { subjects: true },
       },
     },
-  })) as unknown as CourseRow[]
+  })
 }
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
-  return (await db.course.findUnique({
+  return db.course.findUnique({
     where: { id },
     select: {
       id: true,
@@ -133,7 +133,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
         },
       },
     },
-  })) as unknown as (CourseDetail | null)
+  })
 }
 
 export async function getSubjectById(sid: string): Promise<SubjectDetail | null> {

@@ -9,11 +9,11 @@ export type PublishedCourseRow = {
 }
 
 export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
-  return (await db.course.findMany({
+  return db.course.findMany({
     where: { isPublished: true },
     orderBy: { title: 'asc' },
     select: { id: true, title: true, description: true, imageUrl: true },
-  })) as unknown as PublishedCourseRow[]
+  })
 }
 
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {

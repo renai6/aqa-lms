@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
-import { DayOfWeek } from '@/app/generated/prisma'
+import { DayOfWeek } from '@prisma/client'
 
 type ActionState = { error: string | null; success?: boolean }
 
