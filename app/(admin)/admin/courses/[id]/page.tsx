@@ -9,6 +9,7 @@ import { EditCourseForm } from './edit-course-form'
 import { TogglePublishedButton } from './toggle-published-button'
 import { DeleteCourseButton } from './delete-course-button'
 import { AddSubjectForm } from './add-subject-form'
+import { CourseImageCard } from './course-image-card'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -59,6 +60,7 @@ export default async function CourseDetailPage({ params }: Props) {
               <DeleteCourseButton courseId={course.id} courseTitle={course.title} />
             </CardContent>
           </Card>
+          <CourseImageCard courseId={course.id} imageUrl={course.imageUrl} />
         </div>
       </div>
 
