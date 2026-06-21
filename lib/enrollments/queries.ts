@@ -1,6 +1,27 @@
 import { db } from '@/lib/db'
 import { EnrollmentStatus } from '@prisma/client'
 
+export type PublishedCourseRow = {
+  id: string
+  title: string
+  description: string | null
+}
+
+export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
+  return db.course.findMany({
+    where: { isPublished: true },
+    orderBy: { title: 'asc' },
+    select: { id: true, title: true, description: true },
+  })
+}
+
+export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
+  return db.course.findFirst({
+    where: { id, isPublished: true },
+    select: { id: true, title: true, description: true },
+  })
+}
+
 export type EnrollmentRequestRow = {
   id: string
   firstName: string
