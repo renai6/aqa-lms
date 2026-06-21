@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySessionToken } from '@/lib/auth/jwt'
 import type { UserRole } from '@/lib/auth/types'
-
-const ROLE_DASHBOARDS: Record<UserRole, string> = {
-  SUPER_ADMIN: '/admin/dashboard',
-  ADMIN: '/admin/dashboard',
-  TEACHER: '/teacher/dashboard',
-  STUDENT: '/student/dashboard',
-}
+import { ROLE_DASHBOARDS } from '@/lib/auth/dashboards'
 
 const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
   { prefix: '/admin', roles: ['SUPER_ADMIN', 'ADMIN'] },
@@ -17,6 +11,9 @@ const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
 
 const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password', '/verify-email']
 
+// Paths that require any authenticated session (no role restriction)
+const AUTHENTICATED_PATHS = ['/change-password']
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('session')?.value
@@ -24,6 +21,22 @@ export async function proxy(request: NextRequest) {
 
   if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/')) && payload) {
     return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+  }
+
+  // Authenticated-only paths: require a session but no role restriction
+  if (AUTHENTICATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    if (!payload) {
+      const res = NextResponse.redirect(new URL('/login', request.url))
+      if (token) res.cookies.delete('session')
+      return res
+    }
+    if (!payload.mustChangePassword) {
+      return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+    }
+    const res = NextResponse.next()
+    res.headers.set('x-user-id', payload.sub)
+    res.headers.set('x-user-role', payload.role)
+    return res
   }
 
   const match = PROTECTED.find((p) => pathname.startsWith(p.prefix))
@@ -37,6 +50,10 @@ export async function proxy(request: NextRequest) {
 
   if (!match.roles.includes(payload.role)) {
     return NextResponse.redirect(new URL(ROLE_DASHBOARDS[payload.role], request.url))
+  }
+
+  if (payload.mustChangePassword) {
+    return NextResponse.redirect(new URL('/change-password', request.url))
   }
 
   const res = NextResponse.next()
@@ -54,5 +71,6 @@ export const config = {
     '/forgot-password',
     '/reset-password',
     '/verify-email',
+    '/change-password',
   ],
 }

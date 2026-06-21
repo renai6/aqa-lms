@@ -4,4 +4,5 @@ export type SessionPayload = {
   sub: string
   role: UserRole
   email: string
+  mustChangePassword: boolean
 }
