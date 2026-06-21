@@ -40,7 +40,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/admin/courses"
             icon={<BookOpen className="w-5 h-5" aria-hidden="true" />}
             label="Courses"
-            disabled
           />
           <NavLink
             href="/admin/reports"

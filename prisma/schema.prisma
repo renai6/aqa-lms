@@ -64,8 +64,9 @@ model User {
   lastName    String
   displayName String?
 
-  role     UserRole @default(STUDENT)
-  isActive Boolean  @default(true)
+  role               UserRole @default(STUDENT)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -130,7 +131,8 @@ model Course {
   title       String
   description String?
 
-  isPublished Boolean @default(false)
+  isPublished  Boolean @default(false)
+  passingGrade Float   @default(75.0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -151,6 +153,7 @@ model Subject {
   description String?
 
   order Int
+  units Int @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -228,6 +231,7 @@ model Assessment {
   durationMins Int?
   passingScore Float?
   maxAttempts  Int?
+  weight       Float  @default(1.0)
 
   // totalPoints is derived: SUM(Question.points)
 
