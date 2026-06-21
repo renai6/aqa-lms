@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { addScheduleAction, removeScheduleAction } from '../../actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -125,22 +126,20 @@ export function SchedulePanel({ subjectId, courseId, schedules }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label htmlFor="sched-start">Start</Label>
-              <input
+              <Input
                 id="sched-start"
                 name="startTime"
                 type="time"
                 required
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="sched-end">End</Label>
-              <input
+              <Input
                 id="sched-end"
                 name="endTime"
                 type="time"
                 required
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
           </div>
