@@ -2,8 +2,8 @@ import { cookies, headers } from 'next/headers'
 import { signToken } from './jwt'
 import type { UserRole } from './types'
 
-export async function createSession(user: { id: string; role: UserRole; email: string }) {
-  const token = await signToken({ sub: user.id, role: user.role, email: user.email })
+export async function createSession(user: { id: string; role: UserRole; email: string; mustChangePassword: boolean }) {
+  const token = await signToken({ sub: user.id, role: user.role, email: user.email, mustChangePassword: user.mustChangePassword })
   const cookieStore = await cookies()
   cookieStore.set('session', token, {
     httpOnly: true,

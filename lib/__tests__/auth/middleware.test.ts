@@ -29,7 +29,7 @@ describe('middleware', () => {
 
   it('redirects authenticated STUDENT visiting /admin to /student/dashboard', async () => {
     vi.mocked(verifySessionToken).mockResolvedValue({
-      sub: 'u1', role: 'STUDENT', email: 'x@x.com',
+      sub: 'u1', role: 'STUDENT', email: 'x@x.com', mustChangePassword: false,
     })
     const res = await proxy(makeRequest('/admin/dashboard', 'some-token'))
     expect(res.status).toBe(307)
@@ -38,7 +38,7 @@ describe('middleware', () => {
 
   it('forwards user headers for valid ADMIN on /admin', async () => {
     vi.mocked(verifySessionToken).mockResolvedValue({
-      sub: 'u2', role: 'ADMIN', email: 'admin@x.com',
+      sub: 'u2', role: 'ADMIN', email: 'admin@x.com', mustChangePassword: false,
     })
     const res = await proxy(makeRequest('/admin/dashboard', 'valid-token'))
     expect(res.headers.get('x-user-id')).toBe('u2')
@@ -47,7 +47,7 @@ describe('middleware', () => {
 
   it('redirects authenticated user away from /login to their dashboard', async () => {
     vi.mocked(verifySessionToken).mockResolvedValue({
-      sub: 'u3', role: 'TEACHER', email: 't@x.com',
+      sub: 'u3', role: 'TEACHER', email: 't@x.com', mustChangePassword: false,
     })
     const res = await proxy(makeRequest('/login', 'valid-token'))
     expect(res.status).toBe(307)
