@@ -48,3 +48,24 @@ export async function sendEnrollmentRejectionEmail(params: {
   })
   if (error) throw new Error(`Failed to send enrollment rejection email: ${error.message}`)
 }
+
+export async function sendEnrollmentConfirmationEmail(params: {
+  to: string
+  firstName: string
+  courseName: string
+  requestId: string
+}): Promise<void> {
+  const confirmUrl = `${process.env.NEXT_PUBLIC_APP_URL}/enroll/${params.requestId}`
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to: params.to,
+    subject: "We received your enrollment application — Al-Qur'an Academy",
+    html: `<p>Dear ${escapeHtml(params.firstName)},</p>
+<p>Thank you for applying to <strong>${escapeHtml(params.courseName)}</strong> at Al-Qur'an Academy. We have received your enrollment application.</p>
+<p>To complete your enrollment, please pay the course fee and upload your proof of payment using the link below:</p>
+<p><a href="${confirmUrl}">${confirmUrl}</a></p>
+<p>We will notify you by email once your payment has been verified and your enrollment is confirmed.</p>
+<p>Best regards,<br>Al-Qur'an Academy Team</p>`,
+  })
+  if (error) throw new Error(`Failed to send enrollment confirmation email: ${error.message}`)
+}
