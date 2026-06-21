@@ -18,7 +18,15 @@ const BANK_NAME = 'BDO'
 const BANK_ACCOUNT_NO = 'XXXX-XXXX-XXXX'
 const BANK_ACCOUNT_NAME = 'Academy Name'
 
-export const metadata = { title: "Enrollment Confirmation — Al-Qur'an Academy" }
+export async function generateMetadata({ params }: Props) {
+  const { requestId } = await params
+  const request = await getEnrollmentRequestById(requestId)
+  return {
+    title: request
+      ? `Enrollment — ${request.firstName} ${request.lastName} — Al-Qur'an Academy`
+      : "Enrollment Confirmation — Al-Qur'an Academy",
+  }
+}
 
 export default async function EnrollmentConfirmationPage({ params }: Props) {
   const { requestId } = await params

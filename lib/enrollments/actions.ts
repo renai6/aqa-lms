@@ -111,6 +111,18 @@ export async function uploadProofAction(
   const storagePath = `proof/${requestId}/proof.${EXT[file.type]}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
+  // Verify actual file content matches declared type via magic bytes
+  const header = new Uint8Array(buffer.slice(0, 12))
+  const isJpeg = header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF
+  const isPng =
+    header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47
+  const isWebp =
+    header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46 &&
+    header[8] === 0x57 && header[9] === 0x45 && header[10] === 0x42 && header[11] === 0x50
+  if (!isJpeg && !isPng && !isWebp) {
+    return { error: 'Invalid image file. Only JPG, PNG, and WEBP images are accepted.' }
+  }
+
   const { error: uploadError } = await supabaseAdmin.storage
     .from(process.env.SUPABASE_STORAGE_BUCKET!)
     .upload(storagePath, buffer, { contentType: file.type, upsert: true })
