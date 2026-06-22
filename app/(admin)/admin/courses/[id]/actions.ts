@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { DayOfWeek } from '@prisma/client'
@@ -122,7 +123,7 @@ export async function deleteSubjectAction(
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
   try {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.lesson.deleteMany({ where: { subjectId: id } })
       await tx.subject.delete({ where: { id } })
     })

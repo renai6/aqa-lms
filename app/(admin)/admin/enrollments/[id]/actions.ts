@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { hashPassword } from '@/lib/auth/password'
@@ -40,7 +41,7 @@ export async function approveEnrollmentAction(
   // 5. Atomically check PENDING status, create user, enrollment, and update request
   let newUser: { id: string }
   try {
-    newUser = await db.$transaction(async (tx) => {
+    newUser = await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // Atomic PENDING check — updateMany returns count; if 0, someone beat us to it
       const updated = await tx.enrollmentRequest.updateMany({
         where: { id, status: 'PENDING' },

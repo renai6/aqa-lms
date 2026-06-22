@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { supabaseAdmin } from '@/lib/supabase/admin'
@@ -116,7 +117,7 @@ export async function deleteCourseAction(
   if (typeof id !== 'string' || !id) return { error: 'Invalid course ID.' }
 
   try {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       const subjects = await tx.subject.findMany({ where: { courseId: id }, select: { id: true } })
       const subjectIds = subjects.map(s => s.id)
       await tx.lesson.deleteMany({ where: { subjectId: { in: subjectIds } } })
