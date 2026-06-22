@@ -8,6 +8,7 @@ import { getEnrollmentRequestById } from '@/lib/enrollments/queries'
 import { ProofOfPaymentViewer } from './proof-viewer'
 import { ApproveForm } from './approve-form'
 import { RejectForm } from './reject-form'
+import { PaymentSection } from './payment-section'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -135,6 +136,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           </Card>
         </div>
       </div>
+
+      {request.status === 'APPROVED' && request.userId && (
+        <PaymentSection
+          requestId={id}
+          userId={request.userId}
+          courseId={request.courseId}
+        />
+      )}
     </div>
   )
 }

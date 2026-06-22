@@ -8,7 +8,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { hashPassword } from '@/lib/auth/password'
 import { generateTempPassword } from '@/lib/enrollments/password'
-import { sendEnrollmentApprovalEmail, sendEnrollmentRejectionEmail } from '@/lib/enrollments/email'
+import { sendEnrollmentApprovalEmail, sendEnrollmentRejectionEmail, sendPaymentStatusEmail } from '@/lib/enrollments/email'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -213,4 +213,67 @@ export async function rejectEnrollmentAction(
 
   // 8. Redirect to list on success
   redirect('/admin/enrollments')
+}
+
+export async function updatePaymentStatusAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const requestId = formData.get('requestId')
+  if (typeof requestId !== 'string' || !requestId) return { error: 'Invalid request ID.' }
+
+  const newStatus = formData.get('paymentStatus')
+  if (newStatus !== 'PARTIALLY_PAID' && newStatus !== 'FULLY_PAID') {
+    return { error: 'Please select a valid payment status.' }
+  }
+
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+
+  const request = await db.enrollmentRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      userId: true,
+      courseId: true,
+      firstName: true,
+      email: true,
+      course: { select: { title: true, tuitionFee: true } },
+    },
+  })
+  if (!request?.userId) return { error: 'Enrollment not found or not yet approved.' }
+
+  const enrollment = await db.enrollment.findFirst({
+    where: { userId: request.userId, courseId: request.courseId },
+    select: { id: true, totalPaid: true },
+  })
+  if (!enrollment) return { error: 'Active enrollment not found.' }
+
+  try {
+    await db.enrollment.update({
+      where: { id: enrollment.id },
+      data: { paymentStatus: newStatus },
+    })
+  } catch (err) {
+    console.error('[updatePaymentStatus] DB error:', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
+
+  revalidatePath('/admin/enrollments/' + requestId)
+
+  try {
+    await sendPaymentStatusEmail({
+      to: request.email,
+      firstName: request.firstName,
+      courseName: request.course.title,
+      paymentStatus: newStatus,
+      totalPaid: enrollment.totalPaid.toNumber(),
+      tuitionFee: request.course.tuitionFee?.toNumber() ?? null,
+    })
+  } catch (err) {
+    console.error('[updatePaymentStatus] Email error:', err)
+    return { error: 'Status updated but email notification failed.', success: true }
+  }
+
+  return { error: null, success: true }
 }

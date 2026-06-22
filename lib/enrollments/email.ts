@@ -69,3 +69,14 @@ export async function sendEnrollmentConfirmationEmail(params: {
   })
   if (error) throw new Error(`Failed to send enrollment confirmation email: ${error.message}`)
 }
+
+export async function sendPaymentStatusEmail(_params: {
+  to: string
+  firstName: string
+  courseName: string
+  paymentStatus: 'PARTIALLY_PAID' | 'FULLY_PAID'
+  totalPaid: number
+  tuitionFee: number | null
+}): Promise<void> {
+  // Full implementation in Task 8
+}
