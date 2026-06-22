@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { EnrollmentStatus, PaymentType } from '@prisma/client'
+import { EnrollmentStatus, PaymentStatus, PaymentType } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -99,5 +99,86 @@ export async function getEnrollmentRequestById(
   return {
     ...row,
     amountPaid: row.amountPaid.toNumber(),
+  }
+}
+
+export type PaymentProofRow = {
+  id: string
+  proofUrl: string
+  amount: number
+  note: string | null
+  submittedAt: Date
+}
+
+export type StudentEnrollmentDetail = {
+  id: string
+  courseId: string
+  course: { title: string; tuitionFee: number | null }
+  paymentStatus: PaymentStatus
+  totalPaid: number
+  enrolledAt: Date
+  paymentProofs: PaymentProofRow[]
+}
+
+export type AdminEnrollmentPaymentDetail = {
+  enrollmentId: string
+  paymentStatus: PaymentStatus
+  totalPaid: number
+  course: { tuitionFee: number | null }
+  paymentProofs: PaymentProofRow[]
+}
+
+export async function getStudentEnrollment(userId: string): Promise<StudentEnrollmentDetail | null> {
+  const raw = await db.enrollment.findFirst({
+    where: { userId },
+    select: {
+      id: true,
+      courseId: true,
+      course: { select: { title: true, tuitionFee: true } },
+      paymentStatus: true,
+      totalPaid: true,
+      enrolledAt: true,
+      paymentProofs: {
+        orderBy: { submittedAt: 'desc' },
+        select: { id: true, proofUrl: true, amount: true, note: true, submittedAt: true },
+      },
+    },
+  })
+  if (!raw) return null
+  return {
+    ...raw,
+    course: {
+      title: raw.course.title,
+      tuitionFee: raw.course.tuitionFee?.toNumber() ?? null,
+    },
+    totalPaid: raw.totalPaid.toNumber(),
+    paymentProofs: raw.paymentProofs.map(p => ({ ...p, amount: p.amount.toNumber() })),
+  }
+}
+
+export async function getEnrollmentPaymentByRequest(
+  userId: string,
+  courseId: string,
+): Promise<AdminEnrollmentPaymentDetail | null> {
+  const raw = await db.enrollment.findFirst({
+    where: { userId, courseId },
+    select: {
+      id: true,
+      paymentStatus: true,
+      totalPaid: true,
+      course: { select: { tuitionFee: true } },
+      paymentProofs: {
+        orderBy: { submittedAt: 'desc' },
+        select: { id: true, proofUrl: true, amount: true, note: true, submittedAt: true },
+      },
+    },
+  })
+  if (!raw) return null
+  return {
+    enrollmentId: raw.id,
+    paymentStatus: raw.paymentStatus,
+    totalPaid: raw.totalPaid.toNumber(),
+    course: { tuitionFee: raw.course.tuitionFee?.toNumber() ?? null },
+    paymentProofs: raw.paymentProofs.map(p => ({ ...p, amount: p.amount.toNumber() })),
   }
 }
