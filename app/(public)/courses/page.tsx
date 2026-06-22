@@ -108,7 +108,7 @@ export default async function CoursesPage() {
                       {course.tuitionFee != null ? (
                         <div>
                           <span className="text-lg font-bold text-foreground">
-                            ₱{course.tuitionFee.toLocaleString()}
+                            ₱{course.tuitionFee.toLocaleString('en-PH')}
                           </span>
                           <p className="mt-0.5 text-xs text-muted-foreground">
                             Flexible installments available
