@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { getEnrollmentRequestById } from '@/lib/enrollments/queries'
 import { ProofOfPaymentViewer } from './proof-viewer'
-import { ApproveButton } from './approve-button'
+import { ApproveForm } from './approve-form'
 import { RejectForm } from './reject-form'
 
 type Props = { params: Promise<{ id: string }> }
@@ -85,6 +85,16 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 <span className="text-sm text-muted-foreground w-32 shrink-0">Submitted</span>
                 <span className="text-sm">{dateFormatter.format(request.createdAt)}</span>
               </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Payment Type</span>
+                <span className="text-sm">
+                  {request.paymentType === 'FULL' ? 'Full Payment' : 'Partial Payment'}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Amount Declared</span>
+                <span className="text-sm">₱{request.amountPaid.toLocaleString('en-PH')}</span>
+              </div>
               {request.adminRemarks && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                   <span className="text-sm text-muted-foreground w-32 shrink-0">Admin Remarks</span>
@@ -106,7 +116,12 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               {isPending && (
                 <>
                   <Separator />
-                  <ApproveButton requestId={id} />
+                  <ApproveForm
+                    requestId={id}
+                    defaultPaymentStatus={
+                      request.paymentType === 'FULL' ? 'FULLY_PAID' : 'PARTIALLY_PAID'
+                    }
+                  />
                   <Separator />
                   <RejectForm requestId={id} />
                 </>

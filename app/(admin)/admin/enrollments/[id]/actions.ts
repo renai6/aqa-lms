@@ -22,23 +22,41 @@ export async function approveEnrollmentAction(
     return { error: 'Invalid enrollment request ID.' }
   }
 
-  // 2. Auth check
+  // 2. Read and validate paymentStatus
+  const paymentStatusRaw = formData.get('paymentStatus')
+  const paymentStatusResult = z
+    .enum(['PARTIALLY_PAID', 'FULLY_PAID'])
+    .safeParse(paymentStatusRaw)
+  if (!paymentStatusResult.success) {
+    return { error: 'Invalid payment status.' }
+  }
+  const paymentStatus = paymentStatusResult.data
+
+  // 3. Auth check
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
   if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
 
-  // 3. Fetch the enrollment request (to get email, names, courseId etc.)
+  // 4. Fetch the enrollment request (to get email, names, courseId, amountPaid, paymentProofUrl)
   const request = await db.enrollmentRequest.findUnique({
     where: { id },
-    include: { course: { select: { title: true } } },
+    select: {
+      email: true,
+      firstName: true,
+      lastName: true,
+      courseId: true,
+      amountPaid: true,
+      paymentProofUrl: true,
+      course: { select: { title: true } },
+    },
   })
   if (!request) return { error: 'Enrollment request not found.' }
 
-  // 4. Generate and hash temp password
+  // 5. Generate and hash temp password
   const tempPassword = generateTempPassword()
   const hashedPassword = await hashPassword(tempPassword)
 
-  // 5. Atomically check PENDING status, create user, enrollment, and update request
+  // 6. Atomically check PENDING status, create user, enrollment, and update request
   let newUser: { id: string }
   try {
     newUser = await db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -63,9 +81,26 @@ export async function approveEnrollmentAction(
         },
       })
 
-      await tx.enrollment.create({
-        data: { userId: user.id, courseId: request.courseId },
+      const enrollment = await tx.enrollment.create({
+        data: {
+          userId: user.id,
+          courseId: request.courseId,
+          paymentStatus,
+          totalPaid: request.amountPaid,
+        },
       })
+
+      // Create PaymentProof if a proof URL was submitted with the enrollment request
+      if (request.paymentProofUrl) {
+        await tx.paymentProof.create({
+          data: {
+            enrollmentId: enrollment.id,
+            proofUrl: request.paymentProofUrl,
+            amount: request.amountPaid,
+            note: 'Initial payment (submitted at enrollment)',
+          },
+        })
+      }
 
       // Link the new user to the enrollment request
       await tx.enrollmentRequest.update({
@@ -88,10 +123,10 @@ export async function approveEnrollmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  // 6. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
+  // 7. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
   revalidatePath('/admin/enrollments')
 
-  // 7. Send approval email — do NOT rollback if this fails, account already exists
+  // 8. Send approval email — do NOT rollback if this fails, account already exists
   try {
     await sendEnrollmentApprovalEmail({
       to: request.email,
@@ -107,7 +142,7 @@ export async function approveEnrollmentAction(
     }
   }
 
-  // 8. Redirect to list on success
+  // 9. Redirect to list on success
   redirect('/admin/enrollments')
 }
 

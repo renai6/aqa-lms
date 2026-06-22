@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { EnrollmentStatus } from '@prisma/client'
+import { EnrollmentStatus, PaymentType } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -43,6 +43,8 @@ export type EnrollmentRequestDetail = EnrollmentRequestRow & {
   adminRemarks: string | null
   userId: string | null
   updatedAt: Date
+  paymentType: PaymentType
+  amountPaid: number
 }
 
 export async function getEnrollmentRequestsByStatus(
@@ -70,7 +72,7 @@ export async function getEnrollmentRequestsByStatus(
 export async function getEnrollmentRequestById(
   id: string
 ): Promise<EnrollmentRequestDetail | null> {
-  return db.enrollmentRequest.findUnique({
+  const row = await db.enrollmentRequest.findUnique({
     where: { id },
     select: {
       id: true,
@@ -89,6 +91,13 @@ export async function getEnrollmentRequestById(
       adminRemarks: true,
       userId: true,
       updatedAt: true,
+      paymentType: true,
+      amountPaid: true,
     },
   })
+  if (!row) return null
+  return {
+    ...row,
+    amountPaid: row.amountPaid.toNumber(),
+  }
 }
