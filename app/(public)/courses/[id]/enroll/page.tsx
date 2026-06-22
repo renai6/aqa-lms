@@ -31,6 +31,7 @@ export default async function EnrollPage({ params }: Props) {
             src={course.imageUrl!}
             alt=""
             aria-hidden="true"
+            fetchPriority="high"
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
