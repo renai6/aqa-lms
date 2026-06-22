@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useActionState } from 'react'
+import { useState, useActionState } from 'react'
 import { submitEnrollmentAction } from '@/lib/enrollments/actions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -62,11 +61,11 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
               value="FULL"
               checked={paymentType === 'FULL'}
               onChange={() => setPaymentType('FULL')}
-              className="sr-only"
+              className="peer sr-only"
             />
             <div
               className={[
-                'rounded-xl border-2 p-4 transition-colors',
+                'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
                 paymentType === 'FULL' ? 'border-primary bg-primary/5' : 'border-border bg-card',
               ].join(' ')}
             >
@@ -84,11 +83,11 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
               value="PARTIAL"
               checked={paymentType === 'PARTIAL'}
               onChange={() => setPaymentType('PARTIAL')}
-              className="sr-only"
+              className="peer sr-only"
             />
             <div
               className={[
-                'rounded-xl border-2 p-4 transition-colors',
+                'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
                 paymentType === 'PARTIAL'
                   ? 'border-primary bg-primary/5'
                   : 'border-border bg-card',
@@ -128,7 +127,7 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+        className="w-full rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? 'Submitting...' : 'Submit Application'}
       </button>
