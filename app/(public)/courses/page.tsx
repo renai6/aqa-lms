@@ -20,7 +20,7 @@ export default async function CoursesPage() {
           className="absolute inset-0 h-full w-full opacity-[0.04] pointer-events-none mix-blend-overlay"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <filter id="grain-courses">
+          <filter id="grain-courses-hero">
             <feTurbulence
               type="fractalNoise"
               baseFrequency="0.65"
@@ -29,7 +29,7 @@ export default async function CoursesPage() {
             />
             <feColorMatrix type="saturate" values="0" />
           </filter>
-          <rect width="100%" height="100%" filter="url(#grain-courses)" />
+          <rect width="100%" height="100%" filter="url(#grain-courses-hero)" />
         </svg>
 
         {/* Crimson radial glow */}
@@ -76,7 +76,7 @@ export default async function CoursesPage() {
                 >
                   {/* Left panel — image */}
                   <div className="relative sm:w-2/5 shrink-0 min-h-[200px]">
-                    {course.imageUrl ? (
+                    {course.imageUrl && /^https?:\/\//.test(course.imageUrl) ? (
                       <img
                         src={course.imageUrl}
                         alt={course.title}
