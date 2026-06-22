@@ -44,6 +44,11 @@ export type Subject = $Result.DefaultSelection<Prisma.$SubjectPayload>
  */
 export type SubjectTeacher = $Result.DefaultSelection<Prisma.$SubjectTeacherPayload>
 /**
+ * Model SubjectSchedule
+ * 
+ */
+export type SubjectSchedule = $Result.DefaultSelection<Prisma.$SubjectSchedulePayload>
+/**
  * Model Lesson
  * 
  */
@@ -150,6 +155,19 @@ export const TokenType: {
 
 export type TokenType = (typeof TokenType)[keyof typeof TokenType]
 
+
+export const DayOfWeek: {
+  MONDAY: 'MONDAY',
+  TUESDAY: 'TUESDAY',
+  WEDNESDAY: 'WEDNESDAY',
+  THURSDAY: 'THURSDAY',
+  FRIDAY: 'FRIDAY',
+  SATURDAY: 'SATURDAY',
+  SUNDAY: 'SUNDAY'
+};
+
+export type DayOfWeek = (typeof DayOfWeek)[keyof typeof DayOfWeek]
+
 }
 
 export type UserRole = $Enums.UserRole
@@ -175,6 +193,10 @@ export const AttemptStatus: typeof $Enums.AttemptStatus
 export type TokenType = $Enums.TokenType
 
 export const TokenType: typeof $Enums.TokenType
+
+export type DayOfWeek = $Enums.DayOfWeek
+
+export const DayOfWeek: typeof $Enums.DayOfWeek
 
 /**
  * ##  Prisma Client ʲˢ
@@ -356,6 +378,16 @@ export class PrismaClient<
     * ```
     */
   get subjectTeacher(): Prisma.SubjectTeacherDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.subjectSchedule`: Exposes CRUD operations for the **SubjectSchedule** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SubjectSchedules
+    * const subjectSchedules = await prisma.subjectSchedule.findMany()
+    * ```
+    */
+  get subjectSchedule(): Prisma.SubjectScheduleDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.lesson`: Exposes CRUD operations for the **Lesson** model.
@@ -896,6 +928,7 @@ export namespace Prisma {
     Course: 'Course',
     Subject: 'Subject',
     SubjectTeacher: 'SubjectTeacher',
+    SubjectSchedule: 'SubjectSchedule',
     Lesson: 'Lesson',
     Enrollment: 'Enrollment',
     Assessment: 'Assessment',
@@ -921,7 +954,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "verificationToken" | "enrollmentRequest" | "course" | "subject" | "subjectTeacher" | "lesson" | "enrollment" | "assessment" | "question" | "questionOption" | "assessmentAttempt" | "studentAnswer" | "grade" | "certificate" | "announcement"
+      modelProps: "user" | "verificationToken" | "enrollmentRequest" | "course" | "subject" | "subjectTeacher" | "subjectSchedule" | "lesson" | "enrollment" | "assessment" | "question" | "questionOption" | "assessmentAttempt" | "studentAnswer" | "grade" | "certificate" | "announcement"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1366,6 +1399,80 @@ export namespace Prisma {
           count: {
             args: Prisma.SubjectTeacherCountArgs<ExtArgs>
             result: $Utils.Optional<SubjectTeacherCountAggregateOutputType> | number
+          }
+        }
+      }
+      SubjectSchedule: {
+        payload: Prisma.$SubjectSchedulePayload<ExtArgs>
+        fields: Prisma.SubjectScheduleFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SubjectScheduleFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SubjectScheduleFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          findFirst: {
+            args: Prisma.SubjectScheduleFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SubjectScheduleFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          findMany: {
+            args: Prisma.SubjectScheduleFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>[]
+          }
+          create: {
+            args: Prisma.SubjectScheduleCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          createMany: {
+            args: Prisma.SubjectScheduleCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SubjectScheduleCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>[]
+          }
+          delete: {
+            args: Prisma.SubjectScheduleDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          update: {
+            args: Prisma.SubjectScheduleUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          deleteMany: {
+            args: Prisma.SubjectScheduleDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SubjectScheduleUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SubjectScheduleUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>[]
+          }
+          upsert: {
+            args: Prisma.SubjectScheduleUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SubjectSchedulePayload>
+          }
+          aggregate: {
+            args: Prisma.SubjectScheduleAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSubjectSchedule>
+          }
+          groupBy: {
+            args: Prisma.SubjectScheduleGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SubjectScheduleGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SubjectScheduleCountArgs<ExtArgs>
+            result: $Utils.Optional<SubjectScheduleCountAggregateOutputType> | number
           }
         }
       }
@@ -2223,6 +2330,7 @@ export namespace Prisma {
     course?: CourseOmit
     subject?: SubjectOmit
     subjectTeacher?: SubjectTeacherOmit
+    subjectSchedule?: SubjectScheduleOmit
     lesson?: LessonOmit
     enrollment?: EnrollmentOmit
     assessment?: AssessmentOmit
@@ -2469,6 +2577,7 @@ export namespace Prisma {
     assessments: number
     grades: number
     teachers: number
+    schedules: number
   }
 
   export type SubjectCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2476,6 +2585,7 @@ export namespace Prisma {
     assessments?: boolean | SubjectCountOutputTypeCountAssessmentsArgs
     grades?: boolean | SubjectCountOutputTypeCountGradesArgs
     teachers?: boolean | SubjectCountOutputTypeCountTeachersArgs
+    schedules?: boolean | SubjectCountOutputTypeCountSchedulesArgs
   }
 
   // Custom InputTypes
@@ -2515,6 +2625,13 @@ export namespace Prisma {
    */
   export type SubjectCountOutputTypeCountTeachersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SubjectTeacherWhereInput
+  }
+
+  /**
+   * SubjectCountOutputType without action
+   */
+  export type SubjectCountOutputTypeCountSchedulesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SubjectScheduleWhereInput
   }
 
 
@@ -2652,6 +2769,7 @@ export namespace Prisma {
     displayName: string | null
     role: $Enums.UserRole | null
     isActive: boolean | null
+    mustChangePassword: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2665,6 +2783,7 @@ export namespace Prisma {
     displayName: string | null
     role: $Enums.UserRole | null
     isActive: boolean | null
+    mustChangePassword: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2678,6 +2797,7 @@ export namespace Prisma {
     displayName: number
     role: number
     isActive: number
+    mustChangePassword: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -2693,6 +2813,7 @@ export namespace Prisma {
     displayName?: true
     role?: true
     isActive?: true
+    mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2706,6 +2827,7 @@ export namespace Prisma {
     displayName?: true
     role?: true
     isActive?: true
+    mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2719,6 +2841,7 @@ export namespace Prisma {
     displayName?: true
     role?: true
     isActive?: true
+    mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2805,6 +2928,7 @@ export namespace Prisma {
     displayName: string | null
     role: $Enums.UserRole
     isActive: boolean
+    mustChangePassword: boolean
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -2835,6 +2959,7 @@ export namespace Prisma {
     displayName?: boolean
     role?: boolean
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     enrollments?: boolean | User$enrollmentsArgs<ExtArgs>
@@ -2857,6 +2982,7 @@ export namespace Prisma {
     displayName?: boolean
     role?: boolean
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2870,6 +2996,7 @@ export namespace Prisma {
     displayName?: boolean
     role?: boolean
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2883,11 +3010,12 @@ export namespace Prisma {
     displayName?: boolean
     role?: boolean
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "passwordHash" | "firstName" | "lastName" | "displayName" | "role" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "passwordHash" | "firstName" | "lastName" | "displayName" | "role" | "isActive" | "mustChangePassword" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     enrollments?: boolean | User$enrollmentsArgs<ExtArgs>
     attempts?: boolean | User$attemptsArgs<ExtArgs>
@@ -2923,6 +3051,7 @@ export namespace Prisma {
       displayName: string | null
       role: $Enums.UserRole
       isActive: boolean
+      mustChangePassword: boolean
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -3364,6 +3493,7 @@ export namespace Prisma {
     readonly displayName: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'UserRole'>
     readonly isActive: FieldRef<"User", 'Boolean'>
+    readonly mustChangePassword: FieldRef<"User", 'Boolean'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -6219,8 +6349,18 @@ export namespace Prisma {
 
   export type AggregateCourse = {
     _count: CourseCountAggregateOutputType | null
+    _avg: CourseAvgAggregateOutputType | null
+    _sum: CourseSumAggregateOutputType | null
     _min: CourseMinAggregateOutputType | null
     _max: CourseMaxAggregateOutputType | null
+  }
+
+  export type CourseAvgAggregateOutputType = {
+    passingGrade: number | null
+  }
+
+  export type CourseSumAggregateOutputType = {
+    passingGrade: number | null
   }
 
   export type CourseMinAggregateOutputType = {
@@ -6228,6 +6368,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     isPublished: boolean | null
+    passingGrade: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6237,6 +6378,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     isPublished: boolean | null
+    passingGrade: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6246,17 +6388,27 @@ export namespace Prisma {
     title: number
     description: number
     isPublished: number
+    passingGrade: number
     createdAt: number
     updatedAt: number
     _all: number
   }
 
 
+  export type CourseAvgAggregateInputType = {
+    passingGrade?: true
+  }
+
+  export type CourseSumAggregateInputType = {
+    passingGrade?: true
+  }
+
   export type CourseMinAggregateInputType = {
     id?: true
     title?: true
     description?: true
     isPublished?: true
+    passingGrade?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6266,6 +6418,7 @@ export namespace Prisma {
     title?: true
     description?: true
     isPublished?: true
+    passingGrade?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6275,6 +6428,7 @@ export namespace Prisma {
     title?: true
     description?: true
     isPublished?: true
+    passingGrade?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -6318,6 +6472,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: CourseAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: CourseSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: CourseMinAggregateInputType
@@ -6348,6 +6514,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: CourseCountAggregateInputType | true
+    _avg?: CourseAvgAggregateInputType
+    _sum?: CourseSumAggregateInputType
     _min?: CourseMinAggregateInputType
     _max?: CourseMaxAggregateInputType
   }
@@ -6357,9 +6525,12 @@ export namespace Prisma {
     title: string
     description: string | null
     isPublished: boolean
+    passingGrade: number
     createdAt: Date
     updatedAt: Date
     _count: CourseCountAggregateOutputType | null
+    _avg: CourseAvgAggregateOutputType | null
+    _sum: CourseSumAggregateOutputType | null
     _min: CourseMinAggregateOutputType | null
     _max: CourseMaxAggregateOutputType | null
   }
@@ -6383,6 +6554,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     isPublished?: boolean
+    passingGrade?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     subjects?: boolean | Course$subjectsArgs<ExtArgs>
@@ -6397,6 +6569,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     isPublished?: boolean
+    passingGrade?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["course"]>
@@ -6406,6 +6579,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     isPublished?: boolean
+    passingGrade?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["course"]>
@@ -6415,11 +6589,12 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     isPublished?: boolean
+    passingGrade?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CourseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
+  export type CourseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "isPublished" | "passingGrade" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
   export type CourseInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     subjects?: boolean | Course$subjectsArgs<ExtArgs>
     enrollments?: boolean | Course$enrollmentsArgs<ExtArgs>
@@ -6443,6 +6618,7 @@ export namespace Prisma {
       title: string
       description: string | null
       isPublished: boolean
+      passingGrade: number
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["course"]>
@@ -6876,6 +7052,7 @@ export namespace Prisma {
     readonly title: FieldRef<"Course", 'String'>
     readonly description: FieldRef<"Course", 'String'>
     readonly isPublished: FieldRef<"Course", 'Boolean'>
+    readonly passingGrade: FieldRef<"Course", 'Float'>
     readonly createdAt: FieldRef<"Course", 'DateTime'>
     readonly updatedAt: FieldRef<"Course", 'DateTime'>
   }
@@ -7399,10 +7576,12 @@ export namespace Prisma {
 
   export type SubjectAvgAggregateOutputType = {
     order: number | null
+    units: number | null
   }
 
   export type SubjectSumAggregateOutputType = {
     order: number | null
+    units: number | null
   }
 
   export type SubjectMinAggregateOutputType = {
@@ -7411,6 +7590,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     order: number | null
+    units: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -7421,6 +7601,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     order: number | null
+    units: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -7431,6 +7612,7 @@ export namespace Prisma {
     title: number
     description: number
     order: number
+    units: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -7439,10 +7621,12 @@ export namespace Prisma {
 
   export type SubjectAvgAggregateInputType = {
     order?: true
+    units?: true
   }
 
   export type SubjectSumAggregateInputType = {
     order?: true
+    units?: true
   }
 
   export type SubjectMinAggregateInputType = {
@@ -7451,6 +7635,7 @@ export namespace Prisma {
     title?: true
     description?: true
     order?: true
+    units?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -7461,6 +7646,7 @@ export namespace Prisma {
     title?: true
     description?: true
     order?: true
+    units?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -7471,6 +7657,7 @@ export namespace Prisma {
     title?: true
     description?: true
     order?: true
+    units?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -7568,6 +7755,7 @@ export namespace Prisma {
     title: string
     description: string | null
     order: number
+    units: number
     createdAt: Date
     updatedAt: Date
     _count: SubjectCountAggregateOutputType | null
@@ -7597,6 +7785,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     order?: boolean
+    units?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     course?: boolean | CourseDefaultArgs<ExtArgs>
@@ -7604,6 +7793,7 @@ export namespace Prisma {
     assessments?: boolean | Subject$assessmentsArgs<ExtArgs>
     grades?: boolean | Subject$gradesArgs<ExtArgs>
     teachers?: boolean | Subject$teachersArgs<ExtArgs>
+    schedules?: boolean | Subject$schedulesArgs<ExtArgs>
     _count?: boolean | SubjectCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subject"]>
 
@@ -7613,6 +7803,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     order?: boolean
+    units?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     course?: boolean | CourseDefaultArgs<ExtArgs>
@@ -7624,6 +7815,7 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     order?: boolean
+    units?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     course?: boolean | CourseDefaultArgs<ExtArgs>
@@ -7635,17 +7827,19 @@ export namespace Prisma {
     title?: boolean
     description?: boolean
     order?: boolean
+    units?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "courseId" | "title" | "description" | "order" | "createdAt" | "updatedAt", ExtArgs["result"]["subject"]>
+  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "courseId" | "title" | "description" | "order" | "units" | "createdAt" | "updatedAt", ExtArgs["result"]["subject"]>
   export type SubjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     course?: boolean | CourseDefaultArgs<ExtArgs>
     lessons?: boolean | Subject$lessonsArgs<ExtArgs>
     assessments?: boolean | Subject$assessmentsArgs<ExtArgs>
     grades?: boolean | Subject$gradesArgs<ExtArgs>
     teachers?: boolean | Subject$teachersArgs<ExtArgs>
+    schedules?: boolean | Subject$schedulesArgs<ExtArgs>
     _count?: boolean | SubjectCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type SubjectIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7663,6 +7857,7 @@ export namespace Prisma {
       assessments: Prisma.$AssessmentPayload<ExtArgs>[]
       grades: Prisma.$GradePayload<ExtArgs>[]
       teachers: Prisma.$SubjectTeacherPayload<ExtArgs>[]
+      schedules: Prisma.$SubjectSchedulePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7670,6 +7865,7 @@ export namespace Prisma {
       title: string
       description: string | null
       order: number
+      units: number
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["subject"]>
@@ -8071,6 +8267,7 @@ export namespace Prisma {
     assessments<T extends Subject$assessmentsArgs<ExtArgs> = {}>(args?: Subset<T, Subject$assessmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AssessmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     grades<T extends Subject$gradesArgs<ExtArgs> = {}>(args?: Subset<T, Subject$gradesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     teachers<T extends Subject$teachersArgs<ExtArgs> = {}>(args?: Subset<T, Subject$teachersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectTeacherPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    schedules<T extends Subject$schedulesArgs<ExtArgs> = {}>(args?: Subset<T, Subject$schedulesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8105,6 +8302,7 @@ export namespace Prisma {
     readonly title: FieldRef<"Subject", 'String'>
     readonly description: FieldRef<"Subject", 'String'>
     readonly order: FieldRef<"Subject", 'Int'>
+    readonly units: FieldRef<"Subject", 'Int'>
     readonly createdAt: FieldRef<"Subject", 'DateTime'>
     readonly updatedAt: FieldRef<"Subject", 'DateTime'>
   }
@@ -8601,6 +8799,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SubjectTeacherScalarFieldEnum | SubjectTeacherScalarFieldEnum[]
+  }
+
+  /**
+   * Subject.schedules
+   */
+  export type Subject$schedulesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    where?: SubjectScheduleWhereInput
+    orderBy?: SubjectScheduleOrderByWithRelationInput | SubjectScheduleOrderByWithRelationInput[]
+    cursor?: SubjectScheduleWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SubjectScheduleScalarFieldEnum | SubjectScheduleScalarFieldEnum[]
   }
 
   /**
@@ -9664,6 +9886,1069 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: SubjectTeacherInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SubjectSchedule
+   */
+
+  export type AggregateSubjectSchedule = {
+    _count: SubjectScheduleCountAggregateOutputType | null
+    _min: SubjectScheduleMinAggregateOutputType | null
+    _max: SubjectScheduleMaxAggregateOutputType | null
+  }
+
+  export type SubjectScheduleMinAggregateOutputType = {
+    id: string | null
+    subjectId: string | null
+    day: $Enums.DayOfWeek | null
+    startTime: string | null
+    endTime: string | null
+  }
+
+  export type SubjectScheduleMaxAggregateOutputType = {
+    id: string | null
+    subjectId: string | null
+    day: $Enums.DayOfWeek | null
+    startTime: string | null
+    endTime: string | null
+  }
+
+  export type SubjectScheduleCountAggregateOutputType = {
+    id: number
+    subjectId: number
+    day: number
+    startTime: number
+    endTime: number
+    _all: number
+  }
+
+
+  export type SubjectScheduleMinAggregateInputType = {
+    id?: true
+    subjectId?: true
+    day?: true
+    startTime?: true
+    endTime?: true
+  }
+
+  export type SubjectScheduleMaxAggregateInputType = {
+    id?: true
+    subjectId?: true
+    day?: true
+    startTime?: true
+    endTime?: true
+  }
+
+  export type SubjectScheduleCountAggregateInputType = {
+    id?: true
+    subjectId?: true
+    day?: true
+    startTime?: true
+    endTime?: true
+    _all?: true
+  }
+
+  export type SubjectScheduleAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SubjectSchedule to aggregate.
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SubjectSchedules to fetch.
+     */
+    orderBy?: SubjectScheduleOrderByWithRelationInput | SubjectScheduleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SubjectScheduleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SubjectSchedules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SubjectSchedules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SubjectSchedules
+    **/
+    _count?: true | SubjectScheduleCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SubjectScheduleMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SubjectScheduleMaxAggregateInputType
+  }
+
+  export type GetSubjectScheduleAggregateType<T extends SubjectScheduleAggregateArgs> = {
+        [P in keyof T & keyof AggregateSubjectSchedule]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSubjectSchedule[P]>
+      : GetScalarType<T[P], AggregateSubjectSchedule[P]>
+  }
+
+
+
+
+  export type SubjectScheduleGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SubjectScheduleWhereInput
+    orderBy?: SubjectScheduleOrderByWithAggregationInput | SubjectScheduleOrderByWithAggregationInput[]
+    by: SubjectScheduleScalarFieldEnum[] | SubjectScheduleScalarFieldEnum
+    having?: SubjectScheduleScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SubjectScheduleCountAggregateInputType | true
+    _min?: SubjectScheduleMinAggregateInputType
+    _max?: SubjectScheduleMaxAggregateInputType
+  }
+
+  export type SubjectScheduleGroupByOutputType = {
+    id: string
+    subjectId: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+    _count: SubjectScheduleCountAggregateOutputType | null
+    _min: SubjectScheduleMinAggregateOutputType | null
+    _max: SubjectScheduleMaxAggregateOutputType | null
+  }
+
+  type GetSubjectScheduleGroupByPayload<T extends SubjectScheduleGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SubjectScheduleGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SubjectScheduleGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SubjectScheduleGroupByOutputType[P]>
+            : GetScalarType<T[P], SubjectScheduleGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SubjectScheduleSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    subjectId?: boolean
+    day?: boolean
+    startTime?: boolean
+    endTime?: boolean
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["subjectSchedule"]>
+
+  export type SubjectScheduleSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    subjectId?: boolean
+    day?: boolean
+    startTime?: boolean
+    endTime?: boolean
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["subjectSchedule"]>
+
+  export type SubjectScheduleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    subjectId?: boolean
+    day?: boolean
+    startTime?: boolean
+    endTime?: boolean
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["subjectSchedule"]>
+
+  export type SubjectScheduleSelectScalar = {
+    id?: boolean
+    subjectId?: boolean
+    day?: boolean
+    startTime?: boolean
+    endTime?: boolean
+  }
+
+  export type SubjectScheduleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "subjectId" | "day" | "startTime" | "endTime", ExtArgs["result"]["subjectSchedule"]>
+  export type SubjectScheduleInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }
+  export type SubjectScheduleIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }
+  export type SubjectScheduleIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    subject?: boolean | SubjectDefaultArgs<ExtArgs>
+  }
+
+  export type $SubjectSchedulePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SubjectSchedule"
+    objects: {
+      subject: Prisma.$SubjectPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      subjectId: string
+      day: $Enums.DayOfWeek
+      startTime: string
+      endTime: string
+    }, ExtArgs["result"]["subjectSchedule"]>
+    composites: {}
+  }
+
+  type SubjectScheduleGetPayload<S extends boolean | null | undefined | SubjectScheduleDefaultArgs> = $Result.GetResult<Prisma.$SubjectSchedulePayload, S>
+
+  type SubjectScheduleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SubjectScheduleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SubjectScheduleCountAggregateInputType | true
+    }
+
+  export interface SubjectScheduleDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SubjectSchedule'], meta: { name: 'SubjectSchedule' } }
+    /**
+     * Find zero or one SubjectSchedule that matches the filter.
+     * @param {SubjectScheduleFindUniqueArgs} args - Arguments to find a SubjectSchedule
+     * @example
+     * // Get one SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SubjectScheduleFindUniqueArgs>(args: SelectSubset<T, SubjectScheduleFindUniqueArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SubjectSchedule that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SubjectScheduleFindUniqueOrThrowArgs} args - Arguments to find a SubjectSchedule
+     * @example
+     * // Get one SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SubjectScheduleFindUniqueOrThrowArgs>(args: SelectSubset<T, SubjectScheduleFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SubjectSchedule that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleFindFirstArgs} args - Arguments to find a SubjectSchedule
+     * @example
+     * // Get one SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SubjectScheduleFindFirstArgs>(args?: SelectSubset<T, SubjectScheduleFindFirstArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SubjectSchedule that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleFindFirstOrThrowArgs} args - Arguments to find a SubjectSchedule
+     * @example
+     * // Get one SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SubjectScheduleFindFirstOrThrowArgs>(args?: SelectSubset<T, SubjectScheduleFindFirstOrThrowArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SubjectSchedules that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SubjectSchedules
+     * const subjectSchedules = await prisma.subjectSchedule.findMany()
+     * 
+     * // Get first 10 SubjectSchedules
+     * const subjectSchedules = await prisma.subjectSchedule.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const subjectScheduleWithIdOnly = await prisma.subjectSchedule.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SubjectScheduleFindManyArgs>(args?: SelectSubset<T, SubjectScheduleFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SubjectSchedule.
+     * @param {SubjectScheduleCreateArgs} args - Arguments to create a SubjectSchedule.
+     * @example
+     * // Create one SubjectSchedule
+     * const SubjectSchedule = await prisma.subjectSchedule.create({
+     *   data: {
+     *     // ... data to create a SubjectSchedule
+     *   }
+     * })
+     * 
+     */
+    create<T extends SubjectScheduleCreateArgs>(args: SelectSubset<T, SubjectScheduleCreateArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SubjectSchedules.
+     * @param {SubjectScheduleCreateManyArgs} args - Arguments to create many SubjectSchedules.
+     * @example
+     * // Create many SubjectSchedules
+     * const subjectSchedule = await prisma.subjectSchedule.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SubjectScheduleCreateManyArgs>(args?: SelectSubset<T, SubjectScheduleCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SubjectSchedules and returns the data saved in the database.
+     * @param {SubjectScheduleCreateManyAndReturnArgs} args - Arguments to create many SubjectSchedules.
+     * @example
+     * // Create many SubjectSchedules
+     * const subjectSchedule = await prisma.subjectSchedule.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SubjectSchedules and only return the `id`
+     * const subjectScheduleWithIdOnly = await prisma.subjectSchedule.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SubjectScheduleCreateManyAndReturnArgs>(args?: SelectSubset<T, SubjectScheduleCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SubjectSchedule.
+     * @param {SubjectScheduleDeleteArgs} args - Arguments to delete one SubjectSchedule.
+     * @example
+     * // Delete one SubjectSchedule
+     * const SubjectSchedule = await prisma.subjectSchedule.delete({
+     *   where: {
+     *     // ... filter to delete one SubjectSchedule
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SubjectScheduleDeleteArgs>(args: SelectSubset<T, SubjectScheduleDeleteArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SubjectSchedule.
+     * @param {SubjectScheduleUpdateArgs} args - Arguments to update one SubjectSchedule.
+     * @example
+     * // Update one SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SubjectScheduleUpdateArgs>(args: SelectSubset<T, SubjectScheduleUpdateArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SubjectSchedules.
+     * @param {SubjectScheduleDeleteManyArgs} args - Arguments to filter SubjectSchedules to delete.
+     * @example
+     * // Delete a few SubjectSchedules
+     * const { count } = await prisma.subjectSchedule.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SubjectScheduleDeleteManyArgs>(args?: SelectSubset<T, SubjectScheduleDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SubjectSchedules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SubjectSchedules
+     * const subjectSchedule = await prisma.subjectSchedule.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SubjectScheduleUpdateManyArgs>(args: SelectSubset<T, SubjectScheduleUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SubjectSchedules and returns the data updated in the database.
+     * @param {SubjectScheduleUpdateManyAndReturnArgs} args - Arguments to update many SubjectSchedules.
+     * @example
+     * // Update many SubjectSchedules
+     * const subjectSchedule = await prisma.subjectSchedule.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SubjectSchedules and only return the `id`
+     * const subjectScheduleWithIdOnly = await prisma.subjectSchedule.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SubjectScheduleUpdateManyAndReturnArgs>(args: SelectSubset<T, SubjectScheduleUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SubjectSchedule.
+     * @param {SubjectScheduleUpsertArgs} args - Arguments to update or create a SubjectSchedule.
+     * @example
+     * // Update or create a SubjectSchedule
+     * const subjectSchedule = await prisma.subjectSchedule.upsert({
+     *   create: {
+     *     // ... data to create a SubjectSchedule
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SubjectSchedule we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SubjectScheduleUpsertArgs>(args: SelectSubset<T, SubjectScheduleUpsertArgs<ExtArgs>>): Prisma__SubjectScheduleClient<$Result.GetResult<Prisma.$SubjectSchedulePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SubjectSchedules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleCountArgs} args - Arguments to filter SubjectSchedules to count.
+     * @example
+     * // Count the number of SubjectSchedules
+     * const count = await prisma.subjectSchedule.count({
+     *   where: {
+     *     // ... the filter for the SubjectSchedules we want to count
+     *   }
+     * })
+    **/
+    count<T extends SubjectScheduleCountArgs>(
+      args?: Subset<T, SubjectScheduleCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SubjectScheduleCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SubjectSchedule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SubjectScheduleAggregateArgs>(args: Subset<T, SubjectScheduleAggregateArgs>): Prisma.PrismaPromise<GetSubjectScheduleAggregateType<T>>
+
+    /**
+     * Group by SubjectSchedule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SubjectScheduleGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SubjectScheduleGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SubjectScheduleGroupByArgs['orderBy'] }
+        : { orderBy?: SubjectScheduleGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SubjectScheduleGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSubjectScheduleGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SubjectSchedule model
+   */
+  readonly fields: SubjectScheduleFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SubjectSchedule.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SubjectScheduleClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    subject<T extends SubjectDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SubjectDefaultArgs<ExtArgs>>): Prisma__SubjectClient<$Result.GetResult<Prisma.$SubjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SubjectSchedule model
+   */
+  interface SubjectScheduleFieldRefs {
+    readonly id: FieldRef<"SubjectSchedule", 'String'>
+    readonly subjectId: FieldRef<"SubjectSchedule", 'String'>
+    readonly day: FieldRef<"SubjectSchedule", 'DayOfWeek'>
+    readonly startTime: FieldRef<"SubjectSchedule", 'String'>
+    readonly endTime: FieldRef<"SubjectSchedule", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SubjectSchedule findUnique
+   */
+  export type SubjectScheduleFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter, which SubjectSchedule to fetch.
+     */
+    where: SubjectScheduleWhereUniqueInput
+  }
+
+  /**
+   * SubjectSchedule findUniqueOrThrow
+   */
+  export type SubjectScheduleFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter, which SubjectSchedule to fetch.
+     */
+    where: SubjectScheduleWhereUniqueInput
+  }
+
+  /**
+   * SubjectSchedule findFirst
+   */
+  export type SubjectScheduleFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter, which SubjectSchedule to fetch.
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SubjectSchedules to fetch.
+     */
+    orderBy?: SubjectScheduleOrderByWithRelationInput | SubjectScheduleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SubjectSchedules.
+     */
+    cursor?: SubjectScheduleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SubjectSchedules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SubjectSchedules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SubjectSchedules.
+     */
+    distinct?: SubjectScheduleScalarFieldEnum | SubjectScheduleScalarFieldEnum[]
+  }
+
+  /**
+   * SubjectSchedule findFirstOrThrow
+   */
+  export type SubjectScheduleFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter, which SubjectSchedule to fetch.
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SubjectSchedules to fetch.
+     */
+    orderBy?: SubjectScheduleOrderByWithRelationInput | SubjectScheduleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SubjectSchedules.
+     */
+    cursor?: SubjectScheduleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SubjectSchedules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SubjectSchedules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SubjectSchedules.
+     */
+    distinct?: SubjectScheduleScalarFieldEnum | SubjectScheduleScalarFieldEnum[]
+  }
+
+  /**
+   * SubjectSchedule findMany
+   */
+  export type SubjectScheduleFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter, which SubjectSchedules to fetch.
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SubjectSchedules to fetch.
+     */
+    orderBy?: SubjectScheduleOrderByWithRelationInput | SubjectScheduleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SubjectSchedules.
+     */
+    cursor?: SubjectScheduleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SubjectSchedules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SubjectSchedules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SubjectSchedules.
+     */
+    distinct?: SubjectScheduleScalarFieldEnum | SubjectScheduleScalarFieldEnum[]
+  }
+
+  /**
+   * SubjectSchedule create
+   */
+  export type SubjectScheduleCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SubjectSchedule.
+     */
+    data: XOR<SubjectScheduleCreateInput, SubjectScheduleUncheckedCreateInput>
+  }
+
+  /**
+   * SubjectSchedule createMany
+   */
+  export type SubjectScheduleCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SubjectSchedules.
+     */
+    data: SubjectScheduleCreateManyInput | SubjectScheduleCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SubjectSchedule createManyAndReturn
+   */
+  export type SubjectScheduleCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * The data used to create many SubjectSchedules.
+     */
+    data: SubjectScheduleCreateManyInput | SubjectScheduleCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SubjectSchedule update
+   */
+  export type SubjectScheduleUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SubjectSchedule.
+     */
+    data: XOR<SubjectScheduleUpdateInput, SubjectScheduleUncheckedUpdateInput>
+    /**
+     * Choose, which SubjectSchedule to update.
+     */
+    where: SubjectScheduleWhereUniqueInput
+  }
+
+  /**
+   * SubjectSchedule updateMany
+   */
+  export type SubjectScheduleUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SubjectSchedules.
+     */
+    data: XOR<SubjectScheduleUpdateManyMutationInput, SubjectScheduleUncheckedUpdateManyInput>
+    /**
+     * Filter which SubjectSchedules to update
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * Limit how many SubjectSchedules to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SubjectSchedule updateManyAndReturn
+   */
+  export type SubjectScheduleUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * The data used to update SubjectSchedules.
+     */
+    data: XOR<SubjectScheduleUpdateManyMutationInput, SubjectScheduleUncheckedUpdateManyInput>
+    /**
+     * Filter which SubjectSchedules to update
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * Limit how many SubjectSchedules to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SubjectSchedule upsert
+   */
+  export type SubjectScheduleUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SubjectSchedule to update in case it exists.
+     */
+    where: SubjectScheduleWhereUniqueInput
+    /**
+     * In case the SubjectSchedule found by the `where` argument doesn't exist, create a new SubjectSchedule with this data.
+     */
+    create: XOR<SubjectScheduleCreateInput, SubjectScheduleUncheckedCreateInput>
+    /**
+     * In case the SubjectSchedule was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SubjectScheduleUpdateInput, SubjectScheduleUncheckedUpdateInput>
+  }
+
+  /**
+   * SubjectSchedule delete
+   */
+  export type SubjectScheduleDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
+    /**
+     * Filter which SubjectSchedule to delete.
+     */
+    where: SubjectScheduleWhereUniqueInput
+  }
+
+  /**
+   * SubjectSchedule deleteMany
+   */
+  export type SubjectScheduleDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SubjectSchedules to delete
+     */
+    where?: SubjectScheduleWhereInput
+    /**
+     * Limit how many SubjectSchedules to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SubjectSchedule without action
+   */
+  export type SubjectScheduleDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SubjectSchedule
+     */
+    select?: SubjectScheduleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SubjectSchedule
+     */
+    omit?: SubjectScheduleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubjectScheduleInclude<ExtArgs> | null
   }
 
 
@@ -11950,12 +13235,14 @@ export namespace Prisma {
     durationMins: number | null
     passingScore: number | null
     maxAttempts: number | null
+    weight: number | null
   }
 
   export type AssessmentSumAggregateOutputType = {
     durationMins: number | null
     passingScore: number | null
     maxAttempts: number | null
+    weight: number | null
   }
 
   export type AssessmentMinAggregateOutputType = {
@@ -11966,6 +13253,7 @@ export namespace Prisma {
     durationMins: number | null
     passingScore: number | null
     maxAttempts: number | null
+    weight: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -11978,6 +13266,7 @@ export namespace Prisma {
     durationMins: number | null
     passingScore: number | null
     maxAttempts: number | null
+    weight: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -11990,6 +13279,7 @@ export namespace Prisma {
     durationMins: number
     passingScore: number
     maxAttempts: number
+    weight: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -12000,12 +13290,14 @@ export namespace Prisma {
     durationMins?: true
     passingScore?: true
     maxAttempts?: true
+    weight?: true
   }
 
   export type AssessmentSumAggregateInputType = {
     durationMins?: true
     passingScore?: true
     maxAttempts?: true
+    weight?: true
   }
 
   export type AssessmentMinAggregateInputType = {
@@ -12016,6 +13308,7 @@ export namespace Prisma {
     durationMins?: true
     passingScore?: true
     maxAttempts?: true
+    weight?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -12028,6 +13321,7 @@ export namespace Prisma {
     durationMins?: true
     passingScore?: true
     maxAttempts?: true
+    weight?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -12040,6 +13334,7 @@ export namespace Prisma {
     durationMins?: true
     passingScore?: true
     maxAttempts?: true
+    weight?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -12139,6 +13434,7 @@ export namespace Prisma {
     durationMins: number | null
     passingScore: number | null
     maxAttempts: number | null
+    weight: number
     createdAt: Date
     updatedAt: Date
     _count: AssessmentCountAggregateOutputType | null
@@ -12170,6 +13466,7 @@ export namespace Prisma {
     durationMins?: boolean
     passingScore?: boolean
     maxAttempts?: boolean
+    weight?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
@@ -12186,6 +13483,7 @@ export namespace Prisma {
     durationMins?: boolean
     passingScore?: boolean
     maxAttempts?: boolean
+    weight?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
@@ -12199,6 +13497,7 @@ export namespace Prisma {
     durationMins?: boolean
     passingScore?: boolean
     maxAttempts?: boolean
+    weight?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
@@ -12212,11 +13511,12 @@ export namespace Prisma {
     durationMins?: boolean
     passingScore?: boolean
     maxAttempts?: boolean
+    weight?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type AssessmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "type" | "subjectId" | "durationMins" | "passingScore" | "maxAttempts" | "createdAt" | "updatedAt", ExtArgs["result"]["assessment"]>
+  export type AssessmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "type" | "subjectId" | "durationMins" | "passingScore" | "maxAttempts" | "weight" | "createdAt" | "updatedAt", ExtArgs["result"]["assessment"]>
   export type AssessmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
     questions?: boolean | Assessment$questionsArgs<ExtArgs>
@@ -12245,6 +13545,7 @@ export namespace Prisma {
       durationMins: number | null
       passingScore: number | null
       maxAttempts: number | null
+      weight: number
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["assessment"]>
@@ -12680,6 +13981,7 @@ export namespace Prisma {
     readonly durationMins: FieldRef<"Assessment", 'Int'>
     readonly passingScore: FieldRef<"Assessment", 'Float'>
     readonly maxAttempts: FieldRef<"Assessment", 'Int'>
+    readonly weight: FieldRef<"Assessment", 'Float'>
     readonly createdAt: FieldRef<"Assessment", 'DateTime'>
     readonly updatedAt: FieldRef<"Assessment", 'DateTime'>
   }
@@ -20980,6 +22282,7 @@ export namespace Prisma {
     displayName: 'displayName',
     role: 'role',
     isActive: 'isActive',
+    mustChangePassword: 'mustChangePassword',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -21021,6 +22324,7 @@ export namespace Prisma {
     title: 'title',
     description: 'description',
     isPublished: 'isPublished',
+    passingGrade: 'passingGrade',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -21034,6 +22338,7 @@ export namespace Prisma {
     title: 'title',
     description: 'description',
     order: 'order',
+    units: 'units',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -21048,6 +22353,17 @@ export namespace Prisma {
   };
 
   export type SubjectTeacherScalarFieldEnum = (typeof SubjectTeacherScalarFieldEnum)[keyof typeof SubjectTeacherScalarFieldEnum]
+
+
+  export const SubjectScheduleScalarFieldEnum: {
+    id: 'id',
+    subjectId: 'subjectId',
+    day: 'day',
+    startTime: 'startTime',
+    endTime: 'endTime'
+  };
+
+  export type SubjectScheduleScalarFieldEnum = (typeof SubjectScheduleScalarFieldEnum)[keyof typeof SubjectScheduleScalarFieldEnum]
 
 
   export const LessonScalarFieldEnum: {
@@ -21085,6 +22401,7 @@ export namespace Prisma {
     durationMins: 'durationMins',
     passingScore: 'passingScore',
     maxAttempts: 'maxAttempts',
+    weight: 'weight',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -21287,6 +22604,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -21301,16 +22632,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Float'
+   * Reference to a field of type 'DayOfWeek'
    */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+  export type EnumDayOfWeekFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DayOfWeek'>
     
 
 
   /**
-   * Reference to a field of type 'Float[]'
+   * Reference to a field of type 'DayOfWeek[]'
    */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+  export type ListEnumDayOfWeekFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DayOfWeek[]'>
     
 
 
@@ -21371,6 +22702,7 @@ export namespace Prisma {
     displayName?: StringNullableFilter<"User"> | string | null
     role?: EnumUserRoleFilter<"User"> | $Enums.UserRole
     isActive?: BoolFilter<"User"> | boolean
+    mustChangePassword?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     enrollments?: EnrollmentListRelationFilter
@@ -21392,6 +22724,7 @@ export namespace Prisma {
     displayName?: SortOrderInput | SortOrder
     role?: SortOrder
     isActive?: SortOrder
+    mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     enrollments?: EnrollmentOrderByRelationAggregateInput
@@ -21416,6 +22749,7 @@ export namespace Prisma {
     displayName?: StringNullableFilter<"User"> | string | null
     role?: EnumUserRoleFilter<"User"> | $Enums.UserRole
     isActive?: BoolFilter<"User"> | boolean
+    mustChangePassword?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     enrollments?: EnrollmentListRelationFilter
@@ -21437,6 +22771,7 @@ export namespace Prisma {
     displayName?: SortOrderInput | SortOrder
     role?: SortOrder
     isActive?: SortOrder
+    mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -21456,6 +22791,7 @@ export namespace Prisma {
     displayName?: StringNullableWithAggregatesFilter<"User"> | string | null
     role?: EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
     isActive?: BoolWithAggregatesFilter<"User"> | boolean
+    mustChangePassword?: BoolWithAggregatesFilter<"User"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -21616,6 +22952,7 @@ export namespace Prisma {
     title?: StringFilter<"Course"> | string
     description?: StringNullableFilter<"Course"> | string | null
     isPublished?: BoolFilter<"Course"> | boolean
+    passingGrade?: FloatFilter<"Course"> | number
     createdAt?: DateTimeFilter<"Course"> | Date | string
     updatedAt?: DateTimeFilter<"Course"> | Date | string
     subjects?: SubjectListRelationFilter
@@ -21629,6 +22966,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrderInput | SortOrder
     isPublished?: SortOrder
+    passingGrade?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     subjects?: SubjectOrderByRelationAggregateInput
@@ -21645,6 +22983,7 @@ export namespace Prisma {
     title?: StringFilter<"Course"> | string
     description?: StringNullableFilter<"Course"> | string | null
     isPublished?: BoolFilter<"Course"> | boolean
+    passingGrade?: FloatFilter<"Course"> | number
     createdAt?: DateTimeFilter<"Course"> | Date | string
     updatedAt?: DateTimeFilter<"Course"> | Date | string
     subjects?: SubjectListRelationFilter
@@ -21658,11 +22997,14 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrderInput | SortOrder
     isPublished?: SortOrder
+    passingGrade?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: CourseCountOrderByAggregateInput
+    _avg?: CourseAvgOrderByAggregateInput
     _max?: CourseMaxOrderByAggregateInput
     _min?: CourseMinOrderByAggregateInput
+    _sum?: CourseSumOrderByAggregateInput
   }
 
   export type CourseScalarWhereWithAggregatesInput = {
@@ -21673,6 +23015,7 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"Course"> | string
     description?: StringNullableWithAggregatesFilter<"Course"> | string | null
     isPublished?: BoolWithAggregatesFilter<"Course"> | boolean
+    passingGrade?: FloatWithAggregatesFilter<"Course"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Course"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Course"> | Date | string
   }
@@ -21686,6 +23029,7 @@ export namespace Prisma {
     title?: StringFilter<"Subject"> | string
     description?: StringNullableFilter<"Subject"> | string | null
     order?: IntFilter<"Subject"> | number
+    units?: IntFilter<"Subject"> | number
     createdAt?: DateTimeFilter<"Subject"> | Date | string
     updatedAt?: DateTimeFilter<"Subject"> | Date | string
     course?: XOR<CourseScalarRelationFilter, CourseWhereInput>
@@ -21693,6 +23037,7 @@ export namespace Prisma {
     assessments?: AssessmentListRelationFilter
     grades?: GradeListRelationFilter
     teachers?: SubjectTeacherListRelationFilter
+    schedules?: SubjectScheduleListRelationFilter
   }
 
   export type SubjectOrderByWithRelationInput = {
@@ -21701,6 +23046,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrderInput | SortOrder
     order?: SortOrder
+    units?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     course?: CourseOrderByWithRelationInput
@@ -21708,6 +23054,7 @@ export namespace Prisma {
     assessments?: AssessmentOrderByRelationAggregateInput
     grades?: GradeOrderByRelationAggregateInput
     teachers?: SubjectTeacherOrderByRelationAggregateInput
+    schedules?: SubjectScheduleOrderByRelationAggregateInput
   }
 
   export type SubjectWhereUniqueInput = Prisma.AtLeast<{
@@ -21719,6 +23066,7 @@ export namespace Prisma {
     title?: StringFilter<"Subject"> | string
     description?: StringNullableFilter<"Subject"> | string | null
     order?: IntFilter<"Subject"> | number
+    units?: IntFilter<"Subject"> | number
     createdAt?: DateTimeFilter<"Subject"> | Date | string
     updatedAt?: DateTimeFilter<"Subject"> | Date | string
     course?: XOR<CourseScalarRelationFilter, CourseWhereInput>
@@ -21726,6 +23074,7 @@ export namespace Prisma {
     assessments?: AssessmentListRelationFilter
     grades?: GradeListRelationFilter
     teachers?: SubjectTeacherListRelationFilter
+    schedules?: SubjectScheduleListRelationFilter
   }, "id">
 
   export type SubjectOrderByWithAggregationInput = {
@@ -21734,6 +23083,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrderInput | SortOrder
     order?: SortOrder
+    units?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SubjectCountOrderByAggregateInput
@@ -21752,6 +23102,7 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"Subject"> | string
     description?: StringNullableWithAggregatesFilter<"Subject"> | string | null
     order?: IntWithAggregatesFilter<"Subject"> | number
+    units?: IntWithAggregatesFilter<"Subject"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Subject"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Subject"> | Date | string
   }
@@ -21803,6 +23154,61 @@ export namespace Prisma {
     subjectId?: StringWithAggregatesFilter<"SubjectTeacher"> | string
     userId?: StringWithAggregatesFilter<"SubjectTeacher"> | string
     assignedAt?: DateTimeWithAggregatesFilter<"SubjectTeacher"> | Date | string
+  }
+
+  export type SubjectScheduleWhereInput = {
+    AND?: SubjectScheduleWhereInput | SubjectScheduleWhereInput[]
+    OR?: SubjectScheduleWhereInput[]
+    NOT?: SubjectScheduleWhereInput | SubjectScheduleWhereInput[]
+    id?: StringFilter<"SubjectSchedule"> | string
+    subjectId?: StringFilter<"SubjectSchedule"> | string
+    day?: EnumDayOfWeekFilter<"SubjectSchedule"> | $Enums.DayOfWeek
+    startTime?: StringFilter<"SubjectSchedule"> | string
+    endTime?: StringFilter<"SubjectSchedule"> | string
+    subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
+  }
+
+  export type SubjectScheduleOrderByWithRelationInput = {
+    id?: SortOrder
+    subjectId?: SortOrder
+    day?: SortOrder
+    startTime?: SortOrder
+    endTime?: SortOrder
+    subject?: SubjectOrderByWithRelationInput
+  }
+
+  export type SubjectScheduleWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SubjectScheduleWhereInput | SubjectScheduleWhereInput[]
+    OR?: SubjectScheduleWhereInput[]
+    NOT?: SubjectScheduleWhereInput | SubjectScheduleWhereInput[]
+    subjectId?: StringFilter<"SubjectSchedule"> | string
+    day?: EnumDayOfWeekFilter<"SubjectSchedule"> | $Enums.DayOfWeek
+    startTime?: StringFilter<"SubjectSchedule"> | string
+    endTime?: StringFilter<"SubjectSchedule"> | string
+    subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
+  }, "id">
+
+  export type SubjectScheduleOrderByWithAggregationInput = {
+    id?: SortOrder
+    subjectId?: SortOrder
+    day?: SortOrder
+    startTime?: SortOrder
+    endTime?: SortOrder
+    _count?: SubjectScheduleCountOrderByAggregateInput
+    _max?: SubjectScheduleMaxOrderByAggregateInput
+    _min?: SubjectScheduleMinOrderByAggregateInput
+  }
+
+  export type SubjectScheduleScalarWhereWithAggregatesInput = {
+    AND?: SubjectScheduleScalarWhereWithAggregatesInput | SubjectScheduleScalarWhereWithAggregatesInput[]
+    OR?: SubjectScheduleScalarWhereWithAggregatesInput[]
+    NOT?: SubjectScheduleScalarWhereWithAggregatesInput | SubjectScheduleScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SubjectSchedule"> | string
+    subjectId?: StringWithAggregatesFilter<"SubjectSchedule"> | string
+    day?: EnumDayOfWeekWithAggregatesFilter<"SubjectSchedule"> | $Enums.DayOfWeek
+    startTime?: StringWithAggregatesFilter<"SubjectSchedule"> | string
+    endTime?: StringWithAggregatesFilter<"SubjectSchedule"> | string
   }
 
   export type LessonWhereInput = {
@@ -21959,6 +23365,7 @@ export namespace Prisma {
     durationMins?: IntNullableFilter<"Assessment"> | number | null
     passingScore?: FloatNullableFilter<"Assessment"> | number | null
     maxAttempts?: IntNullableFilter<"Assessment"> | number | null
+    weight?: FloatFilter<"Assessment"> | number
     createdAt?: DateTimeFilter<"Assessment"> | Date | string
     updatedAt?: DateTimeFilter<"Assessment"> | Date | string
     subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
@@ -21974,6 +23381,7 @@ export namespace Prisma {
     durationMins?: SortOrderInput | SortOrder
     passingScore?: SortOrderInput | SortOrder
     maxAttempts?: SortOrderInput | SortOrder
+    weight?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     subject?: SubjectOrderByWithRelationInput
@@ -21992,6 +23400,7 @@ export namespace Prisma {
     durationMins?: IntNullableFilter<"Assessment"> | number | null
     passingScore?: FloatNullableFilter<"Assessment"> | number | null
     maxAttempts?: IntNullableFilter<"Assessment"> | number | null
+    weight?: FloatFilter<"Assessment"> | number
     createdAt?: DateTimeFilter<"Assessment"> | Date | string
     updatedAt?: DateTimeFilter<"Assessment"> | Date | string
     subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
@@ -22007,6 +23416,7 @@ export namespace Prisma {
     durationMins?: SortOrderInput | SortOrder
     passingScore?: SortOrderInput | SortOrder
     maxAttempts?: SortOrderInput | SortOrder
+    weight?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: AssessmentCountOrderByAggregateInput
@@ -22027,6 +23437,7 @@ export namespace Prisma {
     durationMins?: IntNullableWithAggregatesFilter<"Assessment"> | number | null
     passingScore?: FloatNullableWithAggregatesFilter<"Assessment"> | number | null
     maxAttempts?: IntNullableWithAggregatesFilter<"Assessment"> | number | null
+    weight?: FloatWithAggregatesFilter<"Assessment"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Assessment"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Assessment"> | Date | string
   }
@@ -22510,6 +23921,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -22531,6 +23943,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -22552,6 +23965,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -22573,6 +23987,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -22594,6 +24009,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -22607,6 +24023,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22620,6 +24037,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22787,6 +24205,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectCreateNestedManyWithoutCourseInput
@@ -22800,6 +24219,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectUncheckedCreateNestedManyWithoutCourseInput
@@ -22813,6 +24233,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUpdateManyWithoutCourseNestedInput
@@ -22826,6 +24247,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUncheckedUpdateManyWithoutCourseNestedInput
@@ -22839,6 +24261,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -22848,6 +24271,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22857,6 +24281,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22866,6 +24291,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     course: CourseCreateNestedOneWithoutSubjectsInput
@@ -22873,6 +24299,7 @@ export namespace Prisma {
     assessments?: AssessmentCreateNestedManyWithoutSubjectInput
     grades?: GradeCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateInput = {
@@ -22881,12 +24308,14 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
     grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUpdateInput = {
@@ -22894,6 +24323,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
@@ -22901,6 +24331,7 @@ export namespace Prisma {
     assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
     grades?: GradeUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateInput = {
@@ -22909,12 +24340,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
     grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectCreateManyInput = {
@@ -22923,6 +24356,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -22932,6 +24366,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22942,6 +24377,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22984,6 +24420,61 @@ export namespace Prisma {
     subjectId?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     assignedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SubjectScheduleCreateInput = {
+    id?: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+    subject: SubjectCreateNestedOneWithoutSchedulesInput
+  }
+
+  export type SubjectScheduleUncheckedCreateInput = {
+    id?: string
+    subjectId: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+  }
+
+  export type SubjectScheduleUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
+    subject?: SubjectUpdateOneRequiredWithoutSchedulesNestedInput
+  }
+
+  export type SubjectScheduleUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    subjectId?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SubjectScheduleCreateManyInput = {
+    id?: string
+    subjectId: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+  }
+
+  export type SubjectScheduleUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SubjectScheduleUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    subjectId?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
   }
 
   export type LessonCreateInput = {
@@ -23137,6 +24628,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subject: SubjectCreateNestedOneWithoutAssessmentsInput
@@ -23152,6 +24644,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     questions?: QuestionUncheckedCreateNestedManyWithoutAssessmentInput
@@ -23165,6 +24658,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subject?: SubjectUpdateOneRequiredWithoutAssessmentsNestedInput
@@ -23180,6 +24674,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     questions?: QuestionUncheckedUpdateManyWithoutAssessmentNestedInput
@@ -23194,6 +24689,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -23205,6 +24701,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -23217,6 +24714,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -23828,6 +25326,7 @@ export namespace Prisma {
     displayName?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
+    mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -23841,6 +25340,7 @@ export namespace Prisma {
     displayName?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
+    mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -23854,6 +25354,7 @@ export namespace Prisma {
     displayName?: SortOrder
     role?: SortOrder
     isActive?: SortOrder
+    mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24044,6 +25545,17 @@ export namespace Prisma {
     _max?: NestedEnumEnrollmentStatusFilter<$PrismaModel>
   }
 
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
   export type SubjectListRelationFilter = {
     every?: SubjectWhereInput
     some?: SubjectWhereInput
@@ -24059,8 +25571,13 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     isPublished?: SortOrder
+    passingGrade?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type CourseAvgOrderByAggregateInput = {
+    passingGrade?: SortOrder
   }
 
   export type CourseMaxOrderByAggregateInput = {
@@ -24068,6 +25585,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     isPublished?: SortOrder
+    passingGrade?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24077,8 +25595,29 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     isPublished?: SortOrder
+    passingGrade?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type CourseSumOrderByAggregateInput = {
+    passingGrade?: SortOrder
+  }
+
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -24104,11 +25643,21 @@ export namespace Prisma {
     none?: AssessmentWhereInput
   }
 
+  export type SubjectScheduleListRelationFilter = {
+    every?: SubjectScheduleWhereInput
+    some?: SubjectScheduleWhereInput
+    none?: SubjectScheduleWhereInput
+  }
+
   export type LessonOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type AssessmentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SubjectScheduleOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -24118,12 +25667,14 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     order?: SortOrder
+    units?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
   export type SubjectAvgOrderByAggregateInput = {
     order?: SortOrder
+    units?: SortOrder
   }
 
   export type SubjectMaxOrderByAggregateInput = {
@@ -24132,6 +25683,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     order?: SortOrder
+    units?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24142,12 +25694,14 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     order?: SortOrder
+    units?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
   export type SubjectSumOrderByAggregateInput = {
     order?: SortOrder
+    units?: SortOrder
   }
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -24192,6 +25746,47 @@ export namespace Prisma {
     subjectId?: SortOrder
     userId?: SortOrder
     assignedAt?: SortOrder
+  }
+
+  export type EnumDayOfWeekFilter<$PrismaModel = never> = {
+    equals?: $Enums.DayOfWeek | EnumDayOfWeekFieldRefInput<$PrismaModel>
+    in?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    not?: NestedEnumDayOfWeekFilter<$PrismaModel> | $Enums.DayOfWeek
+  }
+
+  export type SubjectScheduleCountOrderByAggregateInput = {
+    id?: SortOrder
+    subjectId?: SortOrder
+    day?: SortOrder
+    startTime?: SortOrder
+    endTime?: SortOrder
+  }
+
+  export type SubjectScheduleMaxOrderByAggregateInput = {
+    id?: SortOrder
+    subjectId?: SortOrder
+    day?: SortOrder
+    startTime?: SortOrder
+    endTime?: SortOrder
+  }
+
+  export type SubjectScheduleMinOrderByAggregateInput = {
+    id?: SortOrder
+    subjectId?: SortOrder
+    day?: SortOrder
+    startTime?: SortOrder
+    endTime?: SortOrder
+  }
+
+  export type EnumDayOfWeekWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DayOfWeek | EnumDayOfWeekFieldRefInput<$PrismaModel>
+    in?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    not?: NestedEnumDayOfWeekWithAggregatesFilter<$PrismaModel> | $Enums.DayOfWeek
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDayOfWeekFilter<$PrismaModel>
+    _max?: NestedEnumDayOfWeekFilter<$PrismaModel>
   }
 
   export type LessonCountOrderByAggregateInput = {
@@ -24249,17 +25844,6 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
-  export type FloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
-  }
-
   export type EnrollmentUserIdCourseIdCompoundUniqueInput = {
     userId: string
     courseId: string
@@ -24314,22 +25898,6 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
-  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
-  }
-
   export type EnumAssessmentTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.AssessmentType | EnumAssessmentTypeFieldRefInput<$PrismaModel>
     in?: $Enums.AssessmentType[] | ListEnumAssessmentTypeFieldRefInput<$PrismaModel>
@@ -24377,6 +25945,7 @@ export namespace Prisma {
     durationMins?: SortOrder
     passingScore?: SortOrder
     maxAttempts?: SortOrder
+    weight?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24385,6 +25954,7 @@ export namespace Prisma {
     durationMins?: SortOrder
     passingScore?: SortOrder
     maxAttempts?: SortOrder
+    weight?: SortOrder
   }
 
   export type AssessmentMaxOrderByAggregateInput = {
@@ -24395,6 +25965,7 @@ export namespace Prisma {
     durationMins?: SortOrder
     passingScore?: SortOrder
     maxAttempts?: SortOrder
+    weight?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24407,6 +25978,7 @@ export namespace Prisma {
     durationMins?: SortOrder
     passingScore?: SortOrder
     maxAttempts?: SortOrder
+    weight?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24415,6 +25987,7 @@ export namespace Prisma {
     durationMins?: SortOrder
     passingScore?: SortOrder
     maxAttempts?: SortOrder
+    weight?: SortOrder
   }
 
   export type EnumAssessmentTypeWithAggregatesFilter<$PrismaModel = never> = {
@@ -25245,6 +26818,14 @@ export namespace Prisma {
     connect?: EnrollmentRequestWhereUniqueInput | EnrollmentRequestWhereUniqueInput[]
   }
 
+  export type FloatFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type SubjectUpdateManyWithoutCourseNestedInput = {
     create?: XOR<SubjectCreateWithoutCourseInput, SubjectUncheckedCreateWithoutCourseInput> | SubjectCreateWithoutCourseInput[] | SubjectUncheckedCreateWithoutCourseInput[]
     connectOrCreate?: SubjectCreateOrConnectWithoutCourseInput | SubjectCreateOrConnectWithoutCourseInput[]
@@ -25391,6 +26972,13 @@ export namespace Prisma {
     connect?: SubjectTeacherWhereUniqueInput | SubjectTeacherWhereUniqueInput[]
   }
 
+  export type SubjectScheduleCreateNestedManyWithoutSubjectInput = {
+    create?: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput> | SubjectScheduleCreateWithoutSubjectInput[] | SubjectScheduleUncheckedCreateWithoutSubjectInput[]
+    connectOrCreate?: SubjectScheduleCreateOrConnectWithoutSubjectInput | SubjectScheduleCreateOrConnectWithoutSubjectInput[]
+    createMany?: SubjectScheduleCreateManySubjectInputEnvelope
+    connect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+  }
+
   export type LessonUncheckedCreateNestedManyWithoutSubjectInput = {
     create?: XOR<LessonCreateWithoutSubjectInput, LessonUncheckedCreateWithoutSubjectInput> | LessonCreateWithoutSubjectInput[] | LessonUncheckedCreateWithoutSubjectInput[]
     connectOrCreate?: LessonCreateOrConnectWithoutSubjectInput | LessonCreateOrConnectWithoutSubjectInput[]
@@ -25417,6 +27005,13 @@ export namespace Prisma {
     connectOrCreate?: SubjectTeacherCreateOrConnectWithoutSubjectInput | SubjectTeacherCreateOrConnectWithoutSubjectInput[]
     createMany?: SubjectTeacherCreateManySubjectInputEnvelope
     connect?: SubjectTeacherWhereUniqueInput | SubjectTeacherWhereUniqueInput[]
+  }
+
+  export type SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput = {
+    create?: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput> | SubjectScheduleCreateWithoutSubjectInput[] | SubjectScheduleUncheckedCreateWithoutSubjectInput[]
+    connectOrCreate?: SubjectScheduleCreateOrConnectWithoutSubjectInput | SubjectScheduleCreateOrConnectWithoutSubjectInput[]
+    createMany?: SubjectScheduleCreateManySubjectInputEnvelope
+    connect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
   }
 
   export type IntFieldUpdateOperationsInput = {
@@ -25491,6 +27086,20 @@ export namespace Prisma {
     deleteMany?: SubjectTeacherScalarWhereInput | SubjectTeacherScalarWhereInput[]
   }
 
+  export type SubjectScheduleUpdateManyWithoutSubjectNestedInput = {
+    create?: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput> | SubjectScheduleCreateWithoutSubjectInput[] | SubjectScheduleUncheckedCreateWithoutSubjectInput[]
+    connectOrCreate?: SubjectScheduleCreateOrConnectWithoutSubjectInput | SubjectScheduleCreateOrConnectWithoutSubjectInput[]
+    upsert?: SubjectScheduleUpsertWithWhereUniqueWithoutSubjectInput | SubjectScheduleUpsertWithWhereUniqueWithoutSubjectInput[]
+    createMany?: SubjectScheduleCreateManySubjectInputEnvelope
+    set?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    disconnect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    delete?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    connect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    update?: SubjectScheduleUpdateWithWhereUniqueWithoutSubjectInput | SubjectScheduleUpdateWithWhereUniqueWithoutSubjectInput[]
+    updateMany?: SubjectScheduleUpdateManyWithWhereWithoutSubjectInput | SubjectScheduleUpdateManyWithWhereWithoutSubjectInput[]
+    deleteMany?: SubjectScheduleScalarWhereInput | SubjectScheduleScalarWhereInput[]
+  }
+
   export type LessonUncheckedUpdateManyWithoutSubjectNestedInput = {
     create?: XOR<LessonCreateWithoutSubjectInput, LessonUncheckedCreateWithoutSubjectInput> | LessonCreateWithoutSubjectInput[] | LessonUncheckedCreateWithoutSubjectInput[]
     connectOrCreate?: LessonCreateOrConnectWithoutSubjectInput | LessonCreateOrConnectWithoutSubjectInput[]
@@ -25547,6 +27156,20 @@ export namespace Prisma {
     deleteMany?: SubjectTeacherScalarWhereInput | SubjectTeacherScalarWhereInput[]
   }
 
+  export type SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput = {
+    create?: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput> | SubjectScheduleCreateWithoutSubjectInput[] | SubjectScheduleUncheckedCreateWithoutSubjectInput[]
+    connectOrCreate?: SubjectScheduleCreateOrConnectWithoutSubjectInput | SubjectScheduleCreateOrConnectWithoutSubjectInput[]
+    upsert?: SubjectScheduleUpsertWithWhereUniqueWithoutSubjectInput | SubjectScheduleUpsertWithWhereUniqueWithoutSubjectInput[]
+    createMany?: SubjectScheduleCreateManySubjectInputEnvelope
+    set?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    disconnect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    delete?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    connect?: SubjectScheduleWhereUniqueInput | SubjectScheduleWhereUniqueInput[]
+    update?: SubjectScheduleUpdateWithWhereUniqueWithoutSubjectInput | SubjectScheduleUpdateWithWhereUniqueWithoutSubjectInput[]
+    updateMany?: SubjectScheduleUpdateManyWithWhereWithoutSubjectInput | SubjectScheduleUpdateManyWithWhereWithoutSubjectInput[]
+    deleteMany?: SubjectScheduleScalarWhereInput | SubjectScheduleScalarWhereInput[]
+  }
+
   export type SubjectCreateNestedOneWithoutTeachersInput = {
     create?: XOR<SubjectCreateWithoutTeachersInput, SubjectUncheckedCreateWithoutTeachersInput>
     connectOrCreate?: SubjectCreateOrConnectWithoutTeachersInput
@@ -25573,6 +27196,24 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutSubjectAssignmentsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSubjectAssignmentsInput, UserUpdateWithoutSubjectAssignmentsInput>, UserUncheckedUpdateWithoutSubjectAssignmentsInput>
+  }
+
+  export type SubjectCreateNestedOneWithoutSchedulesInput = {
+    create?: XOR<SubjectCreateWithoutSchedulesInput, SubjectUncheckedCreateWithoutSchedulesInput>
+    connectOrCreate?: SubjectCreateOrConnectWithoutSchedulesInput
+    connect?: SubjectWhereUniqueInput
+  }
+
+  export type EnumDayOfWeekFieldUpdateOperationsInput = {
+    set?: $Enums.DayOfWeek
+  }
+
+  export type SubjectUpdateOneRequiredWithoutSchedulesNestedInput = {
+    create?: XOR<SubjectCreateWithoutSchedulesInput, SubjectUncheckedCreateWithoutSchedulesInput>
+    connectOrCreate?: SubjectCreateOrConnectWithoutSchedulesInput
+    upsert?: SubjectUpsertWithoutSchedulesInput
+    connect?: SubjectWhereUniqueInput
+    update?: XOR<XOR<SubjectUpdateToOneWithWhereWithoutSchedulesInput, SubjectUpdateWithoutSchedulesInput>, SubjectUncheckedUpdateWithoutSchedulesInput>
   }
 
   export type SubjectCreateNestedOneWithoutLessonsInput = {
@@ -25603,14 +27244,6 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
-  }
-
-  export type FloatFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type UserUpdateOneRequiredWithoutEnrollmentsNestedInput = {
@@ -26214,6 +27847,33 @@ export namespace Prisma {
     _max?: NestedEnumEnrollmentStatusFilter<$PrismaModel>
   }
 
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -26230,15 +27890,21 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
-  export type NestedFloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
+  export type NestedEnumDayOfWeekFilter<$PrismaModel = never> = {
+    equals?: $Enums.DayOfWeek | EnumDayOfWeekFieldRefInput<$PrismaModel>
+    in?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    not?: NestedEnumDayOfWeekFilter<$PrismaModel> | $Enums.DayOfWeek
+  }
+
+  export type NestedEnumDayOfWeekWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DayOfWeek | EnumDayOfWeekFieldRefInput<$PrismaModel>
+    in?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DayOfWeek[] | ListEnumDayOfWeekFieldRefInput<$PrismaModel>
+    not?: NestedEnumDayOfWeekWithAggregatesFilter<$PrismaModel> | $Enums.DayOfWeek
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDayOfWeekFilter<$PrismaModel>
+    _max?: NestedEnumDayOfWeekFilter<$PrismaModel>
   }
 
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
@@ -26264,22 +27930,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type NestedEnumAssessmentTypeFilter<$PrismaModel = never> = {
@@ -26843,6 +28493,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -26863,6 +28514,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -26899,6 +28551,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -26919,6 +28572,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -26935,6 +28589,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectCreateNestedManyWithoutCourseInput
@@ -26947,6 +28602,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectUncheckedCreateNestedManyWithoutCourseInput
@@ -26968,6 +28624,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -26988,6 +28645,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -27020,6 +28678,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUpdateManyWithoutCourseNestedInput
@@ -27032,6 +28691,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUncheckedUpdateManyWithoutCourseNestedInput
@@ -27059,6 +28719,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -27079,6 +28740,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -27095,12 +28757,14 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentCreateNestedManyWithoutSubjectInput
     grades?: GradeCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutCourseInput = {
@@ -27108,12 +28772,14 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
     grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutCourseInput = {
@@ -27239,6 +28905,7 @@ export namespace Prisma {
     title?: StringFilter<"Subject"> | string
     description?: StringNullableFilter<"Subject"> | string | null
     order?: IntFilter<"Subject"> | number
+    units?: IntFilter<"Subject"> | number
     createdAt?: DateTimeFilter<"Subject"> | Date | string
     updatedAt?: DateTimeFilter<"Subject"> | Date | string
   }
@@ -27296,6 +28963,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutCourseInput
@@ -27308,6 +28976,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutCourseInput
@@ -27359,6 +29028,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     questions?: QuestionCreateNestedManyWithoutAssessmentInput
@@ -27372,6 +29042,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     questions?: QuestionUncheckedCreateNestedManyWithoutAssessmentInput
@@ -27434,6 +29105,30 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type SubjectScheduleCreateWithoutSubjectInput = {
+    id?: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+  }
+
+  export type SubjectScheduleUncheckedCreateWithoutSubjectInput = {
+    id?: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
+  }
+
+  export type SubjectScheduleCreateOrConnectWithoutSubjectInput = {
+    where: SubjectScheduleWhereUniqueInput
+    create: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput>
+  }
+
+  export type SubjectScheduleCreateManySubjectInputEnvelope = {
+    data: SubjectScheduleCreateManySubjectInput | SubjectScheduleCreateManySubjectInput[]
+    skipDuplicates?: boolean
+  }
+
   export type CourseUpsertWithoutSubjectsInput = {
     update: XOR<CourseUpdateWithoutSubjectsInput, CourseUncheckedUpdateWithoutSubjectsInput>
     create: XOR<CourseCreateWithoutSubjectsInput, CourseUncheckedCreateWithoutSubjectsInput>
@@ -27450,6 +29145,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutCourseNestedInput
@@ -27462,6 +29158,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutCourseNestedInput
@@ -27527,6 +29224,7 @@ export namespace Prisma {
     durationMins?: IntNullableFilter<"Assessment"> | number | null
     passingScore?: FloatNullableFilter<"Assessment"> | number | null
     maxAttempts?: IntNullableFilter<"Assessment"> | number | null
+    weight?: FloatFilter<"Assessment"> | number
     createdAt?: DateTimeFilter<"Assessment"> | Date | string
     updatedAt?: DateTimeFilter<"Assessment"> | Date | string
   }
@@ -27563,17 +29261,46 @@ export namespace Prisma {
     data: XOR<SubjectTeacherUpdateManyMutationInput, SubjectTeacherUncheckedUpdateManyWithoutSubjectInput>
   }
 
+  export type SubjectScheduleUpsertWithWhereUniqueWithoutSubjectInput = {
+    where: SubjectScheduleWhereUniqueInput
+    update: XOR<SubjectScheduleUpdateWithoutSubjectInput, SubjectScheduleUncheckedUpdateWithoutSubjectInput>
+    create: XOR<SubjectScheduleCreateWithoutSubjectInput, SubjectScheduleUncheckedCreateWithoutSubjectInput>
+  }
+
+  export type SubjectScheduleUpdateWithWhereUniqueWithoutSubjectInput = {
+    where: SubjectScheduleWhereUniqueInput
+    data: XOR<SubjectScheduleUpdateWithoutSubjectInput, SubjectScheduleUncheckedUpdateWithoutSubjectInput>
+  }
+
+  export type SubjectScheduleUpdateManyWithWhereWithoutSubjectInput = {
+    where: SubjectScheduleScalarWhereInput
+    data: XOR<SubjectScheduleUpdateManyMutationInput, SubjectScheduleUncheckedUpdateManyWithoutSubjectInput>
+  }
+
+  export type SubjectScheduleScalarWhereInput = {
+    AND?: SubjectScheduleScalarWhereInput | SubjectScheduleScalarWhereInput[]
+    OR?: SubjectScheduleScalarWhereInput[]
+    NOT?: SubjectScheduleScalarWhereInput | SubjectScheduleScalarWhereInput[]
+    id?: StringFilter<"SubjectSchedule"> | string
+    subjectId?: StringFilter<"SubjectSchedule"> | string
+    day?: EnumDayOfWeekFilter<"SubjectSchedule"> | $Enums.DayOfWeek
+    startTime?: StringFilter<"SubjectSchedule"> | string
+    endTime?: StringFilter<"SubjectSchedule"> | string
+  }
+
   export type SubjectCreateWithoutTeachersInput = {
     id?: string
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     course: CourseCreateNestedOneWithoutSubjectsInput
     lessons?: LessonCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentCreateNestedManyWithoutSubjectInput
     grades?: GradeCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutTeachersInput = {
@@ -27582,11 +29309,13 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
     grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutTeachersInput = {
@@ -27603,6 +29332,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -27623,6 +29353,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -27655,12 +29386,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
     lessons?: LessonUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
     grades?: GradeUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutTeachersInput = {
@@ -27669,11 +29402,13 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
     grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type UserUpsertWithoutSubjectAssignmentsInput = {
@@ -27696,6 +29431,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -27716,6 +29452,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -27727,17 +29464,95 @@ export namespace Prisma {
     verificationTokens?: VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
   }
 
+  export type SubjectCreateWithoutSchedulesInput = {
+    id?: string
+    title: string
+    description?: string | null
+    order: number
+    units?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    course: CourseCreateNestedOneWithoutSubjectsInput
+    lessons?: LessonCreateNestedManyWithoutSubjectInput
+    assessments?: AssessmentCreateNestedManyWithoutSubjectInput
+    grades?: GradeCreateNestedManyWithoutSubjectInput
+    teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+  }
+
+  export type SubjectUncheckedCreateWithoutSchedulesInput = {
+    id?: string
+    courseId: string
+    title: string
+    description?: string | null
+    order: number
+    units?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
+    assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
+    grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
+    teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+  }
+
+  export type SubjectCreateOrConnectWithoutSchedulesInput = {
+    where: SubjectWhereUniqueInput
+    create: XOR<SubjectCreateWithoutSchedulesInput, SubjectUncheckedCreateWithoutSchedulesInput>
+  }
+
+  export type SubjectUpsertWithoutSchedulesInput = {
+    update: XOR<SubjectUpdateWithoutSchedulesInput, SubjectUncheckedUpdateWithoutSchedulesInput>
+    create: XOR<SubjectCreateWithoutSchedulesInput, SubjectUncheckedCreateWithoutSchedulesInput>
+    where?: SubjectWhereInput
+  }
+
+  export type SubjectUpdateToOneWithWhereWithoutSchedulesInput = {
+    where?: SubjectWhereInput
+    data: XOR<SubjectUpdateWithoutSchedulesInput, SubjectUncheckedUpdateWithoutSchedulesInput>
+  }
+
+  export type SubjectUpdateWithoutSchedulesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
+    lessons?: LessonUpdateManyWithoutSubjectNestedInput
+    assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
+    grades?: GradeUpdateManyWithoutSubjectNestedInput
+    teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+  }
+
+  export type SubjectUncheckedUpdateWithoutSchedulesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    courseId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
+    assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
+    grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
+    teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+  }
+
   export type SubjectCreateWithoutLessonsInput = {
     id?: string
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     course: CourseCreateNestedOneWithoutSubjectsInput
     assessments?: AssessmentCreateNestedManyWithoutSubjectInput
     grades?: GradeCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutLessonsInput = {
@@ -27746,11 +29561,13 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
     grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutLessonsInput = {
@@ -27774,12 +29591,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
     assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
     grades?: GradeUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutLessonsInput = {
@@ -27788,11 +29607,13 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
     grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type UserCreateWithoutEnrollmentsInput = {
@@ -27804,6 +29625,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     attempts?: AssessmentAttemptCreateNestedManyWithoutUserInput
@@ -27824,6 +29646,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     attempts?: AssessmentAttemptUncheckedCreateNestedManyWithoutUserInput
@@ -27845,6 +29668,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectCreateNestedManyWithoutCourseInput
@@ -27857,6 +29681,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectUncheckedCreateNestedManyWithoutCourseInput
@@ -27889,6 +29714,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attempts?: AssessmentAttemptUpdateManyWithoutUserNestedInput
@@ -27909,6 +29735,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attempts?: AssessmentAttemptUncheckedUpdateManyWithoutUserNestedInput
@@ -27936,6 +29763,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUpdateManyWithoutCourseNestedInput
@@ -27948,6 +29776,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUncheckedUpdateManyWithoutCourseNestedInput
@@ -27960,12 +29789,14 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     course: CourseCreateNestedOneWithoutSubjectsInput
     lessons?: LessonCreateNestedManyWithoutSubjectInput
     grades?: GradeCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutAssessmentsInput = {
@@ -27974,11 +29805,13 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
     grades?: GradeUncheckedCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutAssessmentsInput = {
@@ -28070,12 +29903,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
     lessons?: LessonUpdateManyWithoutSubjectNestedInput
     grades?: GradeUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutAssessmentsInput = {
@@ -28084,11 +29919,13 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
     grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type QuestionUpsertWithWhereUniqueWithoutAssessmentInput = {
@@ -28144,6 +29981,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subject: SubjectCreateNestedOneWithoutAssessmentsInput
@@ -28158,6 +29996,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     attempts?: AssessmentAttemptUncheckedCreateNestedManyWithoutAssessmentInput
@@ -28236,6 +30075,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subject?: SubjectUpdateOneRequiredWithoutAssessmentsNestedInput
@@ -28250,6 +30090,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attempts?: AssessmentAttemptUncheckedUpdateManyWithoutAssessmentNestedInput
@@ -28381,6 +30222,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subject: SubjectCreateNestedOneWithoutAssessmentsInput
@@ -28395,6 +30237,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     questions?: QuestionUncheckedCreateNestedManyWithoutAssessmentInput
@@ -28414,6 +30257,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -28434,6 +30278,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -28459,6 +30304,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -28479,6 +30325,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -28539,6 +30386,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subject?: SubjectUpdateOneRequiredWithoutAssessmentsNestedInput
@@ -28553,6 +30401,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     questions?: QuestionUncheckedUpdateManyWithoutAssessmentNestedInput
@@ -28578,6 +30427,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -28598,6 +30448,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -28629,6 +30480,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -28649,6 +30501,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -28813,6 +30666,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -28833,6 +30687,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -28854,12 +30709,14 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     course: CourseCreateNestedOneWithoutSubjectsInput
     lessons?: LessonCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutGradesInput = {
@@ -28868,11 +30725,13 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     lessons?: LessonUncheckedCreateNestedManyWithoutSubjectInput
     assessments?: AssessmentUncheckedCreateNestedManyWithoutSubjectInput
     teachers?: SubjectTeacherUncheckedCreateNestedManyWithoutSubjectInput
+    schedules?: SubjectScheduleUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutGradesInput = {
@@ -28900,6 +30759,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -28920,6 +30780,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -28947,12 +30808,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     course?: CourseUpdateOneRequiredWithoutSubjectsNestedInput
     lessons?: LessonUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutGradesInput = {
@@ -28961,11 +30824,13 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type UserCreateWithoutCertificatesInput = {
@@ -28977,6 +30842,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentCreateNestedManyWithoutUserInput
@@ -28997,6 +30863,7 @@ export namespace Prisma {
     displayName?: string | null
     role?: $Enums.UserRole
     isActive?: boolean
+    mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     enrollments?: EnrollmentUncheckedCreateNestedManyWithoutUserInput
@@ -29018,6 +30885,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectCreateNestedManyWithoutCourseInput
@@ -29030,6 +30898,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     isPublished?: boolean
+    passingGrade?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     subjects?: SubjectUncheckedCreateNestedManyWithoutCourseInput
@@ -29062,6 +30931,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUpdateManyWithoutUserNestedInput
@@ -29082,6 +30952,7 @@ export namespace Prisma {
     displayName?: NullableStringFieldUpdateOperationsInput | string | null
     role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
     isActive?: BoolFieldUpdateOperationsInput | boolean
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     enrollments?: EnrollmentUncheckedUpdateManyWithoutUserNestedInput
@@ -29109,6 +30980,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUpdateManyWithoutCourseNestedInput
@@ -29121,6 +30993,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     isPublished?: BoolFieldUpdateOperationsInput | boolean
+    passingGrade?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     subjects?: SubjectUncheckedUpdateManyWithoutCourseNestedInput
@@ -29425,6 +31298,7 @@ export namespace Prisma {
     title: string
     description?: string | null
     order: number
+    units?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -29463,12 +31337,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUpdateManyWithoutSubjectNestedInput
     grades?: GradeUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutCourseInput = {
@@ -29476,12 +31352,14 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lessons?: LessonUncheckedUpdateManyWithoutSubjectNestedInput
     assessments?: AssessmentUncheckedUpdateManyWithoutSubjectNestedInput
     grades?: GradeUncheckedUpdateManyWithoutSubjectNestedInput
     teachers?: SubjectTeacherUncheckedUpdateManyWithoutSubjectNestedInput
+    schedules?: SubjectScheduleUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateManyWithoutCourseInput = {
@@ -29489,6 +31367,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     order?: IntFieldUpdateOperationsInput | number
+    units?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -29598,6 +31477,7 @@ export namespace Prisma {
     durationMins?: number | null
     passingScore?: number | null
     maxAttempts?: number | null
+    weight?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -29613,6 +31493,13 @@ export namespace Prisma {
   export type SubjectTeacherCreateManySubjectInput = {
     userId: string
     assignedAt?: Date | string
+  }
+
+  export type SubjectScheduleCreateManySubjectInput = {
+    id?: string
+    day: $Enums.DayOfWeek
+    startTime: string
+    endTime: string
   }
 
   export type LessonUpdateWithoutSubjectInput = {
@@ -29655,6 +31542,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     questions?: QuestionUpdateManyWithoutAssessmentNestedInput
@@ -29668,6 +31556,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     questions?: QuestionUncheckedUpdateManyWithoutAssessmentNestedInput
@@ -29681,6 +31570,7 @@ export namespace Prisma {
     durationMins?: NullableIntFieldUpdateOperationsInput | number | null
     passingScore?: NullableFloatFieldUpdateOperationsInput | number | null
     maxAttempts?: NullableIntFieldUpdateOperationsInput | number | null
+    weight?: FloatFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -29722,6 +31612,27 @@ export namespace Prisma {
   export type SubjectTeacherUncheckedUpdateManyWithoutSubjectInput = {
     userId?: StringFieldUpdateOperationsInput | string
     assignedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SubjectScheduleUpdateWithoutSubjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SubjectScheduleUncheckedUpdateWithoutSubjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SubjectScheduleUncheckedUpdateManyWithoutSubjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    day?: EnumDayOfWeekFieldUpdateOperationsInput | $Enums.DayOfWeek
+    startTime?: StringFieldUpdateOperationsInput | string
+    endTime?: StringFieldUpdateOperationsInput | string
   }
 
   export type QuestionCreateManyAssessmentInput = {

@@ -23,3 +23,26 @@ export async function sendPasswordResetEmail(to: string, token: string) {
   })
   if (error) throw new Error(`Failed to send password reset email: ${error.message}`)
 }
+
+export async function sendCredentialsEmail(
+  to: string,
+  firstName: string,
+  tempPassword: string,
+) {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to,
+    subject: 'Your AQA LMS account credentials',
+    html: `
+      <p>Hi ${esc(firstName)},</p>
+      <p>Your account has been created on the AQA Learning Management System.</p>
+      <p><strong>Email:</strong> ${to}<br/>
+      <strong>Temporary Password:</strong> ${esc(tempPassword)}</p>
+      <p>Please <a href="${loginUrl}">log in</a> and change your password on first login.</p>
+    `,
+  })
+  if (error) throw new Error(`Failed to send credentials email: ${error.message}`)
+}

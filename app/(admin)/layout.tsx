@@ -5,6 +5,7 @@ import {
   BookOpen,
   BarChart2,
   LogOut,
+  UserCog,
 } from 'lucide-react'
 import { NavLink } from './nav-link'
 
@@ -35,6 +36,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/admin/enrollments"
             icon={<Users className="w-5 h-5" aria-hidden="true" />}
             label="Enrollments"
+          />
+          <NavLink
+            href="/admin/users"
+            icon={<UserCog className="w-5 h-5" aria-hidden="true" />}
+            label="Users"
           />
           <NavLink
             href="/admin/courses"

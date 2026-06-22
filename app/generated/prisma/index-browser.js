@@ -129,6 +129,7 @@ exports.Prisma.UserScalarFieldEnum = {
   displayName: 'displayName',
   role: 'role',
   isActive: 'isActive',
+  mustChangePassword: 'mustChangePassword',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -161,6 +162,7 @@ exports.Prisma.CourseScalarFieldEnum = {
   title: 'title',
   description: 'description',
   isPublished: 'isPublished',
+  passingGrade: 'passingGrade',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -171,6 +173,7 @@ exports.Prisma.SubjectScalarFieldEnum = {
   title: 'title',
   description: 'description',
   order: 'order',
+  units: 'units',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -179,6 +182,14 @@ exports.Prisma.SubjectTeacherScalarFieldEnum = {
   subjectId: 'subjectId',
   userId: 'userId',
   assignedAt: 'assignedAt'
+};
+
+exports.Prisma.SubjectScheduleScalarFieldEnum = {
+  id: 'id',
+  subjectId: 'subjectId',
+  day: 'day',
+  startTime: 'startTime',
+  endTime: 'endTime'
 };
 
 exports.Prisma.LessonScalarFieldEnum = {
@@ -210,6 +221,7 @@ exports.Prisma.AssessmentScalarFieldEnum = {
   durationMins: 'durationMins',
   passingScore: 'passingScore',
   maxAttempts: 'maxAttempts',
+  weight: 'weight',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -313,6 +325,16 @@ exports.EnrollmentStatus = exports.$Enums.EnrollmentStatus = {
   REJECTED: 'REJECTED'
 };
 
+exports.DayOfWeek = exports.$Enums.DayOfWeek = {
+  MONDAY: 'MONDAY',
+  TUESDAY: 'TUESDAY',
+  WEDNESDAY: 'WEDNESDAY',
+  THURSDAY: 'THURSDAY',
+  FRIDAY: 'FRIDAY',
+  SATURDAY: 'SATURDAY',
+  SUNDAY: 'SUNDAY'
+};
+
 exports.AssessmentType = exports.$Enums.AssessmentType = {
   QUIZ: 'QUIZ',
   EXAM: 'EXAM'
@@ -337,6 +359,7 @@ exports.Prisma.ModelName = {
   Course: 'Course',
   Subject: 'Subject',
   SubjectTeacher: 'SubjectTeacher',
+  SubjectSchedule: 'SubjectSchedule',
   Lesson: 'Lesson',
   Enrollment: 'Enrollment',
   Assessment: 'Assessment',
