@@ -70,7 +70,7 @@ export async function sendEnrollmentConfirmationEmail(params: {
   if (error) throw new Error(`Failed to send enrollment confirmation email: ${error.message}`)
 }
 
-export async function sendPaymentStatusEmail(_params: {
+export async function sendPaymentStatusEmail(params: {
   to: string
   firstName: string
   courseName: string
@@ -78,5 +78,33 @@ export async function sendPaymentStatusEmail(_params: {
   totalPaid: number
   tuitionFee: number | null
 }): Promise<void> {
-  // Full implementation in Task 8
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/student/dashboard`
+  const totalPaidFormatted = `₱${params.totalPaid.toLocaleString('en-PH')}`
+  const tuitionFormatted = params.tuitionFee !== null ? `₱${params.tuitionFee.toLocaleString('en-PH')}` : null
+
+  const isFullyPaid = params.paymentStatus === 'FULLY_PAID'
+
+  const subject = isFullyPaid
+    ? `Full Payment Confirmed — ${params.courseName}`
+    : `Payment Recorded — ${params.courseName}`
+
+  const html = isFullyPaid
+    ? `<p>Dear ${escapeHtml(params.firstName)},</p>
+<p>Congratulations! Your full payment for <strong>${escapeHtml(params.courseName)}</strong> has been confirmed.</p>
+<p><strong>Total Paid:</strong> ${totalPaidFormatted}</p>
+<p>You have full access to your course. You can view your payment history in your <a href="${dashboardUrl}">student dashboard</a>.</p>
+<p>Best regards,<br>Al-Qur'an Academy Team</p>`
+    : `<p>Dear ${escapeHtml(params.firstName)},</p>
+<p>Your payment for <strong>${escapeHtml(params.courseName)}</strong> has been recorded.</p>
+<p><strong>Total Paid:</strong> ${totalPaidFormatted}${tuitionFormatted ? ` of ${tuitionFormatted}` : ''}</p>
+<p>Please submit your remaining balance at your earliest convenience. You can upload additional proof of payment from your <a href="${dashboardUrl}">student dashboard</a>.</p>
+<p>Best regards,<br>Al-Qur'an Academy Team</p>`
+
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to: params.to,
+    subject,
+    html,
+  })
+  if (error) throw new Error(`Failed to send payment status email: ${error.message}`)
 }
