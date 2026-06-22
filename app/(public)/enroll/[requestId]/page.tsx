@@ -146,7 +146,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
             </CardHeader>
             <CardContent>
               {request.paymentProofUrl ? (
-                <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-300">
                   Proof of payment already received. We will notify you by email once reviewed.
                 </p>
               ) : (

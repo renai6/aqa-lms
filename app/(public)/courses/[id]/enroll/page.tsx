@@ -24,7 +24,7 @@ export default async function EnrollPage({ params }: Props) {
   return (
     <>
       {/* ── Hero Banner ── */}
-      <section className="relative bg-zinc-900 min-h-[40vh] flex items-center pt-20 pb-24">
+      <section className="relative bg-zinc-900 min-h-[max(40vh,320px)] flex items-center pt-20 pb-24">
         {/* Course image background */}
         {hasImage && (
           <img
