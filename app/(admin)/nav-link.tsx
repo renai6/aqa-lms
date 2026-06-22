@@ -23,7 +23,7 @@ export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
         role="link"
         aria-disabled="true"
         title="Coming soon"
-        className={cn(base, 'text-sidebar-foreground/30 cursor-not-allowed')}
+        className={cn(base, 'border-l-2 border-transparent pl-[10px] text-sidebar-foreground/30 cursor-not-allowed')}
       >
         {icon}
         <span>{label}</span>
