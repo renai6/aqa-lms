@@ -25,7 +25,7 @@ export default async function EnrollPage({ params }: Props) {
       <p className="text-muted-foreground mb-8">
         Fill in your details below to apply for enrollment.
       </p>
-      <EnrollForm courseId={course.id} courseTitle={course.title} />
+      <EnrollForm courseId={course.id} courseTitle={course.title} tuitionFee={course.tuitionFee} />
     </div>
   )
 }

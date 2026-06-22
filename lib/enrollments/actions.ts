@@ -15,6 +15,8 @@ const enrollSchema = z.object({
   lastName: z.string().min(1, 'Last name is required.'),
   email: z.string().email('A valid email address is required.'),
   courseId: z.string().min(1, 'Course is required.'),
+  paymentType: z.enum(['PARTIAL', 'FULL']),
+  amountPaid: z.coerce.number().positive('Amount paid must be greater than 0.'),
 })
 
 export async function submitEnrollmentAction(
@@ -26,6 +28,8 @@ export async function submitEnrollmentAction(
     lastName: formData.get('lastName'),
     email: formData.get('email'),
     courseId: formData.get('courseId'),
+    paymentType: formData.get('paymentType'),
+    amountPaid: formData.get('amountPaid'),
   }
 
   const result = enrollSchema.safeParse(raw)
@@ -33,7 +37,7 @@ export async function submitEnrollmentAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { firstName, lastName, email, courseId } = result.data
+  const { firstName, lastName, email, courseId, paymentType, amountPaid } = result.data
 
   const course = await db.course.findFirst({
     where: { id: courseId, isPublished: true },
@@ -50,7 +54,7 @@ export async function submitEnrollmentAction(
   let requestId: string
   try {
     const request = await db.enrollmentRequest.create({
-      data: { firstName, lastName, email, courseId },
+      data: { firstName, lastName, email, courseId, paymentType, amountPaid },
     })
     requestId = request.id
   } catch (err) {
