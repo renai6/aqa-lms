@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { ScheduleRow } from '@/lib/courses/queries'
-import type { DayOfWeek } from '@/app/generated/prisma'
+import type { DayOfWeek } from '@prisma/client'
 
 type Props = {
   subjectId: string

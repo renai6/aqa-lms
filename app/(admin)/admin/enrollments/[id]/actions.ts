@@ -3,11 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { hashPassword } from '@/lib/auth/password'
 import { generateTempPassword } from '@/lib/enrollments/password'
-import { sendEnrollmentApprovalEmail, sendEnrollmentRejectionEmail } from '@/lib/enrollments/email'
+import { sendEnrollmentApprovalEmail, sendEnrollmentRejectionEmail, sendPaymentStatusEmail } from '@/lib/enrollments/email'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -21,26 +22,44 @@ export async function approveEnrollmentAction(
     return { error: 'Invalid enrollment request ID.' }
   }
 
-  // 2. Auth check
+  // 2. Read and validate paymentStatus
+  const paymentStatusRaw = formData.get('paymentStatus')
+  const paymentStatusResult = z
+    .enum(['PARTIALLY_PAID', 'FULLY_PAID'])
+    .safeParse(paymentStatusRaw)
+  if (!paymentStatusResult.success) {
+    return { error: 'Invalid payment status.' }
+  }
+  const paymentStatus = paymentStatusResult.data
+
+  // 3. Auth check
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
   if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
 
-  // 3. Fetch the enrollment request (to get email, names, courseId etc.)
+  // 4. Fetch the enrollment request (to get email, names, courseId, amountPaid, paymentProofUrl)
   const request = await db.enrollmentRequest.findUnique({
     where: { id },
-    include: { course: { select: { title: true } } },
+    select: {
+      email: true,
+      firstName: true,
+      lastName: true,
+      courseId: true,
+      amountPaid: true,
+      paymentProofUrl: true,
+      course: { select: { title: true } },
+    },
   })
   if (!request) return { error: 'Enrollment request not found.' }
 
-  // 4. Generate and hash temp password
+  // 5. Generate and hash temp password
   const tempPassword = generateTempPassword()
   const hashedPassword = await hashPassword(tempPassword)
 
-  // 5. Atomically check PENDING status, create user, enrollment, and update request
+  // 6. Atomically check PENDING status, create user, enrollment, and update request
   let newUser: { id: string }
   try {
-    newUser = await db.$transaction(async (tx) => {
+    newUser = await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // Atomic PENDING check — updateMany returns count; if 0, someone beat us to it
       const updated = await tx.enrollmentRequest.updateMany({
         where: { id, status: 'PENDING' },
@@ -62,9 +81,26 @@ export async function approveEnrollmentAction(
         },
       })
 
-      await tx.enrollment.create({
-        data: { userId: user.id, courseId: request.courseId },
+      const enrollment = await tx.enrollment.create({
+        data: {
+          userId: user.id,
+          courseId: request.courseId,
+          paymentStatus,
+          totalPaid: request.amountPaid,
+        },
       })
+
+      // Create PaymentProof if a proof URL was submitted with the enrollment request
+      if (request.paymentProofUrl) {
+        await tx.paymentProof.create({
+          data: {
+            enrollmentId: enrollment.id,
+            proofUrl: request.paymentProofUrl,
+            amount: request.amountPaid,
+            note: 'Initial payment (submitted at enrollment)',
+          },
+        })
+      }
 
       // Link the new user to the enrollment request
       await tx.enrollmentRequest.update({
@@ -87,10 +123,10 @@ export async function approveEnrollmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  // 6. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
+  // 7. Revalidate enrollments list — DB is committed, cache must be updated regardless of email
   revalidatePath('/admin/enrollments')
 
-  // 7. Send approval email — do NOT rollback if this fails, account already exists
+  // 8. Send approval email — do NOT rollback if this fails, account already exists
   try {
     await sendEnrollmentApprovalEmail({
       to: request.email,
@@ -106,7 +142,7 @@ export async function approveEnrollmentAction(
     }
   }
 
-  // 8. Redirect to list on success
+  // 9. Redirect to list on success
   redirect('/admin/enrollments')
 }
 
@@ -177,4 +213,67 @@ export async function rejectEnrollmentAction(
 
   // 8. Redirect to list on success
   redirect('/admin/enrollments')
+}
+
+export async function updatePaymentStatusAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const requestId = formData.get('requestId')
+  if (typeof requestId !== 'string' || !requestId) return { error: 'Invalid request ID.' }
+
+  const newStatus = formData.get('paymentStatus')
+  if (newStatus !== 'PARTIALLY_PAID' && newStatus !== 'FULLY_PAID') {
+    return { error: 'Please select a valid payment status.' }
+  }
+
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+
+  const request = await db.enrollmentRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      userId: true,
+      courseId: true,
+      firstName: true,
+      email: true,
+      course: { select: { title: true, tuitionFee: true } },
+    },
+  })
+  if (!request?.userId) return { error: 'Enrollment not found or not yet approved.' }
+
+  const enrollment = await db.enrollment.findFirst({
+    where: { userId: request.userId, courseId: request.courseId },
+    select: { id: true, totalPaid: true },
+  })
+  if (!enrollment) return { error: 'Active enrollment not found.' }
+
+  try {
+    await db.enrollment.update({
+      where: { id: enrollment.id },
+      data: { paymentStatus: newStatus },
+    })
+  } catch (err) {
+    console.error('[updatePaymentStatus] DB error:', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
+
+  revalidatePath('/admin/enrollments/' + requestId)
+
+  try {
+    await sendPaymentStatusEmail({
+      to: request.email,
+      firstName: request.firstName,
+      courseName: request.course.title,
+      paymentStatus: newStatus,
+      totalPaid: enrollment.totalPaid.toNumber(),
+      tuitionFee: request.course.tuitionFee?.toNumber() ?? null,
+    })
+  } catch (err) {
+    console.error('[updatePaymentStatus] Email error:', err)
+    return { error: 'Status updated but email notification failed.', success: true }
+  }
+
+  return { error: null, success: true }
 }

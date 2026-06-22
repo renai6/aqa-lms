@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { getCourseById } from '@/lib/courses/queries'
+import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,7 @@ import { EditCourseForm } from './edit-course-form'
 import { TogglePublishedButton } from './toggle-published-button'
 import { DeleteCourseButton } from './delete-course-button'
 import { AddSubjectForm } from './add-subject-form'
+import { CourseImageCard } from './course-image-card'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -28,22 +29,18 @@ export default async function CourseDetailPage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
-      <Link
-        href="/admin/courses"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Back to Courses
-      </Link>
-
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold">{course.title}</h1>
-        {course.isPublished ? (
-          <Badge className="bg-green-100 text-green-800 border-green-200">Published</Badge>
-        ) : (
-          <Badge variant="outline">Draft</Badge>
-        )}
-      </div>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Courses', href: '/admin/courses' },
+          { label: course.title },
+        ]}
+        title={course.title}
+        action={
+          course.isPublished
+            ? <Badge className="bg-green-100 text-green-800 border-green-200">Published</Badge>
+            : <Badge variant="outline">Draft</Badge>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -59,6 +56,7 @@ export default async function CourseDetailPage({ params }: Props) {
               <DeleteCourseButton courseId={course.id} courseTitle={course.title} />
             </CardContent>
           </Card>
+          <CourseImageCard courseId={course.id} imageUrl={course.imageUrl} />
         </div>
       </div>
 

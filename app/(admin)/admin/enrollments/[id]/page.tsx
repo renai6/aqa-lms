@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { PageHeader } from '@/components/admin/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { getEnrollmentRequestById } from '@/lib/enrollments/queries'
 import { ProofOfPaymentViewer } from './proof-viewer'
-import { ApproveButton } from './approve-button'
+import { ApproveForm } from './approve-form'
 import { RejectForm } from './reject-form'
+import { PaymentSection } from './payment-section'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -50,20 +50,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-4xl space-y-6">
-      <Link
-        href="/admin/enrollments"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Back to Enrollments
-      </Link>
-
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold">
-          {request.firstName} {request.lastName}
-        </h1>
-        <StatusBadge status={request.status} />
-      </div>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Enrollments', href: '/admin/enrollments' },
+          { label: `${request.firstName} ${request.lastName}` },
+        ]}
+        title={`${request.firstName} ${request.lastName}`}
+        action={<StatusBadge status={request.status} />}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Applicant info — 2/3 width */}
@@ -84,6 +78,16 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                 <span className="text-sm text-muted-foreground w-32 shrink-0">Submitted</span>
                 <span className="text-sm">{dateFormatter.format(request.createdAt)}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Payment Type</span>
+                <span className="text-sm">
+                  {request.paymentType === 'FULL' ? 'Full Payment' : 'Partial Payment'}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Amount Declared</span>
+                <span className="text-sm">₱{request.amountPaid.toLocaleString('en-PH')}</span>
               </div>
               {request.adminRemarks && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
@@ -106,7 +110,12 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               {isPending && (
                 <>
                   <Separator />
-                  <ApproveButton requestId={id} />
+                  <ApproveForm
+                    requestId={id}
+                    defaultPaymentStatus={
+                      request.paymentType === 'FULL' ? 'FULLY_PAID' : 'PARTIALLY_PAID'
+                    }
+                  />
                   <Separator />
                   <RejectForm requestId={id} />
                 </>
@@ -120,6 +129,14 @@ export default async function EnrollmentDetailPage({ params }: Props) {
           </Card>
         </div>
       </div>
+
+      {request.status === 'APPROVED' && request.userId && (
+        <PaymentSection
+          requestId={id}
+          userId={request.userId}
+          courseId={request.courseId}
+        />
+      )}
     </div>
   )
 }

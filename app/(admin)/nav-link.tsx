@@ -15,17 +15,14 @@ export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
   const pathname = usePathname()
   const isActive = pathname === href || pathname.startsWith(href + '/')
 
-  const baseClasses = 'flex items-center gap-3 px-4 py-2 rounded-lg transition-colors'
+  const base = 'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors'
 
   if (disabled) {
     return (
       <span
-        role="link"
         aria-disabled="true"
-        className={cn(
-          baseClasses,
-          'text-muted-foreground cursor-not-allowed opacity-50'
-        )}
+        title="Coming soon"
+        className={cn(base, 'border-l-2 border-transparent pl-[10px] text-sidebar-foreground/30 cursor-not-allowed')}
       >
         {icon}
         <span>{label}</span>
@@ -37,10 +34,10 @@ export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
     <Link
       href={href}
       className={cn(
-        baseClasses,
+        base,
         isActive
-          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+          ? 'border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground font-medium pl-[10px]'
+          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-2 border-transparent pl-[10px]'
       )}
     >
       {icon}

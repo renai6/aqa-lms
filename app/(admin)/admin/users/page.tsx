@@ -3,6 +3,7 @@ import { getUsersByRole } from '@/lib/users/queries'
 import { TabSwitcher } from './tab-switcher'
 import { UserTable } from './user-table'
 import { CreateUserForm } from './create-user-form'
+import { PageHeader } from '@/components/admin/page-header'
 
 type Props = {
   searchParams: Promise<{ tab?: string }>
@@ -17,8 +18,10 @@ export default async function UsersPage({ searchParams }: Props) {
   const users = await getUsersByRole(role)
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <h1 className="text-2xl font-semibold">Users</h1>
+    <div className="p-6 max-w-5xl space-y-6">
+      <PageHeader
+        title="Users"
+      />
       <Suspense fallback={null}>
         <TabSwitcher activeTab={activeTab} />
       </Suspense>

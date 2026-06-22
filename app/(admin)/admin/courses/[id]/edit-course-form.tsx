@@ -46,6 +46,19 @@ export function EditCourseForm({ course }: Props) {
               defaultValue={String(course.passingGrade)}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-tuitionFee">Tuition Fee (₱)</Label>
+            <Input
+              id="edit-tuitionFee"
+              name="tuitionFee"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={course.tuitionFee !== null ? String(course.tuitionFee) : ''}
+              placeholder="e.g. 10000"
+            />
+            <p className="text-xs text-muted-foreground">Leave blank if not applicable.</p>
+          </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           {state.success && !state.error && (
             <p className="text-sm text-green-600">Saved successfully.</p>

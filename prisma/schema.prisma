@@ -5,7 +5,6 @@
 
 generator client {
   provider      = "prisma-client-js"
-  output        = "../app/generated/prisma"
   binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
@@ -60,6 +59,16 @@ enum DayOfWeek {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum PaymentType {
+  PARTIAL
+  FULL
+}
+
+enum PaymentStatus {
+  PARTIALLY_PAID
+  FULLY_PAID
 }
 
 //
@@ -119,6 +128,8 @@ model EnrollmentRequest {
   course   Course @relation(fields: [courseId], references: [id])
 
   paymentProofUrl String?
+  paymentType     PaymentType @default(FULL)
+  amountPaid      Decimal     @default(0)
 
   status EnrollmentStatus @default(PENDING)
 
@@ -141,9 +152,11 @@ model Course {
 
   title       String
   description String?
+  imageUrl    String?
 
-  isPublished  Boolean @default(false)
-  passingGrade Float   @default(75.0)
+  isPublished  Boolean  @default(false)
+  passingGrade Float    @default(75.0)
+  tuitionFee   Decimal?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -235,7 +248,24 @@ model Enrollment {
 
   progress Float @default(0)
 
+  paymentStatus PaymentStatus @default(PARTIALLY_PAID)
+  totalPaid     Decimal       @default(0)
+
+  paymentProofs PaymentProof[]
+
   @@unique([userId, courseId])
+}
+
+model PaymentProof {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  proofUrl     String
+  amount       Decimal
+  note         String?
+  submittedAt  DateTime   @default(now())
+
+  @@index([enrollmentId])
 }
 
 //

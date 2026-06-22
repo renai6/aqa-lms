@@ -1,22 +1,24 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { getSession } from '@/lib/auth/session'
+import { verifySessionToken } from '@/lib/auth/jwt'
 import { db } from '@/lib/db'
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   // 1. Await params (Next.js 16: params is a Promise)
   const { id } = await params
 
-  // 2. Auth guard: getSession() — return 401 if null, 403 if role is not ADMIN or SUPER_ADMIN
-  const session = await getSession()
-  if (!session) {
+  // 2. Auth guard: API routes are not covered by the middleware matcher (/api/* is excluded),
+  //    so headers() won't have x-user-id/x-user-role. Verify the JWT cookie directly instead.
+  const token = req.cookies.get('session')?.value
+  const payload = token ? await verifySessionToken(token) : null
+  if (!payload) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') {
+  if (payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

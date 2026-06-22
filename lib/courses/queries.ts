@@ -1,10 +1,11 @@
 import { db } from '@/lib/db'
-import { DayOfWeek } from '@/app/generated/prisma'
+import { DayOfWeek } from '@prisma/client'
 
 export type CourseRow = {
   id: string
   title: string
   description: string | null
+  imageUrl: string | null
   isPublished: boolean
   passingGrade: number
   createdAt: Date
@@ -24,8 +25,10 @@ export type CourseDetail = {
   id: string
   title: string
   description: string | null
+  imageUrl: string | null
   isPublished: boolean
   passingGrade: number
+  tuitionFee: number | null
   createdAt: Date
   updatedAt: Date
   subjects: SubjectRow[]
@@ -94,6 +97,7 @@ export async function getCourses(): Promise<CourseRow[]> {
       id: true,
       title: true,
       description: true,
+      imageUrl: true,
       isPublished: true,
       passingGrade: true,
       createdAt: true,
@@ -105,14 +109,16 @@ export async function getCourses(): Promise<CourseRow[]> {
 }
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
-  return db.course.findUnique({
+  const raw = await db.course.findUnique({
     where: { id },
     select: {
       id: true,
       title: true,
       description: true,
+      imageUrl: true,
       isPublished: true,
       passingGrade: true,
+      tuitionFee: true,
       createdAt: true,
       updatedAt: true,
       subjects: {
@@ -130,6 +136,11 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       },
     },
   })
+  if (!raw) return null
+  return {
+    ...raw,
+    tuitionFee: raw.tuitionFee ? raw.tuitionFee.toNumber() : null,
+  }
 }
 
 export async function getSubjectById(sid: string): Promise<SubjectDetail | null> {

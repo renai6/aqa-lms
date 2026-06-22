@@ -35,7 +35,7 @@ User roles: `SUPER_ADMIN`, `ADMIN`, `STUDENT`. Auth is custom (bcryptjs for hash
 
 ### Key non-obvious details
 
-**Prisma 7**: Uses a separate `prisma.config.ts` (with `defineConfig`) instead of the datasource URL inside `schema.prisma`. The generated client outputs to `app/generated/prisma` (not `node_modules/@prisma/client`) — import from there.
+**Prisma 7**: Uses a separate `prisma.config.ts` (with `defineConfig`) instead of the datasource URL inside `schema.prisma`. The generated client goes to the default `node_modules/@prisma/client` — import enums and types from `@prisma/client`. Do NOT add a custom `output` directive to `schema.prisma` (breaks Vercel/Turbopack).
 
 **Tailwind CSS 4**: No `tailwind.config.js`. Configuration lives entirely in `app/globals.css` via `@import "tailwindcss"` and `@theme inline {}` blocks.
 

@@ -1,9 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { getSubjectById, getTeachers } from '@/lib/courses/queries'
+import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EditSubjectForm } from './edit-subject-form'
 import { DeleteSubjectButton } from './delete-subject-button'
 import { TeacherAssignmentPanel } from './teacher-assignment-panel'
@@ -30,15 +29,14 @@ export default async function SubjectDetailPage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
-      <Link
-        href={'/admin/courses/' + id}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Back to {subject.course.title}
-      </Link>
-
-      <h1 className="text-2xl font-semibold">{subject.title}</h1>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Courses', href: '/admin/courses' },
+          { label: subject.course.title, href: '/admin/courses/' + id },
+          { label: subject.title },
+        ]}
+        title={subject.title}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
