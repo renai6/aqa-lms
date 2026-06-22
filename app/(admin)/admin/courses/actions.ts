@@ -28,7 +28,10 @@ const courseSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().optional(),
   passingGrade: z.coerce.number().min(0, 'Must be at least 0.').max(100, 'Must be at most 100.'),
-  tuitionFee: z.coerce.number().min(0, 'Tuition fee cannot be negative.').optional(),
+  tuitionFee: z.preprocess(
+    v => (v === '' || v === null || v === undefined ? undefined : v),
+    z.coerce.number().min(0, 'Tuition fee cannot be negative.').optional(),
+  ),
 })
 
 export async function createCourseAction(
