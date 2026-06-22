@@ -28,6 +28,7 @@ const courseSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().optional(),
   passingGrade: z.coerce.number().min(0, 'Must be at least 0.').max(100, 'Must be at most 100.'),
+  tuitionFee: z.coerce.number().min(0, 'Tuition fee cannot be negative.').optional(),
 })
 
 export async function createCourseAction(
@@ -42,6 +43,7 @@ export async function createCourseAction(
     title: formData.get('title'),
     description: formData.get('description'),
     passingGrade: formData.get('passingGrade') ?? '75',
+    tuitionFee: formData.get('tuitionFee'),
   }
 
   const result = courseSchema.safeParse(raw)
@@ -49,12 +51,12 @@ export async function createCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, passingGrade } = result.data
+  const { title, description, passingGrade, tuitionFee } = result.data
 
   let newCourse: { id: string }
   try {
     newCourse = await db.course.create({
-      data: { title, description: description || null, passingGrade },
+      data: { title, description: description || null, passingGrade, tuitionFee: tuitionFee ?? null },
       select: { id: true },
     })
   } catch (err) {
@@ -81,6 +83,7 @@ export async function updateCourseAction(
     title: formData.get('title'),
     description: formData.get('description'),
     passingGrade: formData.get('passingGrade') ?? '75',
+    tuitionFee: formData.get('tuitionFee'),
   }
 
   const result = courseSchema.safeParse(raw)
@@ -88,12 +91,12 @@ export async function updateCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, passingGrade } = result.data
+  const { title, description, passingGrade, tuitionFee } = result.data
 
   try {
     await db.course.update({
       where: { id },
-      data: { title, description: description || null, passingGrade },
+      data: { title, description: description || null, passingGrade, tuitionFee: tuitionFee ?? null },
     })
   } catch (err) {
     console.error('[updateCourse]', err)

@@ -28,6 +28,7 @@ export type CourseDetail = {
   imageUrl: string | null
   isPublished: boolean
   passingGrade: number
+  tuitionFee: number | null
   createdAt: Date
   updatedAt: Date
   subjects: SubjectRow[]
@@ -108,7 +109,7 @@ export async function getCourses(): Promise<CourseRow[]> {
 }
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
-  return db.course.findUnique({
+  const raw = await db.course.findUnique({
     where: { id },
     select: {
       id: true,
@@ -117,6 +118,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       imageUrl: true,
       isPublished: true,
       passingGrade: true,
+      tuitionFee: true,
       createdAt: true,
       updatedAt: true,
       subjects: {
@@ -134,6 +136,11 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       },
     },
   })
+  if (!raw) return null
+  return {
+    ...raw,
+    tuitionFee: raw.tuitionFee ? raw.tuitionFee.toNumber() : null,
+  }
 }
 
 export async function getSubjectById(sid: string): Promise<SubjectDetail | null> {
