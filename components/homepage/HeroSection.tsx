@@ -32,10 +32,9 @@ export default function HeroSection() {
       <div className="relative z-10 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 pt-24 pb-20">
         <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight tracking-tight max-w-3xl">
           Experience a{" "}
-          <span className="highlight-crimson">credible, high-quality</span>
-          {" "}
-          <span className="highlight-crimson">Islamic education</span>
-          {" "}built for busy lives
+          <span className="highlight-crimson">credible, high-quality</span>{" "}
+          <span className="highlight-crimson">Islamic education</span> built for
+          busy lives
         </h1>
 
         <p className="mt-6 text-base sm:text-lg text-white/80 italic">
@@ -47,12 +46,13 @@ export default function HeroSection() {
           <strong className="text-white font-semibold">
             online &amp; face-to-face programs
           </strong>{" "}
-          for secular students, working adults, kids, and even reverts &amp; seniors.
+          for secular students, working adults, kids, and even reverts &amp;
+          seniors.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-4 items-center">
           <Link
-            href="/programs"
+            href="/courses"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-6 py-3 text-xs font-semibold uppercase tracking-widest transition-opacity hover:opacity-90"
           >
             Explore Programs <ArrowUpRight className="w-4 h-4" />
