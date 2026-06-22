@@ -33,6 +33,7 @@ export default async function EnrollmentsPage({ searchParams }: Props) {
     db.enrollmentRequest.findMany({
       where: { status },
       orderBy: { createdAt: 'desc' },
+      take: 100,
       include: { course: { select: { title: true } } },
     }),
     db.enrollmentRequest.groupBy({
@@ -63,7 +64,6 @@ export default async function EnrollmentsPage({ searchParams }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Enrollment Requests"
-        breadcrumbs={[{ label: 'Enrollments' }]}
       />
 
       {/* Tab bar */}

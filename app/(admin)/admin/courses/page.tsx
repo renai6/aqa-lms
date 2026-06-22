@@ -20,7 +20,6 @@ export default async function CoursesPage() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Courses"
-        breadcrumbs={[{ label: 'Courses' }]}
         action={
           <Button asChild>
             <Link href="/admin/courses/new">New Course</Link>

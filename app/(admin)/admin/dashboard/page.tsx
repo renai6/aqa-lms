@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
       db.enrollmentRequest.count({ where: { status: 'PENDING' } }),
       db.user.count({ where: { role: 'STUDENT', isActive: true } }),
       db.course.count({ where: { isPublished: true } }),
-      db.enrollmentRequest.count({ where: { status: 'APPROVED' } }),
+      db.enrollment.count(),
       db.enrollmentRequest.findMany({
         where: { status: 'PENDING' },
         orderBy: { createdAt: 'desc' },

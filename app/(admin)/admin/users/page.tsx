@@ -21,7 +21,6 @@ export default async function UsersPage({ searchParams }: Props) {
     <div className="p-6 max-w-5xl space-y-6">
       <PageHeader
         title="Users"
-        breadcrumbs={[{ label: 'Users' }]}
       />
       <Suspense fallback={null}>
         <TabSwitcher activeTab={activeTab} />
