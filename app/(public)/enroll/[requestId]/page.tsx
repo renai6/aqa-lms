@@ -38,7 +38,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
     <>
       {/* ── Hero Banner ── */}
       <section
-        className="relative bg-zinc-900 min-h-[40vh] flex items-center pt-20 pb-24"
+        className="relative bg-zinc-900 min-h-[max(40vh,320px)] flex items-center pt-20 pb-24"
         style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 0 100%)' }}
       >
         {/* Grain texture */}
@@ -83,7 +83,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
       </section>
 
       {/* ── Cards Section ── */}
-      <section className="bg-background">
+      <section className="-mt-px bg-background">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 space-y-6">
 
           {/* Application Summary */}
