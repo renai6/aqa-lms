@@ -53,7 +53,7 @@ export async function submitAdditionalPaymentAction(
   }
 
   const enrollment = await db.enrollment.findFirst({
-    where: { userId: session.id },
+    where: { userId: session.userId },
     select: { id: true, paymentStatus: true },
   })
   if (!enrollment) return { error: 'Enrollment not found.' }

@@ -13,7 +13,7 @@ export default async function StudentDashboardPage() {
   const session = await getSession()
   if (!session) notFound()
 
-  const enrollment = await getStudentEnrollment(session.id)
+  const enrollment = await getStudentEnrollment(session.userId)
 
   return (
     <main className="p-8 max-w-3xl space-y-6">

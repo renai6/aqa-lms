@@ -20,7 +20,7 @@ export async function GET(
   })
 
   if (!proof) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (proof.enrollment.userId !== payload.id) {
+  if (proof.enrollment.userId !== payload.sub) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
