@@ -7,6 +7,7 @@ import {
   LogOut,
   UserCog,
   ShieldCheck,
+  GraduationCap,
 } from 'lucide-react'
 import { NavLink } from './nav-link'
 import { TopBar } from '@/components/admin/top-bar'
@@ -59,6 +60,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             href="/admin/enrollments"
             icon={<Users className="w-4 h-4" aria-hidden="true" />}
             label="Enrollments"
+          />
+          <NavLink
+            href="/admin/students"
+            icon={<GraduationCap className="w-4 h-4" aria-hidden="true" />}
+            label="Students"
           />
           <NavLink
             href="/admin/users"
