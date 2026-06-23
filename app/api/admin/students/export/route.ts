@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const genderLabel = s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : ''
     const courses = `"${s.enrollments.map((e) => e.courseTitle).join('; ')}"`
     const enrolledDate = s.enrollments[0]
-      ? s.enrollments[0].enrolledAt.toLocaleDateString()
+      ? s.enrollments[0].enrolledAt.toISOString().slice(0, 10)
       : ''
     const status = s.isActive ? 'Active' : 'Inactive'
     return [name, email, genderLabel, courses, enrolledDate, status].join(',')
