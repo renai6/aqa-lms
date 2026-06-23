@@ -10,14 +10,28 @@ type ActionState = { error: string | null; success?: boolean }
 
 // ─── submitEnrollmentAction ───────────────────────────────────────────────────
 
-const enrollSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
-  email: z.string().email('A valid email address is required.'),
-  courseId: z.string().min(1, 'Course is required.'),
-  paymentType: z.enum(['PARTIAL', 'FULL']),
-  amountPaid: z.coerce.number().positive('Amount paid must be greater than 0.'),
-})
+const enrollSchema = z
+  .object({
+    firstName: z.string().min(1, 'First name is required.'),
+    lastName: z.string().min(1, 'Last name is required.'),
+    email: z.string().email('A valid email address is required.'),
+    courseId: z.string().min(1, 'Course is required.'),
+    gender: z.enum(['MALE', 'FEMALE'], { error: 'Gender is required.' }),
+    address: z.string().min(1, 'Address is required.'),
+    contactNumber: z.string().regex(
+      /^(09\d{9}|\+639\d{9})$/,
+      'Enter a valid PH mobile number (e.g. 09XXXXXXXXX).',
+    ),
+    facebookName: z.string().min(1, 'Facebook name is required.'),
+    facebookLink: z.string().url('Enter a valid URL.'),
+    studentType: z.enum(['NEW', 'OLD'], { error: 'Student type is required.' }),
+    paymentType: z.enum(['PARTIAL', 'FULL']),
+    amountPaid: z.coerce.number().positive('Amount paid must be greater than 0.'),
+  })
+  .refine((data) => !(data.studentType === 'NEW' && data.paymentType !== 'FULL'), {
+    message: 'New students must pay in full.',
+    path: ['paymentType'],
+  })
 
 export async function submitEnrollmentAction(
   _prev: ActionState,
@@ -28,6 +42,12 @@ export async function submitEnrollmentAction(
     lastName: formData.get('lastName'),
     email: formData.get('email'),
     courseId: formData.get('courseId'),
+    gender: formData.get('gender'),
+    address: formData.get('address'),
+    contactNumber: formData.get('contactNumber'),
+    facebookName: formData.get('facebookName'),
+    facebookLink: formData.get('facebookLink'),
+    studentType: formData.get('studentType'),
     paymentType: formData.get('paymentType'),
     amountPaid: formData.get('amountPaid'),
   }
@@ -37,7 +57,7 @@ export async function submitEnrollmentAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { firstName, lastName, email, courseId, paymentType, amountPaid } = result.data
+  const { firstName, lastName, email, courseId, gender, address, contactNumber, facebookName, facebookLink, studentType, paymentType, amountPaid } = result.data
 
   const course = await db.course.findFirst({
     where: { id: courseId, isPublished: true },
@@ -45,7 +65,6 @@ export async function submitEnrollmentAction(
   })
   if (!course) return { error: 'Course not found.' }
 
-  // Block re-apply only for PENDING or APPROVED; REJECTED allows a new application
   const duplicate = await db.enrollmentRequest.findFirst({
     where: { email, courseId, status: { in: ['PENDING', 'APPROVED'] } },
   })
@@ -54,7 +73,20 @@ export async function submitEnrollmentAction(
   let requestId: string
   try {
     const request = await db.enrollmentRequest.create({
-      data: { firstName, lastName, email, courseId, paymentType, amountPaid },
+      data: {
+        firstName,
+        lastName,
+        email,
+        courseId,
+        gender,
+        address,
+        contactNumber,
+        facebookName,
+        facebookLink,
+        studentType,
+        paymentType,
+        amountPaid,
+      },
     })
     requestId = request.id
   } catch (err) {
