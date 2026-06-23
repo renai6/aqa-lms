@@ -19,7 +19,8 @@ ADD COLUMN     "facebookName" TEXT NOT NULL DEFAULT '',
 ADD COLUMN     "gender" "Gender" NOT NULL DEFAULT 'MALE',
 ADD COLUMN     "studentType" "StudentType" NOT NULL DEFAULT 'NEW';
 
--- Drop temporary defaults (schema enforces NOT NULL at app layer)
+-- Drop temporary backfill defaults for fields that require explicit app-supplied values.
+-- Note: studentType retains its DEFAULT 'NEW' (matches @default(NEW) in schema).
 ALTER TABLE "EnrollmentRequest" ALTER COLUMN "address" DROP DEFAULT;
 ALTER TABLE "EnrollmentRequest" ALTER COLUMN "contactNumber" DROP DEFAULT;
 ALTER TABLE "EnrollmentRequest" ALTER COLUMN "facebookLink" DROP DEFAULT;
