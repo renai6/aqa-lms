@@ -72,6 +72,41 @@ export default async function EnrollmentDetailPage({ params }: Props) {
                 <span className="text-sm">{request.email}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Gender</span>
+                <span className="text-sm">
+                  {request.gender === 'MALE' ? 'Male' : 'Female'}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Address</span>
+                <span className="text-sm">{request.address}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Contact No.</span>
+                <span className="text-sm">{request.contactNumber}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Facebook Name</span>
+                <span className="text-sm">{request.facebookName}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Facebook Link</span>
+                <a
+                  href={request.facebookLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary underline-offset-4 hover:underline break-all"
+                >
+                  {request.facebookLink}
+                </a>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground w-32 shrink-0">Student Type</span>
+                <span className="text-sm">
+                  {request.studentType === 'NEW' ? 'New Student' : 'Old Student'}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                 <span className="text-sm text-muted-foreground w-32 shrink-0">Course</span>
                 <span className="text-sm">{request.course.title}</span>
               </div>
