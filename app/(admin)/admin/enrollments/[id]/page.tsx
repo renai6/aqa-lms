@@ -92,7 +92,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                 <span className="text-sm text-muted-foreground w-32 shrink-0">Facebook Link</span>
                 <a
-                  href={/^https?:\/\//i.test(request.facebookLink) ? request.facebookLink : '#'}
+                  href={request.facebookLink.startsWith('https://') ? request.facebookLink : '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary underline-offset-4 hover:underline break-all"
