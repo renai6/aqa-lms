@@ -17,15 +17,18 @@ const enrollSchema = z
     email: z.string().email('A valid email address is required.'),
     courseId: z.string().min(1, 'Course is required.'),
     gender: z.enum(['MALE', 'FEMALE'], { error: 'Gender is required.' }),
-    address: z.string().min(1, 'Address is required.'),
-    contactNumber: z.string().regex(
+    address: z.string().trim().min(1, 'Address is required.'),
+    contactNumber: z.string().trim().regex(
       /^(09\d{9}|\+639\d{9})$/,
       'Enter a valid PH mobile number (e.g. 09XXXXXXXXX).',
     ),
-    facebookName: z.string().min(1, 'Facebook name is required.'),
-    facebookLink: z.string().url('Enter a valid URL.'),
+    facebookName: z.string().trim().min(1, 'Facebook name is required.'),
+    facebookLink: z
+      .string()
+      .url('Enter a valid URL.')
+      .refine((u) => u.startsWith('https://'), 'Link must use HTTPS.'),
     studentType: z.enum(['NEW', 'OLD'], { error: 'Student type is required.' }),
-    paymentType: z.enum(['PARTIAL', 'FULL']),
+    paymentType: z.enum(['PARTIAL', 'FULL'], { error: 'Payment type is required.' }),
     amountPaid: z.coerce.number().positive('Amount paid must be greater than 0.'),
   })
   .refine((data) => !(data.studentType === 'NEW' && data.paymentType !== 'FULL'), {
