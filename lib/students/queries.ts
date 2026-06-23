@@ -1,5 +1,5 @@
 // lib/students/queries.ts
-import { Gender, PaymentStatus } from '@prisma/client'
+import { Gender, PaymentStatus, UserRole } from '@prisma/client'
 import { db } from '@/lib/db'
 
 export type StudentRow = {
@@ -44,7 +44,7 @@ export async function getStudents({
 } = {}): Promise<StudentRow[]> {
   const users = await db.user.findMany({
     where: {
-      role: 'STUDENT',
+      role: UserRole.STUDENT,
       ...(gender ? { gender } : {}),
       ...(courseId ? { enrollments: { some: { courseId } } } : {}),
     },
@@ -79,8 +79,8 @@ export async function getStudents({
 }
 
 export async function getStudentById(id: string): Promise<StudentDetail | null> {
-  const user = await db.user.findFirst({
-    where: { id, role: 'STUDENT' },
+  const user = await db.user.findUnique({
+    where: { id },
     select: {
       id: true,
       firstName: true,
@@ -89,6 +89,7 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       gender: true,
       isActive: true,
       createdAt: true,
+      role: true,
       enrollments: {
         select: {
           courseId: true,
@@ -102,10 +103,11 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
     },
   })
 
-  if (!user) return null
+  if (!user || user.role !== UserRole.STUDENT) return null
 
+  const { role: _role, ...userWithoutRole } = user
   return {
-    ...user,
+    ...userWithoutRole,
     enrollments: user.enrollments.map((e) => ({
       courseId: e.courseId,
       courseTitle: e.course.title,
