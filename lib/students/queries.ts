@@ -105,9 +105,14 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
 
   if (!user || user.role !== UserRole.STUDENT) return null
 
-  const { role: _role, ...userWithoutRole } = user
   return {
-    ...userWithoutRole,
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    gender: user.gender,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
     enrollments: user.enrollments.map((e) => ({
       courseId: e.courseId,
       courseTitle: e.course.title,
