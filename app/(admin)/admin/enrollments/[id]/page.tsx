@@ -49,7 +49,7 @@ export default async function EnrollmentDetailPage({ params }: Props) {
   const isPending = request.status === 'PENDING'
 
   return (
-    <div className="p-6 max-w-4xl space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
         breadcrumbs={[
           { label: 'Enrollments', href: '/admin/enrollments' },
