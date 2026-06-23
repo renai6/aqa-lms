@@ -71,6 +71,11 @@ enum PaymentStatus {
   FULLY_PAID
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 //
 // USERS & AUTH
 //
@@ -86,6 +91,7 @@ model User {
 
   role               UserRole @default(STUDENT)
   isActive           Boolean  @default(true)
+  gender             Gender?
   mustChangePassword Boolean  @default(false)
 
   createdAt DateTime @default(now())
