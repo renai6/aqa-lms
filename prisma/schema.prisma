@@ -71,6 +71,11 @@ enum PaymentStatus {
   FULLY_PAID
 }
 
+enum StudentType {
+  NEW
+  OLD
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -129,6 +134,13 @@ model EnrollmentRequest {
   email     String
   firstName String
   lastName  String
+
+  gender        Gender
+  address       String
+  contactNumber String
+  facebookName  String
+  facebookLink  String
+  studentType   StudentType @default(NEW)
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id])
