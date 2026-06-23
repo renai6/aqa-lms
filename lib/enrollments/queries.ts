@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { EnrollmentStatus, PaymentStatus, PaymentType } from '@prisma/client'
+import { EnrollmentStatus, Gender, PaymentStatus, PaymentType, StudentType } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -45,6 +45,12 @@ export type EnrollmentRequestDetail = EnrollmentRequestRow & {
   updatedAt: Date
   paymentType: PaymentType
   amountPaid: number
+  gender: Gender
+  address: string
+  contactNumber: string
+  facebookName: string
+  facebookLink: string
+  studentType: StudentType
 }
 
 export async function getEnrollmentRequestsByStatus(
@@ -93,6 +99,12 @@ export async function getEnrollmentRequestById(
       updatedAt: true,
       paymentType: true,
       amountPaid: true,
+      gender: true,
+      address: true,
+      contactNumber: true,
+      facebookName: true,
+      facebookLink: true,
+      studentType: true,
     },
   })
   if (!row) return null
