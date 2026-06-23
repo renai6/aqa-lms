@@ -29,7 +29,7 @@ export default async function StudentsPage({ searchParams }: Props) {
 
   const exportParams = new URLSearchParams()
   if (course) exportParams.set('course', course)
-  if (gender) exportParams.set('gender', gender)
+  if (validGender) exportParams.set('gender', validGender)
   const exportHref =
     '/api/admin/students/export' +
     (exportParams.size ? '?' + exportParams.toString() : '')
