@@ -31,6 +31,11 @@ export async function submitAdditionalPaymentAction(
   if (!session) return { error: 'Unauthorized' }
   if (session.role !== 'STUDENT') return { error: 'Forbidden' }
 
+  const enrollmentIdRaw = formData.get('enrollmentId')
+  if (typeof enrollmentIdRaw !== 'string' || !enrollmentIdRaw) {
+    return { error: 'Invalid enrollment.' }
+  }
+
   const amountRaw = formData.get('amount')
   const amount = parseFloat(typeof amountRaw === 'string' ? amountRaw : '')
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -53,7 +58,7 @@ export async function submitAdditionalPaymentAction(
   }
 
   const enrollment = await db.enrollment.findFirst({
-    where: { userId: session.userId },
+    where: { id: enrollmentIdRaw, userId: session.userId },
     select: { id: true, paymentStatus: true },
   })
   if (!enrollment) return { error: 'Enrollment not found.' }

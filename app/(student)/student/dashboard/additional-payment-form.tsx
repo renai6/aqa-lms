@@ -1,3 +1,4 @@
+// app/(student)/student/dashboard/additional-payment-form.tsx
 'use client'
 
 import { useActionState } from 'react'
@@ -7,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 type ActionState = { error: string | null; success?: boolean }
+type Props = { enrollmentId: string }
 
-export function AdditionalPaymentForm() {
+export function AdditionalPaymentForm({ enrollmentId }: Props) {
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     submitAdditionalPaymentAction,
     { error: null },
@@ -24,17 +26,18 @@ export function AdditionalPaymentForm() {
 
   return (
     <form action={formAction} className="space-y-3">
+      <input type="hidden" name="enrollmentId" value={enrollmentId} />
       <div className="space-y-2">
-        <Label htmlFor="amount">Amount Paid (₱)</Label>
-        <Input id="amount" name="amount" type="number" min="1" step="0.01" required placeholder="e.g. 5000" />
+        <Label htmlFor={'amount-' + enrollmentId}>Amount Paid (₱)</Label>
+        <Input id={'amount-' + enrollmentId} name="amount" type="number" min="1" step="0.01" required placeholder="e.g. 5000" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="note">Note (optional)</Label>
-        <Input id="note" name="note" placeholder="e.g. 2nd installment via GCash" />
+        <Label htmlFor={'note-' + enrollmentId}>Note (optional)</Label>
+        <Input id={'note-' + enrollmentId} name="note" placeholder="e.g. 2nd installment via GCash" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="file">Proof of Payment</Label>
-        <Input id="file" name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
+        <Label htmlFor={'file-' + enrollmentId}>Proof of Payment</Label>
+        <Input id={'file-' + enrollmentId} name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
         <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, WEBP. Max 5MB.</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
