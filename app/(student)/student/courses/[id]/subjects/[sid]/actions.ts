@@ -27,6 +27,12 @@ export async function markLessonDoneAction(
   })
   if (!enrollment) return { error: 'Not enrolled in this course.' }
 
+  const lesson = await db.lesson.findFirst({
+    where: { id: lessonId, subject: { courseId } },
+    select: { id: true },
+  })
+  if (!lesson) return { error: 'Invalid lesson.' }
+
   await db.lessonCompletion.upsert({
     where: { userId_lessonId: { userId: session.userId, lessonId } },
     create: { userId: session.userId, lessonId },
@@ -52,6 +58,12 @@ export async function unmarkLessonDoneAction(
   if (typeof lessonId !== 'string' || !lessonId) return { error: 'Invalid lesson.' }
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course.' }
   if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject.' }
+
+  const enrollment = await db.enrollment.findUnique({
+    where: { userId_courseId: { userId: session.userId, courseId } },
+    select: { id: true },
+  })
+  if (!enrollment) return { error: 'Not enrolled in this course.' }
 
   await db.lessonCompletion.deleteMany({
     where: { userId: session.userId, lessonId },
