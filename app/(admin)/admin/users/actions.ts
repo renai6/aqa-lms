@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
@@ -77,7 +78,7 @@ export async function createUserAction(
   }
 
   revalidatePath('/admin/users')
-  return { error: null, success: true }
+  redirect('/admin/users?tab=' + (role === 'TEACHER' ? 'teachers' : 'admins'))
 }
 
 export async function toggleUserActiveAction(
