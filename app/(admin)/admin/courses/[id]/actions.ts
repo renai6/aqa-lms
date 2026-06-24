@@ -61,8 +61,8 @@ export async function createSubjectAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath('/admin/courses/' + courseId)
-  return { error: null, success: true }
+  revalidatePath('/admin/courses/' + courseId + '/subjects')
+  redirect('/admin/courses/' + courseId + '/subjects')
 }
 
 export async function updateSubjectAction(
@@ -132,8 +132,8 @@ export async function deleteSubjectAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath('/admin/courses/' + courseId)
-  redirect('/admin/courses/' + courseId)
+  revalidatePath('/admin/courses/' + courseId + '/subjects')
+  redirect('/admin/courses/' + courseId + '/subjects')
 }
 
 export async function assignTeacherAction(

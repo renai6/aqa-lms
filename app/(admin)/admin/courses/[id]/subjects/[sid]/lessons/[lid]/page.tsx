@@ -28,11 +28,11 @@ export default async function LessonEditPage({ params }: Props) {
   return (
     <div className="p-6 space-y-6">
       <Link
-        href={'/admin/courses/' + id + '/subjects/' + sid}
+        href={'/admin/courses/' + id + '/subjects/' + sid + '/lessons'}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Back to {lesson.subject.title}
+        Back to Lessons
       </Link>
 
       <div>

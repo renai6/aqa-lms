@@ -3,11 +3,12 @@ import Link from 'next/link'
 import { getSubjectById, getTeachers } from '@/lib/courses/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
+import { Button } from '@/components/ui/button'
+import { ChevronRight } from 'lucide-react'
 import { EditSubjectForm } from './edit-subject-form'
 import { DeleteSubjectButton } from './delete-subject-button'
 import { TeacherAssignmentPanel } from './teacher-assignment-panel'
 import { SchedulePanel } from './schedule-panel'
-import { AddLessonForm } from './add-lesson-form'
 import { DeleteLessonButton } from './delete-lesson-button'
 
 type Props = { params: Promise<{ id: string; sid: string }> }
@@ -33,6 +34,7 @@ export default async function SubjectDetailPage({ params }: Props) {
         breadcrumbs={[
           { label: 'Courses', href: '/admin/courses' },
           { label: subject.course.title, href: '/admin/courses/' + id },
+          { label: 'Subjects', href: '/admin/courses/' + id + '/subjects' },
           { label: subject.title },
         ]}
         title={subject.title}
@@ -59,38 +61,31 @@ export default async function SubjectDetailPage({ params }: Props) {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Lessons</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Lessons</h2>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/lessons'}>Manage all</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/lessons/new'}>New Lesson</Link>
+            </Button>
+          </div>
+        </div>
+
         {subject.lessons.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No lessons yet.</p>
+          <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+            No lessons yet.
+          </p>
         ) : (
           <div className="border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted">
                 <tr>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Order
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Title
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Material
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Recording
-                  </th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Order</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Title</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Material</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Recording</th>
                   <th scope="col" aria-label="Actions" className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -101,41 +96,24 @@ export default async function SubjectDetailPage({ params }: Props) {
                     <td className="px-4 py-3 font-medium">{lesson.title}</td>
                     <td className="px-4 py-3">
                       {lesson.materialUrl ? (
-                        <a
-                          href={lesson.materialUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline text-xs truncate max-w-32 block"
-                        >
-                          Link
-                        </a>
+                        <a href={lesson.materialUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">Link</a>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {lesson.recordingUrl ? (
-                        <a
-                          href={lesson.recordingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline text-xs"
-                        >
-                          Link
-                        </a>
+                        <a href={lesson.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">Link</a>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 flex items-center gap-2">
-                      <Link
-                        href={
-                          '/admin/courses/' + id + '/subjects/' + sid + '/lessons/' + lesson.id
-                        }
-                        className="text-primary hover:underline text-sm"
-                      >
-                        Edit
-                      </Link>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/lessons/' + lesson.id}>
+                          Edit <ChevronRight className="w-3 h-3 ml-1" aria-hidden="true" />
+                        </Link>
+                      </Button>
                       <DeleteLessonButton
                         lessonId={lesson.id}
                         subjectId={sid}
@@ -149,8 +127,6 @@ export default async function SubjectDetailPage({ params }: Props) {
             </table>
           </div>
         )}
-
-        <AddLessonForm subjectId={sid} courseId={id} nextOrder={subject.lessons.length + 1} />
       </div>
     </div>
   )

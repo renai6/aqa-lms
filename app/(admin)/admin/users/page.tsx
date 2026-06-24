@@ -1,9 +1,10 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { getUsersByRole } from "@/lib/users/queries";
 import { TabSwitcher } from "./tab-switcher";
 import { UserTable } from "./user-table";
-import { CreateUserForm } from "./create-user-form";
 import { PageHeader } from "@/components/admin/page-header";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   searchParams: Promise<{ tab?: string }>;
@@ -19,12 +20,18 @@ export default async function UsersPage({ searchParams }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title="Users" />
+      <PageHeader
+        title="Users"
+        action={
+          <Button asChild>
+            <Link href={'/admin/users/new?role=' + role}>New {roleLabel}</Link>
+          </Button>
+        }
+      />
       <Suspense fallback={null}>
         <TabSwitcher activeTab={activeTab} />
       </Suspense>
       <UserTable users={users} role={activeTab} />
-      <CreateUserForm role={role} roleLabel={roleLabel} />
     </div>
   );
 }
