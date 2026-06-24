@@ -110,6 +110,7 @@ model User {
   gradedAttempts     AssessmentAttempt[] @relation("GradedBy")
   enrollmentRequests EnrollmentRequest[]
   verificationTokens VerificationToken[]
+  lessonCompletions  LessonCompletion[]
 }
 
 model VerificationToken {
@@ -246,6 +247,8 @@ model Lesson {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  completions LessonCompletion[]
 }
 
 //
@@ -284,6 +287,18 @@ model PaymentProof {
   submittedAt  DateTime   @default(now())
 
   @@index([enrollmentId])
+}
+
+model LessonCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+  @@index([userId])
 }
 
 //
