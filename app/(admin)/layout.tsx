@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
 import {
   LayoutDashboard,
   Users,
@@ -8,25 +8,32 @@ import {
   UserCog,
   ShieldCheck,
   GraduationCap,
-} from 'lucide-react'
-import { NavLink } from './nav-link'
-import { TopBar } from '@/components/admin/top-bar'
-import { getSession } from '@/lib/auth/session'
+} from "lucide-react";
+import { NavLink } from "./nav-link";
+import { TopBar } from "@/components/admin/top-bar";
+import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Admin — Al-Qur'an Academy",
-}
+};
 
 function roleLabel(role: string) {
   switch (role) {
-    case 'SUPER_ADMIN': return 'Super Admin'
-    case 'ADMIN': return 'Admin'
-    default: return role
+    case "SUPER_ADMIN":
+      return "Super Admin";
+    case "ADMIN":
+      return "Admin";
+    default:
+      return role;
   }
 }
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession()
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
 
   return (
     <div className="flex h-dvh bg-background">
@@ -36,7 +43,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="px-5 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
-              <span className="text-primary font-bold text-[10px] tracking-tight">AQA</span>
+              <span className="text-primary font-bold text-[10px] tracking-tight">
+                AQA
+              </span>
             </div>
             <div className="leading-none">
               <p className="text-sidebar-foreground text-[11px] font-semibold tracking-wide">
@@ -50,7 +59,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
 
         {/* Nav links */}
-        <nav aria-label="Admin navigation" className="flex-1 flex flex-col gap-0.5 p-3">
+        <nav
+          aria-label="Admin navigation"
+          className="flex-1 flex flex-col gap-0.5 p-3"
+        >
           <NavLink
             href="/admin/dashboard"
             icon={<LayoutDashboard className="w-4 h-4" aria-hidden="true" />}
@@ -59,7 +71,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <NavLink
             href="/admin/purchases"
             icon={<Users className="w-4 h-4" aria-hidden="true" />}
-            label="Purchases"
+            label="Enrollment Requests"
           />
           <NavLink
             href="/admin/students"
@@ -89,7 +101,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {session && (
             <div className="flex items-center gap-2.5 px-3 py-2">
               <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary-foreground" aria-hidden="true" />
+                <ShieldCheck
+                  className="w-3.5 h-3.5 text-primary-foreground"
+                  aria-hidden="true"
+                />
               </div>
               <div className="leading-none min-w-0">
                 <p className="text-sidebar-foreground text-xs font-medium truncate">
@@ -114,10 +129,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Main content */}
       <main className="flex-1 overflow-auto flex flex-col min-w-0">
         <TopBar />
-        <div className="flex-1">
-          {children}
-        </div>
+        <div className="flex-1">{children}</div>
       </main>
     </div>
-  )
+  );
 }
