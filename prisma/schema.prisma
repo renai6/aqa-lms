@@ -76,6 +76,11 @@ enum StudentType {
   OLD
 }
 
+enum CourseType {
+  ON_SITE
+  ONLINE
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -142,8 +147,9 @@ model Course {
   description String?
   imageUrl    String?
 
-  isPublished  Boolean  @default(false)
-  passingGrade Float    @default(75.0)
+  courseType   CourseType @default(ON_SITE)
+  isPublished  Boolean    @default(false)
+  passingGrade Float      @default(75.0)
   tuitionFee   Decimal?
 
   createdAt DateTime @default(now())

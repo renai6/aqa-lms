@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import type { EnrollmentStatus, PaymentType } from '@prisma/client'
+import type { CourseType, EnrollmentStatus, PaymentType } from '@prisma/client'
 
 export type PurchasableCourse = {
   id: string
@@ -7,6 +7,7 @@ export type PurchasableCourse = {
   description: string | null
   imageUrl: string | null
   tuitionFee: number | null
+  courseType: CourseType
 }
 
 // Published courses the student is not already enrolled in and has no PENDING/APPROVED purchase for.
@@ -15,7 +16,7 @@ export async function getPurchasableCourses(userId: string): Promise<Purchasable
     db.course.findMany({
       where: { isPublished: true },
       orderBy: { title: 'asc' },
-      select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true },
+      select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true, courseType: true },
     }),
     db.enrollment.findMany({ where: { userId }, select: { courseId: true } }),
     db.purchaseItem.findMany({
@@ -26,7 +27,7 @@ export async function getPurchasableCourses(userId: string): Promise<Purchasable
   const taken = new Set([...enrollments.map((e) => e.courseId), ...pendingItems.map((p) => p.courseId)])
   return courses
     .filter((c) => !taken.has(c.id))
-    .map((c) => ({ ...c, tuitionFee: c.tuitionFee?.toNumber() ?? null }))
+    .map((c) => ({ ...c, tuitionFee: c.tuitionFee?.toNumber() ?? null, courseType: c.courseType }))
 }
 
 export type CheckoutCourse = { id: string; title: string; tuitionFee: number | null }

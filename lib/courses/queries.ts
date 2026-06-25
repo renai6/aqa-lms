@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { DayOfWeek } from '@prisma/client'
+import type { CourseType, DayOfWeek } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -7,13 +7,14 @@ export type PublishedCourseRow = {
   description: string | null
   imageUrl: string | null
   tuitionFee: number | null
+  courseType: CourseType
 }
 
-export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
+export async function getPublishedCourses(type?: CourseType): Promise<PublishedCourseRow[]> {
   const rows = await db.course.findMany({
-    where: { isPublished: true },
+    where: { isPublished: true, ...(type ? { courseType: type } : {}) },
     orderBy: { title: 'asc' },
-    select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true },
+    select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true, courseType: true },
   })
   return rows.map(r => ({ ...r, tuitionFee: r.tuitionFee?.toNumber() ?? null }))
 }
@@ -21,10 +22,10 @@ export async function getPublishedCourses(): Promise<PublishedCourseRow[]> {
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
     where: { id },
-    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true, tuitionFee: true },
+    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true, tuitionFee: true, courseType: true },
   })
   if (!course?.isPublished) return null
-  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl, tuitionFee: course.tuitionFee?.toNumber() ?? null }
+  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl, tuitionFee: course.tuitionFee?.toNumber() ?? null, courseType: course.courseType }
 }
 
 export type CourseRow = {
@@ -33,6 +34,7 @@ export type CourseRow = {
   description: string | null
   imageUrl: string | null
   isPublished: boolean
+  courseType: CourseType
   passingGrade: number
   createdAt: Date
   _count: { subjects: number }
@@ -53,6 +55,7 @@ export type CourseDetail = {
   description: string | null
   imageUrl: string | null
   isPublished: boolean
+  courseType: CourseType
   passingGrade: number
   tuitionFee: number | null
   createdAt: Date
@@ -125,6 +128,7 @@ export async function getCourses(): Promise<CourseRow[]> {
       description: true,
       imageUrl: true,
       isPublished: true,
+      courseType: true,
       passingGrade: true,
       createdAt: true,
       _count: {
@@ -143,6 +147,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       description: true,
       imageUrl: true,
       isPublished: true,
+      courseType: true,
       passingGrade: true,
       tuitionFee: true,
       createdAt: true,
