@@ -1,11 +1,24 @@
 import Link from 'next/link'
 import { BookOpen } from 'lucide-react'
-import { getPublishedCourses } from '@/lib/enrollments/queries'
+import { getPublishedCourses } from '@/lib/courses/queries'
+import type { CourseType } from '@prisma/client'
 
 export const metadata = { title: "Courses — Al-Qur'an Academy" }
 
-export default async function CoursesPage() {
-  const courses = await getPublishedCourses()
+const TYPES: { label: string; value: CourseType | 'ALL' }[] = [
+  { label: 'All', value: 'ALL' },
+  { label: 'On-Site', value: 'ON_SITE' },
+  { label: 'Online', value: 'ONLINE' },
+]
+
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>
+}) {
+  const { type } = await searchParams
+  const activeType = type === 'ON_SITE' || type === 'ONLINE' ? (type as CourseType) : undefined
+  const courses = await getPublishedCourses(activeType)
 
   return (
     <>
@@ -56,26 +69,46 @@ export default async function CoursesPage() {
       </section>
 
       {/* ── Course List or Empty State ── */}
-      {courses.length === 0 ? (
-        <section className="bg-background py-24 px-4">
-          <div className="flex flex-col items-center text-center">
-            <BookOpen className="w-12 h-12 text-muted-foreground/40" />
-            <p className="mt-4 text-sm text-muted-foreground">
-              No courses available at this time. Check back soon.
-            </p>
+      <section className="bg-background">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          {/* Filter tabs */}
+          <div className="flex gap-2 mb-8">
+            {TYPES.map((t) => {
+              const isActive = (t.value === 'ALL' && !activeType) || t.value === activeType
+              const href = t.value === 'ALL' ? '/courses' : `/courses?type=${t.value}`
+              return (
+                <Link
+                  key={t.value}
+                  href={href}
+                  className={[
+                    'rounded-full px-4 py-1.5 text-sm font-medium border transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {t.label}
+                </Link>
+              )
+            })}
           </div>
-        </section>
-      ) : (
-        <>
-          <section className="bg-background">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 space-y-6">
+
+          {courses.length === 0 ? (
+            <div className="flex flex-col items-center text-center py-16">
+              <BookOpen className="w-12 h-12 text-muted-foreground/40" />
+              <p className="mt-4 text-sm text-muted-foreground">
+                No courses available at this time. Check back soon.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {courses.map((course) => (
                 <div
                   key={course.id}
-                  className="flex flex-col sm:flex-row rounded-xl border shadow-md overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                  className="flex flex-col rounded-xl border shadow-md overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  {/* Left panel — image */}
-                  <div className="relative sm:w-2/5 shrink-0 min-h-[200px]">
+                  {/* Top — image */}
+                  <div className="relative h-48 shrink-0">
                     {course.imageUrl && /^https?:\/\//.test(course.imageUrl) ? (
                       <img
                         src={course.imageUrl}
@@ -89,12 +122,21 @@ export default async function CoursesPage() {
                         </span>
                       </div>
                     )}
+                    {/* Type badge on image */}
+                    <span className={[
+                      'absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full',
+                      course.courseType === 'ONLINE'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-amber-600 text-white',
+                    ].join(' ')}>
+                      {course.courseType === 'ONLINE' ? 'Online' : 'On-Site'}
+                    </span>
                   </div>
 
-                  {/* Right panel — content */}
-                  <div className="flex flex-1 flex-col justify-between p-6 sm:p-8">
+                  {/* Bottom — content */}
+                  <div className="flex flex-1 flex-col justify-between p-5">
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground">
+                      <h2 className="text-base font-semibold text-foreground">
                         {course.title}
                       </h2>
                       {course.description && (
@@ -104,7 +146,7 @@ export default async function CoursesPage() {
                       )}
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-5">
                       {course.tuitionFee != null ? (
                         <div>
                           <span className="text-lg font-bold text-foreground">
@@ -120,27 +162,27 @@ export default async function CoursesPage() {
                         </p>
                       )}
                       <Link
-                        href={`/courses/${course.id}/enroll`}
-                        className="mt-4 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                        href="/register"
+                        className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                       >
-                        Enroll Now
+                        Register to purchase
                       </Link>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          )}
+        </div>
+      </section>
 
-          {/* ── Partial Payment Band ── */}
-          <section className="bg-zinc-900 py-10 px-4">
-            <p className="mx-auto max-w-xl text-center text-sm text-white/70">
-              All courses support flexible installment payments. Pay a partial
-              amount upfront and complete your tuition over time.
-            </p>
-          </section>
-        </>
-      )}
+      {/* ── Partial Payment Band ── */}
+      <section className="bg-zinc-900 py-10 px-4">
+        <p className="mx-auto max-w-xl text-center text-sm text-white/70">
+          All courses support flexible installment payments. Pay a partial
+          amount upfront and complete your tuition over time.
+        </p>
+      </section>
     </>
   )
 }

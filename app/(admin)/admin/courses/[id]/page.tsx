@@ -5,10 +5,11 @@ import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ChevronRight } from 'lucide-react'
 import { EditCourseForm } from './edit-course-form'
 import { TogglePublishedButton } from './toggle-published-button'
 import { DeleteCourseButton } from './delete-course-button'
-import { AddSubjectForm } from './add-subject-form'
 import { CourseImageCard } from './course-image-card'
 
 type Props = { params: Promise<{ id: string }> }
@@ -28,7 +29,7 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!course) notFound()
 
   return (
-    <div className="p-6 max-w-5xl space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
         breadcrumbs={[
           { label: 'Courses', href: '/admin/courses' },
@@ -51,48 +52,48 @@ export default async function CourseDetailPage({ params }: Props) {
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               <TogglePublishedButton courseId={course.id} isPublished={course.isPublished} />
-              <DeleteCourseButton courseId={course.id} courseTitle={course.title} />
             </CardContent>
           </Card>
           <CourseImageCard courseId={course.id} imageUrl={course.imageUrl} />
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-destructive text-sm">Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DeleteCourseButton courseId={course.id} courseTitle={course.title} />
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Subjects</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Subjects</h2>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={'/admin/courses/' + course.id + '/subjects'}>Manage all</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href={'/admin/courses/' + course.id + '/subjects/new'}>New Subject</Link>
+            </Button>
+          </div>
+        </div>
+
         {course.subjects.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No subjects yet. Add the first one below.</p>
+          <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+            No subjects yet.
+          </p>
         ) : (
           <div className="border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted">
                 <tr>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Order
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Title
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Units
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    Lessons
-                  </th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Order</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Title</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Units</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Lessons</th>
                   <th scope="col" aria-label="Actions" className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -104,12 +105,11 @@ export default async function CourseDetailPage({ params }: Props) {
                     <td className="px-4 py-3">{subject.units}</td>
                     <td className="px-4 py-3">{subject._count.lessons}</td>
                     <td className="px-4 py-3">
-                      <Link
-                        href={'/admin/courses/' + course.id + '/subjects/' + subject.id}
-                        className="text-primary hover:underline text-sm"
-                      >
-                        View →
-                      </Link>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={'/admin/courses/' + course.id + '/subjects/' + subject.id}>
+                          View <ChevronRight className="w-3 h-3 ml-1" aria-hidden="true" />
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -117,8 +117,6 @@ export default async function CourseDetailPage({ params }: Props) {
             </table>
           </div>
         )}
-
-        <AddSubjectForm courseId={course.id} nextOrder={course.subjects.length + 1} />
       </div>
     </div>
   )

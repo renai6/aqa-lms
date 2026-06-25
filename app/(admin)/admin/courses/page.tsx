@@ -38,6 +38,7 @@ export default async function CoursesPage() {
             <thead className="bg-muted">
               <tr>
                 <th scope="col" className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">Title</th>
+                <th scope="col" className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">Type</th>
                 <th scope="col" className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">Status</th>
                 <th scope="col" className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">Subjects</th>
                 <th scope="col" className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">Passing Grade</th>
@@ -49,6 +50,11 @@ export default async function CoursesPage() {
               {courses.map((course) => (
                 <tr key={course.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-2 font-medium">{course.title}</td>
+                  <td className="px-4 py-2">
+                    <Badge variant="outline" className={course.courseType === 'ONLINE' ? 'border-blue-300 text-blue-700' : 'border-amber-300 text-amber-700'}>
+                      {course.courseType === 'ONLINE' ? 'Online' : 'On-Site'}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-2">
                     {course.isPublished
                       ? <Badge className="bg-green-100 text-green-800 border-green-200">Published</Badge>

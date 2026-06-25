@@ -7,6 +7,7 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import type { CourseType } from '@prisma/client'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -27,6 +28,7 @@ const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const courseSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().optional(),
+  courseType: z.enum(['ON_SITE', 'ONLINE'], { error: 'Please select a course type.' }),
   passingGrade: z.coerce.number().min(0, 'Must be at least 0.').max(100, 'Must be at most 100.'),
   tuitionFee: z.preprocess(
     v => (v === '' || v === null || v === undefined ? undefined : v),
@@ -45,6 +47,7 @@ export async function createCourseAction(
   const raw = {
     title: formData.get('title'),
     description: formData.get('description'),
+    courseType: formData.get('courseType'),
     passingGrade: formData.get('passingGrade') ?? '75',
     tuitionFee: formData.get('tuitionFee'),
   }
@@ -54,12 +57,12 @@ export async function createCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, passingGrade, tuitionFee } = result.data
+  const { title, description, courseType, passingGrade, tuitionFee } = result.data
 
   let newCourse: { id: string }
   try {
     newCourse = await db.course.create({
-      data: { title, description: description || null, passingGrade, tuitionFee: tuitionFee ?? null },
+      data: { title, description: description || null, courseType: courseType as CourseType, passingGrade, tuitionFee: tuitionFee ?? null },
       select: { id: true },
     })
   } catch (err) {
@@ -85,6 +88,7 @@ export async function updateCourseAction(
   const raw = {
     title: formData.get('title'),
     description: formData.get('description'),
+    courseType: formData.get('courseType'),
     passingGrade: formData.get('passingGrade') ?? '75',
     tuitionFee: formData.get('tuitionFee'),
   }
@@ -94,12 +98,12 @@ export async function updateCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, passingGrade, tuitionFee } = result.data
+  const { title, description, courseType, passingGrade, tuitionFee } = result.data
 
   try {
     await db.course.update({
       where: { id },
-      data: { title, description: description || null, passingGrade, tuitionFee: tuitionFee ?? null },
+      data: { title, description: description || null, courseType: courseType as CourseType, passingGrade, tuitionFee: tuitionFee ?? null },
     })
   } catch (err) {
     console.error('[updateCourse]', err)

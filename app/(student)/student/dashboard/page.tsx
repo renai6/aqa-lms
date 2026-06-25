@@ -1,92 +1,167 @@
-import { notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
 import { getSession } from '@/lib/auth/session'
-import { getStudentEnrollment } from '@/lib/enrollments/queries'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { AdditionalPaymentForm } from './additional-payment-form'
+import { getStudentDashboard } from '@/lib/student/queries'
+import { db } from '@/lib/db'
+import { Button } from '@/components/ui/button'
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short', day: 'numeric', year: 'numeric',
-})
+function formatTime(t: string): string {
+  const [hStr, mStr] = t.split(':')
+  const h = parseInt(hStr, 10)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 === 0 ? 12 : h % 12
+  return `${hour}:${mStr} ${period}`
+}
+
+const DAY_LABEL: Record<string, string> = {
+  MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed',
+  THURSDAY: 'Thu', FRIDAY: 'Fri', SATURDAY: 'Sat', SUNDAY: 'Sun',
+}
+
+
+export const metadata = { title: 'Dashboard — AQA Student' }
 
 export default async function StudentDashboardPage() {
   const session = await getSession()
-  if (!session) notFound()
+  if (!session) redirect('/login')
 
-  const enrollment = await getStudentEnrollment(session.userId)
+  const [{ enrollments, schedules, announcements }, user] = await Promise.all([
+    getStudentDashboard(session.userId),
+    db.user.findUnique({ where: { id: session.userId }, select: { firstName: true } }),
+  ])
+
+  const partialEnrollments = enrollments.filter(e => e.paymentStatus === 'PARTIALLY_PAID')
 
   return (
-    <main className="p-8 max-w-3xl space-y-6">
-      <h1 className="text-2xl font-bold">Student Dashboard</h1>
+    <div className="px-6 md:px-10 py-10 space-y-12">
 
-      {!enrollment && (
-        <p className="text-muted-foreground">No active enrollment found.</p>
+      {/* Page title */}
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+          Welcome{user?.firstName ? `, ${user.firstName}` : ''}!
+        </h1>
+        <Button asChild size="sm" className="shrink-0">
+          <Link href="/student/courses">Buy more courses</Link>
+        </Button>
+      </div>
+
+      {/* Schedules strip */}
+      {schedules.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">Upcoming Schedule</h2>
+          <div className="flex flex-wrap gap-2">
+            {schedules.map((s, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 rounded-full bg-zinc-50 border border-zinc-200 px-3.5 py-1.5 text-xs font-medium text-zinc-700"
+              >
+                <span className="font-semibold">{s.subjectTitle}</span>
+                <span className="text-zinc-300">·</span>
+                <span className="text-zinc-500">{DAY_LABEL[s.day]} {formatTime(s.startTime)}–{formatTime(s.endTime)}</span>
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
-      {enrollment && (
-        <Card>
-          <CardHeader>
-            <CardTitle>My Enrollment &amp; Payments</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{enrollment.course.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  Enrolled {dateFormatter.format(enrollment.enrolledAt)}
-                </p>
+      {/* Announcements */}
+      {announcements.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">Announcements</h2>
+          <div className="space-y-2">
+            {announcements.slice(0, 3).map(a => (
+              <div key={a.id} className="flex rounded-lg bg-white overflow-hidden border border-zinc-200 shadow-sm">
+                <div className="w-[3px] bg-primary shrink-0" />
+                <div className="px-4 py-3">
+                  <p className="font-medium text-sm text-zinc-900">{a.title}</p>
+                  <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">{a.content}</p>
+                </div>
               </div>
-              <Badge
-                className={
-                  enrollment.paymentStatus === 'FULLY_PAID'
-                    ? 'bg-green-100 text-green-800 border-green-200'
-                    : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                }
-              >
-                {enrollment.paymentStatus === 'FULLY_PAID' ? 'Fully Paid' : 'Partially Paid'}
-              </Badge>
-            </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-            <div className="text-sm">
-              <span className="text-muted-foreground">Total Paid: </span>
-              <strong>₱{enrollment.totalPaid.toLocaleString('en-PH')}</strong>
-              {enrollment.course.tuitionFee !== null && (
-                <span className="text-muted-foreground">
-                  {' '}of ₱{enrollment.course.tuitionFee.toLocaleString('en-PH')}
-                </span>
-              )}
-            </div>
-
-            {enrollment.paymentProofs.length > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-2">Payment History</p>
-                <div className="divide-y border rounded-md">
-                  {enrollment.paymentProofs.map(proof => (
-                    <div key={proof.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                      <div>
-                        <span className="font-medium">₱{proof.amount.toLocaleString('en-PH')}</span>
-                        {proof.note && (
-                          <span className="text-muted-foreground ml-2">— {proof.note}</span>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {dateFormatter.format(proof.submittedAt)}
+      {/* My Courses */}
+      <section className="space-y-4">
+        <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">My Courses</h2>
+        {enrollments.length === 0 ? (
+          <p className="text-sm text-zinc-400">No active enrollments.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {enrollments.map(e => {
+              const pct = e.totalLessons > 0
+                ? Math.round((e.completedLessons / e.totalLessons) * 100)
+                : 0
+              return (
+                <Link key={e.id} href={'/student/courses/' + e.courseId} className="block group">
+                  <div className="h-full rounded-xl bg-white border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-200">
+                    {e.course.imageUrl ? (
+                      <div className="relative h-44 w-full overflow-hidden">
+                        <Image
+                          src={e.course.imageUrl}
+                          alt={e.course.title}
+                          fill
+                          className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                      </div>
+                    ) : (
+                      <div className="h-20 w-full bg-zinc-100" />
+                    )}
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-sm text-zinc-900 group-hover:text-primary transition-colors duration-150">
+                          {e.course.title}
+                        </p>
+                        <span
+                          className={[
+                            'shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border',
+                            e.paymentStatus === 'FULLY_PAID'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200',
+                          ].join(' ')}
+                        >
+                          {e.paymentStatus === 'FULLY_PAID' ? 'Paid' : 'Partial'}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="h-1.5 w-full rounded-full bg-zinc-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-300"
+                            style={{ width: pct + '%' }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-zinc-400">
+                          {e.completedLessons} of {e.totalLessons} lessons completed
                         </p>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Payment summary */}
+      {partialEnrollments.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">Payment</h2>
+          <div className="space-y-2">
+            {partialEnrollments.map(e => (
+              <div key={e.id} className="flex items-center justify-between rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4">
+                <div>
+                  <p className="font-semibold text-sm text-zinc-900">{e.course.title}</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Partial payment — balance outstanding</p>
                 </div>
               </div>
-            )}
-
-            {enrollment.paymentStatus === 'PARTIALLY_PAID' && (
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-3">Submit Additional Payment</p>
-                <AdditionalPaymentForm />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </section>
       )}
-    </main>
+    </div>
   )
 }

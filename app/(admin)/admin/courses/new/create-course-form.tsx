@@ -23,6 +23,19 @@ export function CreateCourseForm() {
             <Textarea id="description" name="description" placeholder="Brief course description..." rows={3} />
           </div>
           <div className="space-y-2">
+            <Label>Course Type <span aria-hidden="true">*</span></Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseType" value="ON_SITE" defaultChecked className="accent-primary" />
+                On-Site
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseType" value="ONLINE" className="accent-primary" />
+                Online
+              </label>
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="passingGrade">Passing Grade (%)</Label>
             <Input id="passingGrade" name="passingGrade" type="number" min="0" max="100" step="0.1" defaultValue="75" />
           </div>

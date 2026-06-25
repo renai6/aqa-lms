@@ -61,8 +61,8 @@ export async function createLessonAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath('/admin/courses/' + courseId + '/subjects/' + subjectId)
-  return { error: null, success: true }
+  revalidatePath('/admin/courses/' + courseId + '/subjects/' + subjectId + '/lessons')
+  redirect('/admin/courses/' + courseId + '/subjects/' + subjectId + '/lessons')
 }
 
 export async function updateLessonAction(
@@ -142,6 +142,6 @@ export async function deleteLessonAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath('/admin/courses/' + courseId + '/subjects/' + subjectId)
-  redirect('/admin/courses/' + courseId + '/subjects/' + subjectId)
+  revalidatePath('/admin/courses/' + courseId + '/subjects/' + subjectId + '/lessons')
+  redirect('/admin/courses/' + courseId + '/subjects/' + subjectId + '/lessons')
 }

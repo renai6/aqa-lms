@@ -71,6 +71,21 @@ enum PaymentStatus {
   FULLY_PAID
 }
 
+enum StudentType {
+  NEW
+  OLD
+}
+
+enum CourseType {
+  ON_SITE
+  ONLINE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
 //
 // USERS & AUTH
 //
@@ -86,7 +101,13 @@ model User {
 
   role               UserRole @default(STUDENT)
   isActive           Boolean  @default(true)
+  gender             Gender?
   mustChangePassword Boolean  @default(false)
+  address            String?
+  contactNumber      String?
+  facebookName       String?
+  facebookLink       String?
+  studentType        StudentType?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,8 +118,10 @@ model User {
   certificates       Certificate[]
   subjectAssignments SubjectTeacher[]
   gradedAttempts     AssessmentAttempt[] @relation("GradedBy")
-  enrollmentRequests EnrollmentRequest[]
+  purchases          Purchase[]
+  reviewedPurchases  Purchase[]          @relation("ReviewedPurchases")
   verificationTokens VerificationToken[]
+  lessonCompletions  LessonCompletion[]
 }
 
 model VerificationToken {
@@ -114,36 +137,6 @@ model VerificationToken {
 }
 
 //
-// ENROLLMENT REQUEST (BEFORE USER CREATION)
-//
-
-model EnrollmentRequest {
-  id String @id @default(cuid())
-
-  email     String
-  firstName String
-  lastName  String
-
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id])
-
-  paymentProofUrl String?
-  paymentType     PaymentType @default(FULL)
-  amountPaid      Decimal     @default(0)
-
-  status EnrollmentStatus @default(PENDING)
-
-  adminRemarks String?
-
-  // Linked once the account is created on approval
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-//
 // COURSE STRUCTURE
 //
 
@@ -154,17 +147,18 @@ model Course {
   description String?
   imageUrl    String?
 
-  isPublished  Boolean  @default(false)
-  passingGrade Float    @default(75.0)
+  courseType   CourseType @default(ON_SITE)
+  isPublished  Boolean    @default(false)
+  passingGrade Float      @default(75.0)
   tuitionFee   Decimal?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  subjects     Subject[]
-  enrollments  Enrollment[]
-  certificates Certificate[]
-  requests     EnrollmentRequest[]
+  subjects      Subject[]
+  enrollments   Enrollment[]
+  certificates  Certificate[]
+  purchaseItems PurchaseItem[]
 }
 
 model Subject {
@@ -228,6 +222,8 @@ model Lesson {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  completions LessonCompletion[]
 }
 
 //
@@ -249,23 +245,54 @@ model Enrollment {
   progress Float @default(0)
 
   paymentStatus PaymentStatus @default(PARTIALLY_PAID)
-  totalPaid     Decimal       @default(0)
 
-  paymentProofs PaymentProof[]
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
 
   @@unique([userId, courseId])
 }
 
-model PaymentProof {
-  id           String     @id @default(cuid())
-  enrollmentId String
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  proofUrl     String
-  amount       Decimal
-  note         String?
-  submittedAt  DateTime   @default(now())
+model LessonCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
 
-  @@index([enrollmentId])
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+model Purchase {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id])
+  status          EnrollmentStatus @default(PENDING)
+  paymentType     PaymentType      @default(FULL)
+  amountPaid      Decimal          @default(0)
+  paymentProofUrl String
+  adminRemarks    String?
+  reviewedById    String?
+  reviewedBy      User?            @relation("ReviewedPurchases", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  items           PurchaseItem[]
+  enrollments     Enrollment[]
+
+  @@index([userId])
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([purchaseId, courseId])
+  @@index([courseId])
 }
 
 //
