@@ -83,5 +83,5 @@ export async function createPurchaseAction(_prev: ActionState, formData: FormDat
     console.error('[createPurchase] Email error:', err)
   }
 
-  redirect('/student/purchases')
+  redirect('/student/dashboard')
 }

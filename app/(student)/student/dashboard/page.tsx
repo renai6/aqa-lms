@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getSession } from '@/lib/auth/session'
 import { getStudentDashboard } from '@/lib/student/queries'
+import { Button } from '@/components/ui/button'
 
 function formatTime(t: string): string {
   const [hStr, mStr] = t.split(':')
@@ -32,7 +33,12 @@ export default async function StudentDashboardPage() {
     <div className="px-6 md:px-10 py-10 space-y-12">
 
       {/* Page title */}
-      <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Dashboard</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Dashboard</h1>
+        <Button asChild size="sm" className="shrink-0">
+          <Link href="/student/courses">Buy more courses</Link>
+        </Button>
+      </div>
 
       {/* Schedules strip */}
       {schedules.length > 0 && (
@@ -145,12 +151,6 @@ export default async function StudentDashboardPage() {
                   <p className="font-semibold text-sm text-zinc-900">{e.course.title}</p>
                   <p className="text-xs text-amber-600 mt-0.5">Partial payment — balance outstanding</p>
                 </div>
-                <Link
-                  href="/student/purchases"
-                  className="shrink-0 text-xs font-medium text-primary hover:underline"
-                >
-                  Manage purchases
-                </Link>
               </div>
             ))}
           </div>

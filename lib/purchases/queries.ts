@@ -43,41 +43,6 @@ export async function getCheckoutCourses(userId: string, courseIds: string[]): P
   return resolved
 }
 
-export type StudentPurchaseRow = {
-  id: string
-  status: EnrollmentStatus
-  paymentType: PaymentType
-  amountPaid: number
-  adminRemarks: string | null
-  createdAt: Date
-  courses: string[]
-}
-
-export async function getStudentPurchases(userId: string): Promise<StudentPurchaseRow[]> {
-  const rows = await db.purchase.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      status: true,
-      paymentType: true,
-      amountPaid: true,
-      adminRemarks: true,
-      createdAt: true,
-      items: { select: { course: { select: { title: true } } } },
-    },
-  })
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status,
-    paymentType: r.paymentType,
-    amountPaid: r.amountPaid.toNumber(),
-    adminRemarks: r.adminRemarks,
-    createdAt: r.createdAt,
-    courses: r.items.map((i) => i.course.title),
-  }))
-}
-
 export type AdminPurchaseRow = {
   id: string
   status: EnrollmentStatus
