@@ -9,7 +9,7 @@ const PROTECTED: Array<{ prefix: string; roles: UserRole[] }> = [
   { prefix: '/student', roles: ['STUDENT'] },
 ]
 
-const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password', '/verify-email']
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
 
 // Paths that require any authenticated session (no role restriction)
 const AUTHENTICATED_PATHS = ['/change-password']
@@ -68,6 +68,7 @@ export const config = {
     '/teacher/:path*',
     '/student/:path*',
     '/login',
+    '/register',
     '/forgot-password',
     '/reset-password',
     '/verify-email',
