@@ -29,7 +29,7 @@ export default async function StudentDashboardPage() {
   const partialEnrollments = enrollments.filter(e => e.paymentStatus === 'PARTIALLY_PAID')
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 space-y-12">
+    <div className="px-6 md:px-10 py-10 space-y-12">
 
       {/* Page title */}
       <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Dashboard</h1>

@@ -20,22 +20,29 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
     })
   }
 
-  const total = courses
-    .filter((c) => selected.has(c.id))
-    .reduce((sum, c) => sum + (c.tuitionFee ?? 0), 0)
-
   function checkout() {
     const ids = [...selected]
     if (ids.length === 0) return
     router.push(`/student/checkout?ids=${ids.join(',')}`)
   }
 
-  if (courses.length === 0) {
-    return <p className="text-sm text-muted-foreground">No courses available to purchase right now.</p>
-  }
-
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Browse Courses</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Select one or more courses to purchase.
+          </p>
+        </div>
+        <Button onClick={checkout} disabled={selected.size === 0} className="shrink-0">
+          Proceed to checkout ({selected.size})
+        </Button>
+      </div>
+
+      {courses.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No courses available to purchase right now.</p>
+      ) : (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {courses.map((c) => {
           const isSel = selected.has(c.id)
@@ -83,16 +90,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
           )
         })}
       </div>
-
-      <div className="sticky bottom-0 flex items-center justify-between rounded-xl border bg-card p-4">
-        <div>
-          <p className="text-xs text-muted-foreground">{selected.size} selected</p>
-          <p className="text-lg font-bold">₱{total.toLocaleString('en-PH')}</p>
-        </div>
-        <Button onClick={checkout} disabled={selected.size === 0}>
-          Proceed to checkout
-        </Button>
-      </div>
+      )}
     </div>
   )
 }

@@ -23,7 +23,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
   if (courses.length === 0) redirect('/student/courses')
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-8">
+    <div className="px-6 md:px-10 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
       <p className="text-muted-foreground text-sm mt-1">
         Review your selection, then upload your proof of payment.

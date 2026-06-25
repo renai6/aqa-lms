@@ -16,7 +16,7 @@ export default async function StudentPurchasesPage() {
   const purchases = await getStudentPurchases(session.userId)
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="px-6 md:px-10 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">My Purchases</h1>
         <Button asChild size="sm"><Link href="/student/courses">Buy more courses</Link></Button>
