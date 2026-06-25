@@ -12,7 +12,7 @@ export default async function StudentCoursesPage() {
   const courses = await getPurchasableCourses(session.userId)
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="px-6 md:px-10 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Browse Courses</h1>
       <p className="text-muted-foreground text-sm mt-1">
         Select one or more courses to purchase.

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { BookOpen, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PurchasableCourse } from '@/lib/purchases/queries'
 
@@ -34,7 +36,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {courses.map((c) => {
           const isSel = selected.has(c.id)
           return (
@@ -44,17 +46,39 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
               onClick={() => toggle(c.id)}
               aria-pressed={isSel}
               className={[
-                'text-left rounded-xl border-2 p-4 transition-colors',
+                'group flex flex-col overflow-hidden text-left rounded-xl border-2 transition-colors',
                 isSel ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40',
               ].join(' ')}
             >
-              <p className="font-semibold text-foreground">{c.title}</p>
-              {c.description && (
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.description}</p>
-              )}
-              <p className="mt-2 text-sm font-bold text-foreground">
-                {c.tuitionFee != null ? `₱${c.tuitionFee.toLocaleString('en-PH')}` : 'Contact us for pricing'}
-              </p>
+              <div className="relative aspect-video w-full bg-muted">
+                {c.imageUrl ? (
+                  <Image
+                    src={c.imageUrl}
+                    alt={c.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <BookOpen className="h-8 w-8" aria-hidden="true" />
+                  </div>
+                )}
+                {isSel && (
+                  <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col p-4">
+                <p className="font-semibold text-foreground">{c.title}</p>
+                {c.description && (
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.description}</p>
+                )}
+                <p className="mt-auto pt-2 text-sm font-bold text-foreground">
+                  {c.tuitionFee != null ? `₱${c.tuitionFee.toLocaleString('en-PH')}` : 'Contact us for pricing'}
+                </p>
+              </div>
             </button>
           )
         })}
