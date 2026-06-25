@@ -18,6 +18,9 @@ export function StudentNav({ firstName }: Props) {
         </Link>
 
         <div className="flex items-center gap-4">
+          <Link href="/student/dashboard" className="text-white/70 hover:text-white text-sm hidden sm:block">Dashboard</Link>
+          <Link href="/student/courses" className="text-white/70 hover:text-white text-sm hidden sm:block">Courses</Link>
+          <Link href="/student/purchases" className="text-white/70 hover:text-white text-sm hidden sm:block">Purchases</Link>
           <span className="text-white/40 text-xs hidden sm:block">{firstName}</span>
           <SignOutButton className="text-white/60 hover:text-white hover:bg-white/10" />
         </div>
