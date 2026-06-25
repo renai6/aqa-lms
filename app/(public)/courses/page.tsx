@@ -120,10 +120,10 @@ export default async function CoursesPage() {
                         </p>
                       )}
                       <Link
-                        href={`/courses/${course.id}/enroll`}
+                        href="/register"
                         className="mt-4 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                       >
-                        Enroll Now
+                        Register to purchase
                       </Link>
                     </div>
                   </div>
