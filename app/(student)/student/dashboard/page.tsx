@@ -3,7 +3,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getSession } from '@/lib/auth/session'
 import { getStudentDashboard } from '@/lib/student/queries'
-import { AdditionalPaymentForm } from './additional-payment-form'
 
 function formatTime(t: string): string {
   const [hStr, mStr] = t.split(':')
@@ -18,7 +17,6 @@ const DAY_LABEL: Record<string, string> = {
   THURSDAY: 'Thu', FRIDAY: 'Fri', SATURDAY: 'Sat', SUNDAY: 'Sun',
 }
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 export const metadata = { title: 'Dashboard — AQA Student' }
 
@@ -140,43 +138,19 @@ export default async function StudentDashboardPage() {
       {partialEnrollments.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">Payment</h2>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {partialEnrollments.map(e => (
-              <div key={e.id} className="flex rounded-xl bg-white overflow-hidden border border-zinc-200 shadow-sm">
-                <div className="w-1 bg-primary shrink-0" />
-                <div className="flex-1 px-5 py-4 space-y-4">
-                  <h3 className="font-semibold text-sm text-zinc-900">{e.course.title}</h3>
-                  <div className="flex items-center gap-5 text-sm">
-                    <span>
-                      <span className="text-zinc-400 text-xs">Paid </span>
-                      <strong className="text-zinc-900">₱{e.totalPaid.toLocaleString('en-PH')}</strong>
-                    </span>
-                    {e.course.tuitionFee !== null && (
-                      <span>
-                        <span className="text-zinc-400 text-xs">Balance </span>
-                        <strong className="text-amber-700">₱{(e.course.tuitionFee - e.totalPaid).toLocaleString('en-PH')}</strong>
-                      </span>
-                    )}
-                  </div>
-                  {e.paymentProofs.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.15em] mb-2">Payment History</p>
-                      <div className="divide-y divide-zinc-100 border border-zinc-200 rounded-lg">
-                        {e.paymentProofs.map(p => (
-                          <div key={p.id} className="px-3 py-2.5">
-                            <span className="font-medium text-sm text-zinc-900">₱{p.amount.toLocaleString('en-PH')}</span>
-                            {p.note && <span className="text-zinc-400 ml-2 text-xs">— {p.note}</span>}
-                            <p className="text-xs text-zinc-400 mt-0.5">{dateFormatter.format(p.submittedAt)}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="border-t border-zinc-100 pt-4">
-                    <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.15em] mb-3">Submit Additional Payment</p>
-                    <AdditionalPaymentForm enrollmentId={e.id} />
-                  </div>
+              <div key={e.id} className="flex items-center justify-between rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4">
+                <div>
+                  <p className="font-semibold text-sm text-zinc-900">{e.course.title}</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Partial payment — balance outstanding</p>
                 </div>
+                <Link
+                  href="/student/purchases"
+                  className="shrink-0 text-xs font-medium text-primary hover:underline"
+                >
+                  Manage purchases
+                </Link>
               </div>
             ))}
           </div>
