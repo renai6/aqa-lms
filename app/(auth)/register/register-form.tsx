@@ -19,27 +19,27 @@ export function RegisterForm() {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" name="firstName" required placeholder="Juan" />
+          <Input id="firstName" name="firstName" required placeholder="Juan" defaultValue={state.values?.firstName} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" name="lastName" required placeholder="dela Cruz" />
+          <Input id="lastName" name="lastName" required placeholder="dela Cruz" defaultValue={state.values?.lastName} />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="email">Email Address</Label>
-        <Input id="email" name="email" type="email" required placeholder="juan@example.com" />
+        <Input id="email" name="email" type="email" required placeholder="juan@example.com" defaultValue={state.values?.email} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required autoComplete="new-password" placeholder="••••••••" />
+          <Input id="password" name="password" type="password" required autoComplete="new-password" placeholder="••••••••" defaultValue={state.values?.password} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="new-password" placeholder="••••••••" />
+          <Input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="new-password" placeholder="••••••••" defaultValue={state.values?.confirmPassword} />
         </div>
       </div>
 
@@ -59,22 +59,22 @@ export function RegisterForm() {
 
       <div className="space-y-2">
         <Label htmlFor="address">Address</Label>
-        <Textarea id="address" name="address" required rows={2} placeholder="House No., Street, Barangay, City, Province" />
+        <Textarea id="address" name="address" required rows={2} placeholder="House No., Street, Barangay, City, Province" defaultValue={state.values?.address} />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="contactNumber">Contact Number</Label>
-        <Input id="contactNumber" name="contactNumber" type="tel" required placeholder="09XXXXXXXXX" />
+        <Input id="contactNumber" name="contactNumber" type="tel" required placeholder="09XXXXXXXXX" defaultValue={state.values?.contactNumber} />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="facebookName">Facebook Name</Label>
-        <Input id="facebookName" name="facebookName" required placeholder="Juan dela Cruz" />
+        <Input id="facebookName" name="facebookName" required placeholder="Juan dela Cruz" defaultValue={state.values?.facebookName} />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="facebookLink">Facebook Link</Label>
-        <Input id="facebookLink" name="facebookLink" type="url" required placeholder="https://facebook.com/yourprofile" />
+        <Input id="facebookLink" name="facebookLink" type="url" required placeholder="https://facebook.com/yourprofile" defaultValue={state.values?.facebookLink} />
       </div>
 
       <div className="space-y-2">
