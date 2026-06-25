@@ -35,6 +35,19 @@ export function EditCourseForm({ course }: Props) {
             />
           </div>
           <div className="space-y-2">
+            <Label>Course Type</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseType" value="ON_SITE" defaultChecked={course.courseType === 'ON_SITE'} className="accent-primary" />
+                On-Site
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseType" value="ONLINE" defaultChecked={course.courseType === 'ONLINE'} className="accent-primary" />
+                Online
+              </label>
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="edit-passingGrade">Passing Grade (%)</Label>
             <Input
               id="edit-passingGrade"

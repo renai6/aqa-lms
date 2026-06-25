@@ -53,4 +53,19 @@ describe('middleware', () => {
     expect(res.status).toBe(307)
     expect(res.headers.get('location')).toContain('/teacher/dashboard')
   })
+
+  it('redirects an authenticated user away from /register', async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue({
+      sub: 'u1', role: 'STUDENT', email: 'x@x.com', mustChangePassword: false,
+    })
+    const res = await proxy(makeRequest('/register', 'some-token'))
+    expect(res.status).toBe(307)
+    expect(res.headers.get('location')).toContain('/student/dashboard')
+  })
+
+  it('allows an unauthenticated user to reach /register', async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue(null)
+    const res = await proxy(makeRequest('/register'))
+    expect(res.status).toBe(200)
+  })
 })

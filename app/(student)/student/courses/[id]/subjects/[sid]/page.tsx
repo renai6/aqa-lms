@@ -44,7 +44,7 @@ export default async function StudentSubjectPage({ params, searchParams }: Props
   if (!subject || subject.courseId !== id) notFound()
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+    <div className="px-6 md:px-10 py-8 space-y-6">
       {/* Header */}
       <div className="space-y-2">
         <Link

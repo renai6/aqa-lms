@@ -4,23 +4,14 @@ import type { DayOfWeek, AssessmentType } from '@prisma/client'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
-export type DashboardPaymentProof = {
-  id: string
-  amount: number
-  note: string | null
-  submittedAt: Date
-}
-
 export type DashboardEnrollment = {
   id: string
   courseId: string
   course: { title: string; imageUrl: string | null; tuitionFee: number | null }
   paymentStatus: 'PARTIALLY_PAID' | 'FULLY_PAID'
-  totalPaid: number
   enrolledAt: Date
   totalLessons: number
   completedLessons: number
-  paymentProofs: DashboardPaymentProof[]
 }
 
 export type DashboardSchedule = {
@@ -57,7 +48,6 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         id: true,
         courseId: true,
         paymentStatus: true,
-        totalPaid: true,
         enrolledAt: true,
         course: {
           select: {
@@ -72,10 +62,6 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
               },
             },
           },
-        },
-        paymentProofs: {
-          orderBy: { submittedAt: 'desc' },
-          select: { id: true, amount: true, note: true, submittedAt: true },
         },
       },
     }),
@@ -122,11 +108,9 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         tuitionFee: e.course.tuitionFee?.toNumber() ?? null,
       },
       paymentStatus: e.paymentStatus,
-      totalPaid: e.totalPaid.toNumber(),
       enrolledAt: e.enrolledAt,
       totalLessons,
       completedLessons,
-      paymentProofs: e.paymentProofs.map(p => ({ ...p, amount: p.amount.toNumber() })),
     }
   })
 
