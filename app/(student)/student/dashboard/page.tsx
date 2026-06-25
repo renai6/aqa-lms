@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getSession } from '@/lib/auth/session'
 import { getStudentDashboard } from '@/lib/student/queries'
+import { db } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 
 function formatTime(t: string): string {
@@ -25,7 +26,10 @@ export default async function StudentDashboardPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { enrollments, schedules, announcements } = await getStudentDashboard(session.userId)
+  const [{ enrollments, schedules, announcements }, user] = await Promise.all([
+    getStudentDashboard(session.userId),
+    db.user.findUnique({ where: { id: session.userId }, select: { firstName: true } }),
+  ])
 
   const partialEnrollments = enrollments.filter(e => e.paymentStatus === 'PARTIALLY_PAID')
 
@@ -34,7 +38,9 @@ export default async function StudentDashboardPage() {
 
       {/* Page title */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+          Welcome{user?.firstName ? `, ${user.firstName}` : ''}!
+        </h1>
         <Button asChild size="sm" className="shrink-0">
           <Link href="/student/courses">Buy more courses</Link>
         </Button>
