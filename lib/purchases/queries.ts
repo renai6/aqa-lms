@@ -77,3 +77,88 @@ export async function getStudentPurchases(userId: string): Promise<StudentPurcha
     courses: r.items.map((i) => i.course.title),
   }))
 }
+
+export type AdminPurchaseRow = {
+  id: string
+  status: EnrollmentStatus
+  amountPaid: number
+  createdAt: Date
+  studentName: string
+  studentEmail: string
+  courseCount: number
+}
+
+export async function getAdminPurchasesByStatus(status: EnrollmentStatus): Promise<AdminPurchaseRow[]> {
+  const rows = await db.purchase.findMany({
+    where: { status },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+    select: {
+      id: true,
+      status: true,
+      amountPaid: true,
+      createdAt: true,
+      user: { select: { firstName: true, lastName: true, email: true } },
+      _count: { select: { items: true } },
+    },
+  })
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    amountPaid: r.amountPaid.toNumber(),
+    createdAt: r.createdAt,
+    studentName: `${r.user.firstName} ${r.user.lastName}`,
+    studentEmail: r.user.email,
+    courseCount: r._count.items,
+  }))
+}
+
+export type AdminPurchaseDetail = {
+  id: string
+  status: EnrollmentStatus
+  paymentType: PaymentType
+  amountPaid: number
+  paymentProofUrl: string
+  adminRemarks: string | null
+  createdAt: Date
+  student: { firstName: string; lastName: string; email: string; contactNumber: string | null }
+  courses: { id: string; title: string; tuitionFee: number | null }[]
+}
+
+export async function getAdminPurchaseById(id: string): Promise<AdminPurchaseDetail | null> {
+  const r = await db.purchase.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true,
+      paymentType: true,
+      amountPaid: true,
+      paymentProofUrl: true,
+      adminRemarks: true,
+      createdAt: true,
+      user: { select: { firstName: true, lastName: true, email: true, contactNumber: true } },
+      items: { select: { course: { select: { id: true, title: true, tuitionFee: true } } } },
+    },
+  })
+  if (!r) return null
+  return {
+    id: r.id,
+    status: r.status,
+    paymentType: r.paymentType,
+    amountPaid: r.amountPaid.toNumber(),
+    paymentProofUrl: r.paymentProofUrl,
+    adminRemarks: r.adminRemarks,
+    createdAt: r.createdAt,
+    student: r.user,
+    courses: r.items.map((i) => ({
+      id: i.course.id,
+      title: i.course.title,
+      tuitionFee: i.course.tuitionFee?.toNumber() ?? null,
+    })),
+  }
+}
+
+export async function getPurchaseStatusCounts(): Promise<Record<string, number>> {
+  const grouped = await db.purchase.groupBy({ by: ['status'], _count: { _all: true } })
+  return Object.fromEntries(grouped.map((g) => [g.status, g._count._all]))
+}
