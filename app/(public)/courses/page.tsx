@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { BookOpen } from 'lucide-react'
-import { getPublishedCourses } from '@/lib/enrollments/queries'
+import { getPublishedCourses } from '@/lib/courses/queries'
 
 export const metadata = { title: "Courses — Al-Qur'an Academy" }
 
