@@ -131,16 +131,16 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      {/* Divider + course CTA (mobile) */}
-      <div className="lg:hidden mt-7 pt-6 border-t border-border/60 text-center">
+      {/* Register CTA */}
+      <div className="mt-7 pt-6 border-t border-border/60 text-center">
         <p className="text-sm text-muted-foreground">
-          Not enrolled yet?{' '}
+          New here?{' '}
           <Link
-            href="/courses"
+            href="/register"
             className="font-medium hover:opacity-80 transition-opacity"
             style={{ color: 'oklch(0.525 0.223 3.958)' }}
           >
-            Browse our courses
+            Create an account
           </Link>
         </p>
       </div>
