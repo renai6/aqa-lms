@@ -26,15 +26,18 @@ export default async function AdminDashboardPage() {
     approvedCount,
     recentPending,
   ] = await Promise.all([
-    db.enrollmentRequest.count({ where: { status: "PENDING" } }),
+    db.purchase.count({ where: { status: "PENDING" } }),
     db.user.count({ where: { role: "STUDENT", isActive: true } }),
     db.course.count({ where: { isPublished: true } }),
     db.enrollment.count(),
-    db.enrollmentRequest.findMany({
+    db.purchase.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "desc" },
       take: 5,
-      include: { course: { select: { title: true } } },
+      include: {
+        user: { select: { firstName: true, lastName: true } },
+        _count: { select: { items: true } },
+      },
     }),
   ]);
 
@@ -45,7 +48,7 @@ export default async function AdminDashboardPage() {
       icon: Clock,
       iconBg: "bg-primary/10",
       iconColor: "text-primary",
-      href: "/admin/enrollments?tab=pending",
+      href: "/admin/purchases?tab=pending",
     },
     {
       label: "Active Students",
@@ -118,12 +121,12 @@ export default async function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Recent pending requests */}
+      {/* Recent pending purchases */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold">Recent Pending Reviews</h2>
+          <h2 className="text-sm font-semibold">Recent Pending Purchases</h2>
           <Link
-            href="/admin/enrollments?tab=pending"
+            href="/admin/purchases?tab=pending"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             View all →
@@ -149,7 +152,7 @@ export default async function AdminDashboardPage() {
                     scope="col"
                     className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
                   >
-                    Course
+                    Courses
                   </th>
                   <th
                     scope="col"
@@ -165,23 +168,23 @@ export default async function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {recentPending.map((req) => (
+                {recentPending.map((purchase) => (
                   <tr
-                    key={req.id}
+                    key={purchase.id}
                     className="hover:bg-muted/50 transition-colors"
                   >
                     <td className="px-4 py-2 font-medium">
-                      {req.firstName} {req.lastName}
+                      {purchase.user.firstName} {purchase.user.lastName}
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">
-                      {req.course.title}
+                      {purchase._count.items} course(s)
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">
-                      {dateFormatter.format(req.createdAt)}
+                      {dateFormatter.format(purchase.createdAt)}
                     </td>
                     <td className="px-4 py-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={"/admin/enrollments/" + req.id}>
+                        <Link href={"/admin/purchases/" + purchase.id}>
                           Review
                           <ChevronRight
                             className="w-3 h-3 ml-1"
