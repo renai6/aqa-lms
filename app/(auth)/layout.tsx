@@ -1,5 +1,6 @@
 import { Playfair_Display } from 'next/font/google'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -12,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className={`min-h-screen flex ${playfair.variable}`}>
       {/* ─── LEFT BRAND PANEL ─── */}
       <aside
-        className="hidden lg:flex w-[460px] shrink-0 flex-col relative overflow-hidden"
+        className="hidden lg:flex w-[460px] shrink-0 flex-col relative overflow-hidden sticky top-0 h-screen"
         style={{ backgroundColor: 'oklch(0.525 0.223 3.958)' }}
       >
         {/* Dot-grid texture */}
@@ -57,12 +58,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Top: Logo */}
         <div className="relative z-10 p-8 flex items-center gap-3.5">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ border: '1.5px solid rgba(255,255,255,0.35)' }}
-          >
-            <span className="text-white font-bold text-xs tracking-tighter">AQA</span>
-          </div>
+          <Image
+            src="/aqa-logo.png"
+            alt="Al-Qur'an Academy"
+            width={44}
+            height={44}
+            className="h-10 w-10 rounded-full object-cover shrink-0"
+          />
           <div className="leading-none">
             <p className="text-white text-[11px] font-semibold tracking-[0.18em] uppercase">
               Al-Qur&apos;an Academy

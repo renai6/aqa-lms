@@ -89,7 +89,7 @@ export default async function StudentDashboardPage() {
         {enrollments.length === 0 ? (
           <p className="text-sm text-zinc-400">No active enrollments.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {enrollments.map(e => {
               const pct = e.totalLessons > 0
                 ? Math.round((e.completedLessons / e.totalLessons) * 100)
@@ -98,7 +98,7 @@ export default async function StudentDashboardPage() {
                 <Link key={e.id} href={'/student/courses/' + e.courseId} className="block group">
                   <div className="h-full rounded-xl bg-white border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-200">
                     {e.course.imageUrl ? (
-                      <div className="relative h-44 w-full overflow-hidden">
+                      <div className="relative h-72 w-full overflow-hidden">
                         <Image
                           src={e.course.imageUrl}
                           alt={e.course.title}

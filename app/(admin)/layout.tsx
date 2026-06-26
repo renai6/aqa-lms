@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Users,
@@ -40,21 +41,17 @@ export default async function AdminLayout({
       {/* Sidebar — dark class activates dark sidebar CSS vars */}
       <aside className="w-64 border-r border-sidebar-border flex flex-col bg-sidebar dark shrink-0">
         {/* Logo / brand area */}
-        <div className="px-5 py-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
-              <span className="text-primary font-bold text-[10px] tracking-tight">
-                AQA
-              </span>
-            </div>
-            <div className="leading-none">
-              <p className="text-sidebar-foreground text-[11px] font-semibold tracking-wide">
-                AL-QUR&apos;AN ACADEMY
-              </p>
-              <p className="text-sidebar-foreground/50 text-[9px] tracking-widest mt-0.5">
-                INTERNATIONAL
-              </p>
-            </div>
+        <div className="px-5 py-5 border-b border-sidebar-border flex items-center gap-3">
+          <Image
+            src="/aqa-logo.png"
+            alt="Al-Qur'an Academy"
+            width={44}
+            height={44}
+            className="h-10 w-10 rounded-full object-cover shrink-0"
+          />
+          <div className="leading-none">
+            <p className="text-sidebar-foreground text-[11px] font-semibold tracking-wide">AL-QUR&apos;AN ACADEMY</p>
+            <p className="text-sidebar-foreground/50 text-[9px] tracking-widest mt-0.5">INTERNATIONAL</p>
           </div>
         </div>
 

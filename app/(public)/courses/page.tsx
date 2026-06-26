@@ -1,31 +1,32 @@
-import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
-import { getPublishedCourses } from '@/lib/courses/queries'
-import type { CourseType } from '@prisma/client'
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
+import { getPublishedCourses } from "@/lib/courses/queries";
+import type { CourseType } from "@prisma/client";
 
-export const metadata = { title: "Courses — Al-Qur'an Academy" }
+export const metadata = { title: "Courses — Al-Qur'an Academy" };
 
-const TYPES: { label: string; value: CourseType | 'ALL' }[] = [
-  { label: 'All', value: 'ALL' },
-  { label: 'On-Site', value: 'ON_SITE' },
-  { label: 'Online', value: 'ONLINE' },
-]
+const TYPES: { label: string; value: CourseType | "ALL" }[] = [
+  { label: "All", value: "ALL" },
+  { label: "On-Site", value: "ON_SITE" },
+  { label: "Online", value: "ONLINE" },
+];
 
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>
+  searchParams: Promise<{ type?: string }>;
 }) {
-  const { type } = await searchParams
-  const activeType = type === 'ON_SITE' || type === 'ONLINE' ? (type as CourseType) : undefined
-  const courses = await getPublishedCourses(activeType)
+  const { type } = await searchParams;
+  const activeType =
+    type === "ON_SITE" || type === "ONLINE" ? (type as CourseType) : undefined;
+  const courses = await getPublishedCourses(activeType);
 
   return (
     <>
       {/* ── Hero Banner ── */}
       <section
         className="relative bg-zinc-900 min-h-[40vh] flex items-center pt-20 pb-24"
-        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 0 100%)' }}
+        style={{ clipPath: "polygon(0 0, 100% 0, 100% 88%, 0 100%)" }}
       >
         {/* Grain texture */}
         <svg
@@ -50,7 +51,7 @@ export default async function CoursesPage({
           className="absolute top-0 left-0 w-96 h-96 rounded-full pointer-events-none"
           style={{
             background:
-              'radial-gradient(circle, oklch(0.525 0.223 3.958 / 0.2) 0%, transparent 70%)',
+              "radial-gradient(circle, oklch(0.525 0.223 3.958 / 0.2) 0%, transparent 70%)",
           }}
         />
 
@@ -74,22 +75,24 @@ export default async function CoursesPage({
           {/* Filter tabs */}
           <div className="flex gap-2 mb-8">
             {TYPES.map((t) => {
-              const isActive = (t.value === 'ALL' && !activeType) || t.value === activeType
-              const href = t.value === 'ALL' ? '/courses' : `/courses?type=${t.value}`
+              const isActive =
+                (t.value === "ALL" && !activeType) || t.value === activeType;
+              const href =
+                t.value === "ALL" ? "/courses" : `/courses?type=${t.value}`;
               return (
                 <Link
                   key={t.value}
                   href={href}
                   className={[
-                    'rounded-full px-4 py-1.5 text-sm font-medium border transition-colors',
+                    "rounded-full px-4 py-1.5 text-sm font-medium border transition-colors",
                     isActive
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
-                  ].join(' ')}
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                  ].join(" ")}
                 >
                   {t.label}
                 </Link>
-              )
+              );
             })}
           </div>
 
@@ -108,7 +111,7 @@ export default async function CoursesPage({
                   className="flex flex-col rounded-xl border shadow-md overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
                 >
                   {/* Top — image */}
-                  <div className="relative h-48 shrink-0">
+                  <div className="relative h-72 shrink-0">
                     {course.imageUrl && /^https?:\/\//.test(course.imageUrl) ? (
                       <img
                         src={course.imageUrl}
@@ -123,13 +126,15 @@ export default async function CoursesPage({
                       </div>
                     )}
                     {/* Type badge on image */}
-                    <span className={[
-                      'absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full',
-                      course.courseType === 'ONLINE'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-amber-600 text-white',
-                    ].join(' ')}>
-                      {course.courseType === 'ONLINE' ? 'Online' : 'On-Site'}
+                    <span
+                      className={[
+                        "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full",
+                        course.courseType === "ONLINE"
+                          ? "bg-blue-600 text-white"
+                          : "bg-amber-600 text-white",
+                      ].join(" ")}
+                    >
+                      {course.courseType === "ONLINE" ? "Online" : "On-Site"}
                     </span>
                   </div>
 
@@ -150,7 +155,7 @@ export default async function CoursesPage({
                       {course.tuitionFee != null ? (
                         <div>
                           <span className="text-lg font-bold text-foreground">
-                            ₱{course.tuitionFee.toLocaleString('en-PH')}
+                            ₱{course.tuitionFee.toLocaleString("en-PH")}
                           </span>
                           <p className="mt-0.5 text-xs text-muted-foreground">
                             Flexible installments available
@@ -184,5 +189,5 @@ export default async function CoursesPage({
         </p>
       </section>
     </>
-  )
+  );
 }
