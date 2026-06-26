@@ -136,6 +136,12 @@ export default async function CoursesPage({
                     >
                       {course.courseType === "ONLINE" ? "Online" : "On-Site"}
                     </span>
+                    {/* Duration badge */}
+                    {course.courseDuration && (
+                      <span className="absolute top-2 left-16 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-600 text-white">
+                        {course.courseDuration === 'SHORT' ? 'Short' : 'Long'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Bottom — content */}
@@ -150,6 +156,20 @@ export default async function CoursesPage({
                         </p>
                       )}
                     </div>
+
+                    {course.meetLink && (
+                      <a
+                        href={course.meetLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                        </svg>
+                        Join Google Meet
+                      </a>
+                    )}
 
                     <div className="mt-5">
                       {course.tuitionFee != null ? (
