@@ -81,6 +81,11 @@ enum CourseType {
   ONLINE
 }
 
+enum CourseDuration {
+  SHORT
+  LONG
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -151,6 +156,8 @@ model Course {
   isPublished  Boolean    @default(false)
   passingGrade Float      @default(75.0)
   tuitionFee   Decimal?
+  meetLink       String?
+  courseDuration CourseDuration?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
