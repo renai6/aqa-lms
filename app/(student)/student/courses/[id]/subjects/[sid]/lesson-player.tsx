@@ -9,7 +9,6 @@ type Props = {
   lessons: StudentLesson[]
   subjectId: string
   courseId: string
-  assessmentsHref: string
 }
 
 type ActiveVideo = {
@@ -24,7 +23,7 @@ function toPreviewUrl(url: string): string | null {
   return `https://drive.google.com/file/d/${match[1]}/preview`
 }
 
-export function LessonPlayer({ lessons, subjectId, courseId, assessmentsHref }: Props) {
+export function LessonPlayer({ lessons, subjectId, courseId }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null)
 
@@ -140,15 +139,6 @@ export function LessonPlayer({ lessons, subjectId, courseId, assessmentsHref }: 
           )}
         </div>
 
-        {/* Assessments footer link */}
-        <div className="shrink-0 border-t border-border p-4">
-          <a
-            href={assessmentsHref}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            View Assessments →
-          </a>
-        </div>
       </aside>
 
       {/* ── Video Player ── */}

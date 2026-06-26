@@ -10,8 +10,7 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { sid } = await params
-  void sid
+  await params
   return { title: 'Subject — AQA Student' }
 }
 
@@ -23,8 +22,6 @@ export default async function StudentSubjectPage({ params }: Props) {
 
   const subject = await getStudentSubject(session.userId, sid)
   if (!subject || subject.courseId !== id) notFound()
-
-  const assessmentsHref = `/student/courses/${id}/subjects/${sid}?tab=assessments`
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -46,7 +43,6 @@ export default async function StudentSubjectPage({ params }: Props) {
         lessons={subject.lessons}
         subjectId={sid}
         courseId={id}
-        assessmentsHref={assessmentsHref}
       />
     </div>
   )
