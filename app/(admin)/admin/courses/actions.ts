@@ -38,7 +38,7 @@ const courseSchema = z.object({
     v => (v === '' || v === null || v === undefined ? undefined : v),
     z.string()
       .url('Meet link must be a valid URL.')
-      .refine(u => /^https?:\/\//i.test(u), 'Meet link must use http:// or https://.')
+      .refine(u => /^https:\/\//i.test(u), 'Meet link must use https://.')
       .optional(),
   ),
   courseDuration: z.preprocess(

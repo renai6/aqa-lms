@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Video } from "lucide-react";
 import { getPublishedCourses } from "@/lib/courses/queries";
 import type { CourseType } from "@prisma/client";
 
@@ -164,9 +164,7 @@ export default async function CoursesPage({
                         rel="noopener noreferrer"
                         className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
                       >
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                        </svg>
+                        <Video className="w-3.5 h-3.5" aria-hidden="true" />
                         Join Google Meet
                       </a>
                     )}
