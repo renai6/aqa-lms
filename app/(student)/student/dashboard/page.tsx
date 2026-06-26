@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Video } from 'lucide-react'
 import { getSession } from '@/lib/auth/session'
 import { getStudentDashboard } from '@/lib/student/queries'
 import { db } from '@/lib/db'
@@ -95,8 +96,14 @@ export default async function StudentDashboardPage() {
                 ? Math.round((e.completedLessons / e.totalLessons) * 100)
                 : 0
               return (
-                <Link key={e.id} href={'/student/courses/' + e.courseId} className="block group">
-                  <div className="h-full rounded-xl bg-white border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-200">
+                <div key={e.id} className="relative group">
+                  {/* Card overlay link — covers whole card for primary navigation */}
+                  <Link
+                    href={'/student/courses/' + e.courseId}
+                    className="absolute inset-0 z-0 rounded-xl"
+                    aria-label={e.course.title}
+                  />
+                  <div className="h-full rounded-xl bg-white border border-zinc-200 overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-zinc-300 transition-all duration-200">
                     {e.course.imageUrl ? (
                       <div className="relative h-72 w-full overflow-hidden">
                         <Image
@@ -137,9 +144,20 @@ export default async function StudentDashboardPage() {
                           {e.completedLessons} of {e.totalLessons} lessons completed
                         </p>
                       </div>
+                      {e.course.meetLink && (
+                        <a
+                          href={e.course.meetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative z-10 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                        >
+                          <Video className="w-3.5 h-3.5" aria-hidden="true" />
+                          Join Google Meet
+                        </a>
+                      )}
                     </div>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
