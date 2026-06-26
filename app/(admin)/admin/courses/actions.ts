@@ -7,7 +7,7 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import type { CourseType } from '@prisma/client'
+import type { CourseType, CourseDuration } from '@prisma/client'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -36,7 +36,10 @@ const courseSchema = z.object({
   ),
   meetLink: z.preprocess(
     v => (v === '' || v === null || v === undefined ? undefined : v),
-    z.string().url('Meet link must be a valid URL.').optional(),
+    z.string()
+      .url('Meet link must be a valid URL.')
+      .refine(u => /^https?:\/\//i.test(u), 'Meet link must use http:// or https://.')
+      .optional(),
   ),
   courseDuration: z.preprocess(
     v => (v === '' || v === null || v === undefined ? undefined : v),
@@ -79,7 +82,7 @@ export async function createCourseAction(
         passingGrade,
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
-        courseDuration: courseDuration ?? null,
+        courseDuration: (courseDuration ?? null) as CourseDuration | null,
       },
       select: { id: true },
     })
@@ -130,7 +133,7 @@ export async function updateCourseAction(
         passingGrade,
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
-        courseDuration: courseDuration ?? null,
+        courseDuration: (courseDuration ?? null) as CourseDuration | null,
       },
     })
   } catch (err) {
