@@ -36,6 +36,28 @@ export function CreateCourseForm() {
             </div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="meetLink">Google Meet Link</Label>
+            <Input id="meetLink" name="meetLink" type="url" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+            <p className="text-xs text-muted-foreground">Only applicable for Online courses.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Course Duration</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="" defaultChecked className="accent-primary" />
+                Not specified
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="SHORT" className="accent-primary" />
+                Short
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="LONG" className="accent-primary" />
+                Long
+              </label>
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="passingGrade">Passing Grade (%)</Label>
             <Input id="passingGrade" name="passingGrade" type="number" min="0" max="100" step="0.1" defaultValue="75" />
           </div>
