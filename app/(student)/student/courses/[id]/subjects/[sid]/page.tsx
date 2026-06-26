@@ -39,11 +39,13 @@ export default async function StudentSubjectPage({ params }: Props) {
       </header>
 
       {/* ── Two-panel layout ── */}
-      <LessonPlayer
-        lessons={subject.lessons}
-        subjectId={sid}
-        courseId={id}
-      />
+      <div className="flex-1 min-h-0">
+        <LessonPlayer
+          lessons={subject.lessons}
+          subjectId={sid}
+          courseId={id}
+        />
+      </div>
     </div>
   )
 }
