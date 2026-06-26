@@ -1,27 +1,29 @@
-import { Playfair_Display } from 'next/font/google'
-import Link from 'next/link'
-import Image from 'next/image'
+import { Playfair_Display } from "next/font/google";
+import Link from "next/link";
+import Image from "next/image";
 
 const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '700', '900'],
-  variable: '--font-display',
-})
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+  variable: "--font-display",
+});
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className={`min-h-screen flex ${playfair.variable}`}>
       {/* ─── LEFT BRAND PANEL ─── */}
-      <aside
-        className="hidden lg:flex w-[460px] shrink-0 flex-col relative overflow-hidden sticky top-0 h-screen"
-        style={{ backgroundColor: 'oklch(0.525 0.223 3.958)' }}
-      >
+      <aside className="hidden lg:flex w-[460px] shrink-0 flex-col relative overflow-hidden sticky top-0 h-screen bg-primary/90">
         {/* Dot-grid texture */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.16) 1.5px, transparent 1.5px)',
-            backgroundSize: '26px 26px',
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.16) 1.5px, transparent 1.5px)",
+            backgroundSize: "26px 26px",
           }}
         />
         {/* Center radial glow */}
@@ -29,30 +31,30 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0.11) 0%, transparent 68%)',
+              "radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0.11) 0%, transparent 68%)",
           }}
         />
         {/* Large decorative circle */}
         <div
           className="absolute pointer-events-none"
           style={{
-            width: '520px',
-            height: '520px',
-            borderRadius: '50%',
-            border: '1px solid rgba(255,255,255,0.08)',
-            bottom: '-120px',
-            right: '-160px',
+            width: "520px",
+            height: "520px",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.08)",
+            bottom: "-120px",
+            right: "-160px",
           }}
         />
         <div
           className="absolute pointer-events-none"
           style={{
-            width: '360px',
-            height: '360px',
-            borderRadius: '50%',
-            border: '1px solid rgba(255,255,255,0.06)',
-            bottom: '-60px',
-            right: '-100px',
+            width: "360px",
+            height: "360px",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.06)",
+            bottom: "-60px",
+            right: "-100px",
           }}
         />
 
@@ -77,11 +79,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Center: Copy */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-6">
-          <div className="w-10 h-px mb-8" style={{ backgroundColor: 'rgba(255,255,255,0.28)' }} />
+          <div
+            className="w-10 h-px mb-8"
+            style={{ backgroundColor: "rgba(255,255,255,0.28)" }}
+          />
 
           <h1
             className="text-white leading-[1.08] tracking-tight"
-            style={{ fontFamily: 'var(--font-display)', fontSize: '3.2rem', fontWeight: 700 }}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "3.2rem",
+              fontWeight: 700,
+            }}
           >
             Learn.
             <br />
@@ -93,28 +102,28 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p
             className="mt-6 leading-relaxed"
             style={{
-              color: 'rgba(255,255,255,0.62)',
-              fontSize: '0.9375rem',
-              maxWidth: '280px',
+              color: "rgba(255,255,255,0.62)",
+              fontSize: "0.9375rem",
+              maxWidth: "280px",
             }}
           >
-            Join thousands of students on a journey of knowledge and spiritual growth through our
-            structured online curriculum.
+            Join thousands of students on a journey of knowledge and spiritual
+            growth through our structured online curriculum.
           </p>
 
           {/* Geometric diamond accents */}
           <div className="mt-12 flex items-center gap-3">
             <div
               className="w-8 h-8 rotate-45"
-              style={{ border: '1.5px solid rgba(255,255,255,0.22)' }}
+              style={{ border: "1.5px solid rgba(255,255,255,0.22)" }}
             />
             <div
               className="w-5 h-5 rotate-45"
-              style={{ border: '1.5px solid rgba(255,255,255,0.16)' }}
+              style={{ border: "1.5px solid rgba(255,255,255,0.16)" }}
             />
             <div
               className="w-3 h-3 rotate-45"
-              style={{ border: '1.5px solid rgba(255,255,255,0.1)' }}
+              style={{ border: "1.5px solid rgba(255,255,255,0.1)" }}
             />
           </div>
         </div>
@@ -204,5 +213,5 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       </main>
     </div>
-  )
+  );
 }
