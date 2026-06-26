@@ -34,6 +34,14 @@ const courseSchema = z.object({
     v => (v === '' || v === null || v === undefined ? undefined : v),
     z.coerce.number().min(0, 'Tuition fee cannot be negative.').optional(),
   ),
+  meetLink: z.preprocess(
+    v => (v === '' || v === null || v === undefined ? undefined : v),
+    z.string().url('Meet link must be a valid URL.').optional(),
+  ),
+  courseDuration: z.preprocess(
+    v => (v === '' || v === null || v === undefined ? undefined : v),
+    z.enum(['SHORT', 'LONG']).optional(),
+  ),
 })
 
 export async function createCourseAction(
@@ -50,6 +58,8 @@ export async function createCourseAction(
     courseType: formData.get('courseType'),
     passingGrade: formData.get('passingGrade') ?? '75',
     tuitionFee: formData.get('tuitionFee'),
+    meetLink: formData.get('meetLink'),
+    courseDuration: formData.get('courseDuration'),
   }
 
   const result = courseSchema.safeParse(raw)
@@ -57,12 +67,20 @@ export async function createCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, courseType, passingGrade, tuitionFee } = result.data
+  const { title, description, courseType, passingGrade, tuitionFee, meetLink, courseDuration } = result.data
 
   let newCourse: { id: string }
   try {
     newCourse = await db.course.create({
-      data: { title, description: description || null, courseType: courseType as CourseType, passingGrade, tuitionFee: tuitionFee ?? null },
+      data: {
+        title,
+        description: description || null,
+        courseType: courseType as CourseType,
+        passingGrade,
+        tuitionFee: tuitionFee ?? null,
+        meetLink: meetLink ?? null,
+        courseDuration: courseDuration ?? null,
+      },
       select: { id: true },
     })
   } catch (err) {
@@ -91,6 +109,8 @@ export async function updateCourseAction(
     courseType: formData.get('courseType'),
     passingGrade: formData.get('passingGrade') ?? '75',
     tuitionFee: formData.get('tuitionFee'),
+    meetLink: formData.get('meetLink'),
+    courseDuration: formData.get('courseDuration'),
   }
 
   const result = courseSchema.safeParse(raw)
@@ -98,12 +118,20 @@ export async function updateCourseAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, courseType, passingGrade, tuitionFee } = result.data
+  const { title, description, courseType, passingGrade, tuitionFee, meetLink, courseDuration } = result.data
 
   try {
     await db.course.update({
       where: { id },
-      data: { title, description: description || null, courseType: courseType as CourseType, passingGrade, tuitionFee: tuitionFee ?? null },
+      data: {
+        title,
+        description: description || null,
+        courseType: courseType as CourseType,
+        passingGrade,
+        tuitionFee: tuitionFee ?? null,
+        meetLink: meetLink ?? null,
+        courseDuration: courseDuration ?? null,
+      },
     })
   } catch (err) {
     console.error('[updateCourse]', err)
