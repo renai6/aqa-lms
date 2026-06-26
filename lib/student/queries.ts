@@ -146,6 +146,7 @@ export type StudentCourse = {
   id: string
   title: string
   imageUrl: string | null
+  meetLink: string | null
   totalLessons: number
   completedLessons: number
   subjects: CourseSubject[]
@@ -166,6 +167,7 @@ export async function getStudentCourse(
         id: true,
         title: true,
         imageUrl: true,
+        meetLink: true,
         subjects: {
           orderBy: { order: 'asc' },
           select: {
@@ -216,7 +218,7 @@ export async function getStudentCourse(
     }
   })
 
-  return { id: course.id, title: course.title, imageUrl: course.imageUrl, totalLessons, completedLessons, subjects }
+  return { id: course.id, title: course.title, imageUrl: course.imageUrl, meetLink: course.meetLink, totalLessons, completedLessons, subjects }
 }
 
 // ─── Subject page ─────────────────────────────────────────────────────────────
