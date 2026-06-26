@@ -40,9 +40,9 @@ export function LessonPlayer({ lessons, subjectId, courseId, assessmentsHref }: 
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)]">
+    <div className="flex flex-col lg:flex-row h-full">
       {/* ── Sidebar ── */}
-      <aside className="w-full lg:w-80 shrink-0 border-r border-border flex flex-col overflow-hidden">
+      <aside className="w-full lg:w-80 shrink-0 max-h-[40vh] lg:max-h-none border-r border-border flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           {lessons.length === 0 ? (
             <p className="px-4 py-8 text-sm text-center text-muted-foreground">No lessons yet.</p>
@@ -58,13 +58,16 @@ export function LessonPlayer({ lessons, subjectId, courseId, assessmentsHref }: 
                     {/* Row header — click to expand/collapse */}
                     <button
                       onClick={() => toggleLesson(lesson.id)}
+                      aria-expanded={isOpen}
                       className={
                         'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ' +
                         (isPlaying ? 'bg-primary/5' : '')
                       }
                     >
                       {/* Completion indicator */}
-                      <span className={
+                      <span
+                        aria-label={lesson.isCompleted ? 'Completed' : `Lesson ${index + 1}`}
+                        className={
                         'flex-none w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold ' +
                         (lesson.isCompleted
                           ? 'bg-green-600 border-green-600 text-white'
