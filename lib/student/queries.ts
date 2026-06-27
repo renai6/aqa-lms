@@ -7,7 +7,7 @@ import type { DayOfWeek, AssessmentType } from '@prisma/client'
 export type DashboardEnrollment = {
   id: string
   courseId: string
-  course: { title: string; imageUrl: string | null; tuitionFee: number | null }
+  course: { title: string; imageUrl: string | null; tuitionFee: number | null; meetLink: string | null }
   paymentStatus: 'PARTIALLY_PAID' | 'FULLY_PAID'
   enrolledAt: Date
   totalLessons: number
@@ -54,6 +54,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
             title: true,
             imageUrl: true,
             tuitionFee: true,
+            meetLink: true,
             subjects: {
               select: {
                 title: true,
@@ -106,6 +107,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         title: e.course.title,
         imageUrl: e.course.imageUrl,
         tuitionFee: e.course.tuitionFee?.toNumber() ?? null,
+        meetLink: e.course.meetLink,
       },
       paymentStatus: e.paymentStatus,
       enrolledAt: e.enrolledAt,
@@ -144,6 +146,7 @@ export type StudentCourse = {
   id: string
   title: string
   imageUrl: string | null
+  meetLink: string | null
   totalLessons: number
   completedLessons: number
   subjects: CourseSubject[]
@@ -164,6 +167,7 @@ export async function getStudentCourse(
         id: true,
         title: true,
         imageUrl: true,
+        meetLink: true,
         subjects: {
           orderBy: { order: 'asc' },
           select: {
@@ -214,7 +218,7 @@ export async function getStudentCourse(
     }
   })
 
-  return { id: course.id, title: course.title, imageUrl: course.imageUrl, totalLessons, completedLessons, subjects }
+  return { id: course.id, title: course.title, imageUrl: course.imageUrl, meetLink: course.meetLink, totalLessons, completedLessons, subjects }
 }
 
 // ─── Subject page ─────────────────────────────────────────────────────────────

@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Building2 } from "lucide-react";
 
 const PARTNERS = [
-  { id: 1, label: "Partner institution 1" },
-  { id: 2, label: "Partner institution 2" },
-  { id: 3, label: "Partner institution 3" },
+  { id: 1, label: "Partner institution A", image: "/a.png" },
+  { id: 2, label: "Partner institution B", image: "/b.png" },
+  { id: 3, label: "Partner institution C", image: "/c.png" },
 ];
 
 export default function AffiliationsBanner() {
@@ -18,7 +17,7 @@ export default function AffiliationsBanner() {
       ([entry]) => {
         if (entry.isIntersecting) setVisible(true);
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -28,7 +27,8 @@ export default function AffiliationsBanner() {
     <section className="bg-primary py-10">
       <div className="max-w-7xl mx-auto px-6 text-center">
         <p className="text-primary-foreground/90 text-sm italic mb-8">
-          In affiliation with esteemed institution and partners in Islamic education
+          In affiliation with esteemed institution and partners in Islamic
+          education
         </p>
         <div ref={ref} className="flex justify-center gap-8 flex-wrap">
           {PARTNERS.map((partner, i) => (
@@ -42,8 +42,12 @@ export default function AffiliationsBanner() {
                 transform: visible ? "translateY(0)" : "translateY(16px)",
               }}
             >
-              <div className="w-20 h-20 rounded-full bg-white border-2 border-white/80 shadow-inner flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-zinc-400" />
+              <div className="flex items-center justify-center">
+                <img
+                  src={partner.image}
+                  alt={partner.label}
+                  className="w-20 h-20 rounded-full"
+                />
               </div>
             </div>
           ))}

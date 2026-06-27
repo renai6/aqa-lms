@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import type { CourseType, DayOfWeek } from '@prisma/client'
+import type { CourseType, CourseDuration, DayOfWeek } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -8,24 +8,70 @@ export type PublishedCourseRow = {
   imageUrl: string | null
   tuitionFee: number | null
   courseType: CourseType
+  meetLink: string | null
+  courseDuration: CourseDuration | null
 }
 
 export async function getPublishedCourses(type?: CourseType): Promise<PublishedCourseRow[]> {
   const rows = await db.course.findMany({
     where: { isPublished: true, ...(type ? { courseType: type } : {}) },
     orderBy: { title: 'asc' },
-    select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true, courseType: true },
+    select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true, courseType: true, meetLink: true, courseDuration: true },
   })
   return rows.map(r => ({ ...r, tuitionFee: r.tuitionFee?.toNumber() ?? null }))
+}
+
+export type PublicSubjectRow = {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  units: number
+  _count: { lessons: number }
+  schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
+}
+
+export type PublicCourseDetail = PublishedCourseRow & {
+  subjects: PublicSubjectRow[]
+}
+
+export async function getPublicCourseDetail(id: string): Promise<PublicCourseDetail | null> {
+  const raw = await db.course.findUnique({
+    where: { id, isPublished: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      tuitionFee: true,
+      courseType: true,
+      meetLink: true,
+      courseDuration: true,
+      subjects: {
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          order: true,
+          units: true,
+          _count: { select: { lessons: true } },
+          schedules: { select: { day: true, startTime: true, endTime: true } },
+        },
+      },
+    },
+  })
+  if (!raw) return null
+  return { ...raw, tuitionFee: raw.tuitionFee?.toNumber() ?? null }
 }
 
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
     where: { id },
-    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true, tuitionFee: true, courseType: true },
+    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true, tuitionFee: true, courseType: true, meetLink: true, courseDuration: true },
   })
   if (!course?.isPublished) return null
-  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl, tuitionFee: course.tuitionFee?.toNumber() ?? null, courseType: course.courseType }
+  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl, tuitionFee: course.tuitionFee?.toNumber() ?? null, courseType: course.courseType, meetLink: course.meetLink, courseDuration: course.courseDuration }
 }
 
 export type CourseRow = {
@@ -36,6 +82,8 @@ export type CourseRow = {
   isPublished: boolean
   courseType: CourseType
   passingGrade: number
+  meetLink: string | null
+  courseDuration: CourseDuration | null
   createdAt: Date
   _count: { subjects: number }
 }
@@ -58,6 +106,8 @@ export type CourseDetail = {
   courseType: CourseType
   passingGrade: number
   tuitionFee: number | null
+  meetLink: string | null
+  courseDuration: CourseDuration | null
   createdAt: Date
   updatedAt: Date
   subjects: SubjectRow[]
@@ -130,6 +180,8 @@ export async function getCourses(): Promise<CourseRow[]> {
       isPublished: true,
       courseType: true,
       passingGrade: true,
+      meetLink: true,
+      courseDuration: true,
       createdAt: true,
       _count: {
         select: { subjects: true },
@@ -150,6 +202,8 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       courseType: true,
       passingGrade: true,
       tuitionFee: true,
+      meetLink: true,
+      courseDuration: true,
       createdAt: true,
       updatedAt: true,
       subjects: {

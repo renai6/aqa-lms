@@ -2,7 +2,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Video } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { getStudentCourse } from "@/lib/student/queries";
 
@@ -65,7 +65,20 @@ export default async function StudentCoursePage({ params }: Props) {
             />
           </div>
         )}
-        <h1 className="text-2xl font-bold">{course.title}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">{course.title}</h1>
+          {course.meetLink && (
+            <a
+              href={course.meetLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 shrink-0 text-sm font-medium text-primary hover:underline"
+            >
+              <Video className="w-4 h-4" aria-hidden="true" />
+              Join Google Meet
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Overall progress */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { UserCircle2 } from "lucide-react";
 
 export default function Navbar() {
@@ -25,13 +26,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center shrink-0">
-            <span className="text-primary font-bold text-xs tracking-tight">AQA</span>
-          </div>
-          <div className="hidden sm:block leading-none">
-            <p className="text-white text-xs font-semibold tracking-wide">
-              AL-QUR&apos;AN ACADEMY
-            </p>
+          <Image
+            src="/aqa-logo.png"
+            alt="Al-Qur'an Academy"
+            width={44}
+            height={44}
+            className="h-10 w-10 rounded-full object-cover shrink-0"
+          />
+          <div className="leading-none">
+            <p className="text-white text-xs font-semibold tracking-wide">AL-QUR&apos;AN ACADEMY</p>
             <p className="text-white/50 text-[10px] tracking-widest mt-0.5">INTERNATIONAL</p>
           </div>
         </Link>

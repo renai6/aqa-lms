@@ -1,6 +1,5 @@
 import { getSession } from '@/lib/auth/session'
 import { redirect } from 'next/navigation'
-import { db } from '@/lib/db'
 import { getCheckoutCourses } from '@/lib/purchases/queries'
 import { CheckoutForm } from './checkout-form'
 
@@ -16,10 +15,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const courseIds = (ids ?? '').split(',').map((s) => s.trim()).filter(Boolean)
   if (courseIds.length === 0) redirect('/student/courses')
 
-  const [courses, user] = await Promise.all([
-    getCheckoutCourses(session.userId, courseIds),
-    db.user.findUnique({ where: { id: session.userId }, select: { studentType: true } }),
-  ])
+  const courses = await getCheckoutCourses(session.userId, courseIds)
   if (courses.length === 0) redirect('/student/courses')
 
   return (
@@ -29,7 +25,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
         Review your selection, then upload your proof of payment.
       </p>
       <div className="mt-6">
-        <CheckoutForm courses={courses} studentType={user?.studentType ?? 'OLD'} />
+        <CheckoutForm courses={courses} />
       </div>
     </div>
   )

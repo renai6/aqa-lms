@@ -1,20 +1,17 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useActionState } from 'react'
 import { createPurchaseAction } from '@/lib/purchases/actions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 import type { CheckoutCourse } from '@/lib/purchases/queries'
-import type { StudentType } from '@prisma/client'
 
-type Props = { courses: CheckoutCourse[]; studentType: StudentType }
+type Props = { courses: CheckoutCourse[] }
 
-export function CheckoutForm({ courses, studentType }: Props) {
+export function CheckoutForm({ courses }: Props) {
   const [state, formAction, isPending] = useActionState(createPurchaseAction, { error: null })
-  const isNew = studentType === 'NEW'
-  const [paymentType, setPaymentType] = useState<'FULL' | 'PARTIAL'>('FULL')
   const total = courses.reduce((s, c) => s + (c.tuitionFee ?? 0), 0)
 
   return (
@@ -38,29 +35,7 @@ export function CheckoutForm({ courses, studentType }: Props) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Payment Type</Label>
-        {isNew ? (
-          <>
-            <input type="hidden" name="paymentType" value="FULL" />
-            <div className="rounded-xl border-2 border-primary bg-primary/5 p-4 text-sm">
-              <p className="font-semibold text-foreground">Full Payment</p>
-              <p className="text-xs text-muted-foreground mt-0.5">New students are required to pay in full.</p>
-            </div>
-          </>
-        ) : (
-          <div className="flex gap-3">
-            {(['FULL', 'PARTIAL'] as const).map((p) => (
-              <label key={p} className="flex-1 cursor-pointer">
-                <input type="radio" name="paymentType" value={p} checked={paymentType === p} onChange={() => setPaymentType(p)} className="peer sr-only" />
-                <div className={['rounded-xl border-2 p-4 text-center transition-colors', paymentType === p ? 'border-primary bg-primary/5' : 'border-border bg-card'].join(' ')}>
-                  <p className="text-sm font-semibold text-foreground">{p === 'FULL' ? 'Full Payment' : 'Partial Payment'}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
+      <input type="hidden" name="paymentType" value="PARTIAL" />
 
       <div className="space-y-2">
         <Label htmlFor="amountPaid">Amount Paying Now (₱)</Label>

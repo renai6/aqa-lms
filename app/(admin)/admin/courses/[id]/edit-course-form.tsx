@@ -48,6 +48,34 @@ export function EditCourseForm({ course }: Props) {
             </div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="edit-meetLink">Google Meet Link</Label>
+            <Input
+              id="edit-meetLink"
+              name="meetLink"
+              type="url"
+              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+              defaultValue={course.meetLink ?? ''}
+            />
+            <p className="text-xs text-muted-foreground">Only applicable for Online courses.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Course Duration</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="" defaultChecked={!course.courseDuration} className="accent-primary" />
+                Not specified
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="SHORT" defaultChecked={course.courseDuration === 'SHORT'} className="accent-primary" />
+                Short
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="courseDuration" value="LONG" defaultChecked={course.courseDuration === 'LONG'} className="accent-primary" />
+                Long
+              </label>
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="edit-passingGrade">Passing Grade (%)</Label>
             <Input
               id="edit-passingGrade"
