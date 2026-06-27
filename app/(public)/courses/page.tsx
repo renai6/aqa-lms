@@ -139,7 +139,7 @@ export default async function CoursesPage({
                     {/* Duration badge */}
                     {course.courseDuration && (
                       <span className="absolute top-2 left-16 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-600 text-white">
-                        {course.courseDuration === 'SHORT' ? 'Short' : 'Long'}
+                        {course.courseDuration === "SHORT" ? "Short" : "Long"}
                       </span>
                     )}
                   </div>
@@ -156,18 +156,6 @@ export default async function CoursesPage({
                         </p>
                       )}
                     </div>
-
-                    {course.meetLink && (
-                      <a
-                        href={course.meetLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                      >
-                        <Video className="w-3.5 h-3.5" aria-hidden="true" />
-                        Join Google Meet
-                      </a>
-                    )}
 
                     <div className="mt-5">
                       {course.tuitionFee != null ? (
