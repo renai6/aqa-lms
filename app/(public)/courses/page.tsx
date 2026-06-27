@@ -172,12 +172,20 @@ export default async function CoursesPage({
                           Contact us for pricing
                         </p>
                       )}
-                      <Link
-                        href="/register"
-                        className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                      >
-                        Register to purchase
-                      </Link>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <Link
+                          href={`/courses/${course.id}`}
+                          className="inline-flex w-full items-center justify-center rounded-full border border-primary px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                        >
+                          Learn More
+                        </Link>
+                        <Link
+                          href="/register"
+                          className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                          Register to purchase
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>

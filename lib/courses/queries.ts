@@ -21,6 +21,50 @@ export async function getPublishedCourses(type?: CourseType): Promise<PublishedC
   return rows.map(r => ({ ...r, tuitionFee: r.tuitionFee?.toNumber() ?? null }))
 }
 
+export type PublicSubjectRow = {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  units: number
+  _count: { lessons: number }
+  schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
+}
+
+export type PublicCourseDetail = PublishedCourseRow & {
+  subjects: PublicSubjectRow[]
+}
+
+export async function getPublicCourseDetail(id: string): Promise<PublicCourseDetail | null> {
+  const raw = await db.course.findUnique({
+    where: { id, isPublished: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      tuitionFee: true,
+      courseType: true,
+      meetLink: true,
+      courseDuration: true,
+      subjects: {
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          order: true,
+          units: true,
+          _count: { select: { lessons: true } },
+          schedules: { select: { day: true, startTime: true, endTime: true } },
+        },
+      },
+    },
+  })
+  if (!raw) return null
+  return { ...raw, tuitionFee: raw.tuitionFee?.toNumber() ?? null }
+}
+
 export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
     where: { id },

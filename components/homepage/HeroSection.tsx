@@ -1,14 +1,25 @@
+import Image from "next/image";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Placeholder background — swap for <Image> when /hero-bg.jpg is available */}
-      <div className="absolute inset-0 bg-zinc-900" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.18),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.12),transparent_22%),linear-gradient(180deg,#020617,#080c17)]" />
+      <div className="absolute -left-16 top-24 h-60 w-60 rounded-full bg-sky-500/15 blur-3xl" />
+      <div className="absolute left-1/4 bottom-24 h-44 w-44 rounded-full bg-violet-500/10 blur-3xl" />
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/90 via-black/70 to-black/40" />
+      <div className="absolute inset-y-0 right-0 w-1/2 overflow-hidden">
+        <Image
+          src="/aqa-bldg.png"
+          alt="AQA building"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+      </div>
 
       {/* SVG grain texture */}
       <svg
@@ -57,12 +68,12 @@ export default function HeroSection() {
           >
             Explore Programs <ArrowUpRight className="w-4 h-4" />
           </Link>
-          <Link
+          {/* <Link
             href="/community"
             className="inline-flex items-center gap-2 border border-white/30 text-white rounded-full px-6 py-3 text-xs font-semibold uppercase tracking-widest transition-colors hover:bg-white/10"
           >
             Join AQA Community
-          </Link>
+          </Link> */}
         </div>
 
         <p className="mt-8 text-xs text-white/40">
