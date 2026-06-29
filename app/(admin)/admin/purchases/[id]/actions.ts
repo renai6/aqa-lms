@@ -1,58 +1,78 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { z } from 'zod'
-import type { Prisma } from '@prisma/client'
-import { db } from '@/lib/db'
-import { getSession } from '@/lib/auth/session'
-import { paymentStatusFromType } from '@/lib/purchases/payment'
-import { sendPurchaseApprovalEmail, sendPurchaseRejectionEmail } from '@/lib/purchases/email'
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import type { Prisma, PaymentStatus } from "@prisma/client";
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth/session";
+import {
+  paymentStatusFromType,
+  paymentTypeFromStatus,
+} from "@/lib/purchases/payment";
+import {
+  sendPurchaseApprovalEmail,
+  sendPurchaseRejectionEmail,
+} from "@/lib/purchases/email";
 
-type ActionState = { error: string | null; success?: boolean }
+type ActionState = { error: string | null; success?: boolean };
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) return { ok: false as const, error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') {
-    return { ok: false as const, error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+    return { ok: false as const, error: "Forbidden" };
   }
-  return { ok: true as const, userId: session.userId }
+  return { ok: true as const, userId: session.userId };
 }
 
-export async function approvePurchaseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const id = formData.get('id')
-  if (typeof id !== 'string' || !id) return { error: 'Invalid purchase ID.' }
+export async function approvePurchaseAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid purchase ID." };
 
-  const auth = await requireAdmin()
-  if (!auth.ok) return { error: auth.error }
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
 
   const purchase = await db.purchase.findUnique({
     where: { id },
     select: {
       paymentType: true,
       user: { select: { id: true, email: true, firstName: true } },
-      items: { select: { courseId: true, course: { select: { title: true } } } },
+      items: {
+        select: { courseId: true, course: { select: { title: true } } },
+      },
     },
-  })
-  if (!purchase) return { error: 'Purchase not found.' }
+  });
+  if (!purchase) return { error: "Purchase not found." };
 
-  const paymentStatus = paymentStatusFromType(purchase.paymentType)
+  const paymentStatus = paymentStatusFromType(purchase.paymentType);
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.purchase.updateMany({
-        where: { id, status: 'PENDING' },
-        data: { status: 'APPROVED', reviewedById: auth.userId, reviewedAt: new Date() },
-      })
-      if (updated.count === 0) throw new Error('ALREADY_PROCESSED')
+        where: { id, status: "PENDING" },
+        data: {
+          status: "APPROVED",
+          reviewedById: auth.userId,
+          reviewedAt: new Date(),
+        },
+      });
+      if (updated.count === 0) throw new Error("ALREADY_PROCESSED");
 
       for (const item of purchase.items) {
         const exists = await tx.enrollment.findUnique({
-          where: { userId_courseId: { userId: purchase.user.id, courseId: item.courseId } },
+          where: {
+            userId_courseId: {
+              userId: purchase.user.id,
+              courseId: item.courseId,
+            },
+          },
           select: { id: true },
-        })
-        if (exists) continue
+        });
+        if (exists) continue;
         await tx.enrollment.create({
           data: {
             userId: purchase.user.id,
@@ -60,69 +80,154 @@ export async function approvePurchaseAction(_prev: ActionState, formData: FormDa
             paymentStatus,
             purchaseId: id,
           },
-        })
+        });
       }
-    })
+    });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : ''
-    if (msg === 'ALREADY_PROCESSED') return { error: 'This purchase has already been processed.' }
-    console.error('[approvePurchase] Transaction error:', err)
-    return { error: 'A database error occurred. Please try again.' }
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "ALREADY_PROCESSED")
+      return { error: "This purchase has already been processed." };
+    console.error("[approvePurchase] Transaction error:", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/purchases')
+  revalidatePath("/admin/purchases");
 
   try {
     await sendPurchaseApprovalEmail({
       to: purchase.user.email,
       firstName: purchase.user.firstName,
       courseNames: purchase.items.map((i) => i.course.title),
-    })
+    });
   } catch (err) {
-    console.error('[approvePurchase] Email error:', err)
-    return { error: 'Purchase approved but email delivery failed. Contact the student directly.', success: true }
+    console.error("[approvePurchase] Email error:", err);
+    return {
+      error:
+        "Purchase approved but email delivery failed. Contact the student directly.",
+      success: true,
+    };
   }
 
-  redirect('/admin/purchases')
+  redirect("/admin/purchases");
 }
 
-export async function rejectPurchaseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const id = formData.get('id')
-  if (typeof id !== 'string' || !id) return { error: 'Invalid purchase ID.' }
+export async function rejectPurchaseAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid purchase ID." };
 
-  const reasonResult = z.string().min(1, 'A reason is required.').safeParse(formData.get('reason'))
-  if (!reasonResult.success) return { error: reasonResult.error.issues[0]?.message ?? 'A reason is required.' }
-  const reason = reasonResult.data
+  const reasonResult = z
+    .string()
+    .min(1, "A reason is required.")
+    .safeParse(formData.get("reason"));
+  if (!reasonResult.success)
+    return {
+      error: reasonResult.error.issues[0]?.message ?? "A reason is required.",
+    };
+  const reason = reasonResult.data;
 
-  const auth = await requireAdmin()
-  if (!auth.ok) return { error: auth.error }
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
 
   const purchase = await db.purchase.findUnique({
     where: { id },
     select: { user: { select: { email: true, firstName: true } } },
-  })
-  if (!purchase) return { error: 'Purchase not found.' }
+  });
+  if (!purchase) return { error: "Purchase not found." };
 
-  let result: { count: number }
+  let result: { count: number };
   try {
     result = await db.purchase.updateMany({
-      where: { id, status: 'PENDING' },
-      data: { status: 'REJECTED', adminRemarks: reason, reviewedById: auth.userId, reviewedAt: new Date() },
-    })
+      where: { id, status: "PENDING" },
+      data: {
+        status: "REJECTED",
+        adminRemarks: reason,
+        reviewedById: auth.userId,
+        reviewedAt: new Date(),
+      },
+    });
   } catch (err) {
-    console.error('[rejectPurchase] DB error:', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[rejectPurchase] DB error:", err);
+    return { error: "A database error occurred. Please try again." };
   }
-  if (result.count === 0) return { error: 'This purchase has already been processed.' }
+  if (result.count === 0)
+    return { error: "This purchase has already been processed." };
 
-  revalidatePath('/admin/purchases')
+  revalidatePath("/admin/purchases");
 
   try {
-    await sendPurchaseRejectionEmail({ to: purchase.user.email, firstName: purchase.user.firstName, reason })
+    await sendPurchaseRejectionEmail({
+      to: purchase.user.email,
+      firstName: purchase.user.firstName,
+      reason,
+    });
   } catch (err) {
-    console.error('[rejectPurchase] Email error:', err)
-    return { error: 'Purchase rejected but notification email failed.', success: true }
+    console.error("[rejectPurchase] Email error:", err);
+    return {
+      error: "Purchase rejected but notification email failed.",
+      success: true,
+    };
   }
 
-  redirect('/admin/purchases')
+  redirect("/admin/purchases");
+}
+
+export async function updatePaymentStatusAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid purchase ID." };
+
+  const statusResult = z
+    .enum(["PARTIALLY_PAID", "FULLY_PAID"])
+    .safeParse(formData.get("paymentStatus"));
+  if (!statusResult.success)
+    return { error: "Please select a valid payment status." };
+  const paymentStatus = statusResult.data;
+
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const purchase = await db.purchase.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      userId: true,
+      items: { select: { courseId: true } },
+      status: true,
+    },
+  });
+  if (!purchase) return { error: "Purchase not found." };
+
+  const paymentType = paymentTypeFromStatus(paymentStatus);
+
+  try {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.purchase.update({
+        where: { id },
+        data: { paymentType },
+      });
+
+      if (purchase.status === "APPROVED") {
+        const enrollmentUpdates = purchase.items.map((item) =>
+          tx.enrollment.updateMany({
+            where: { userId: purchase.userId, courseId: item.courseId },
+            data: { paymentStatus },
+          }),
+        );
+        await Promise.all(enrollmentUpdates);
+      }
+    });
+  } catch (err) {
+    console.error("[updatePaymentStatus] DB error:", err);
+    return { error: "A database error occurred. Please try again." };
+  }
+
+  revalidatePath("/admin/purchases");
+  revalidatePath(`/admin/purchases/${id}`);
+
+  return { error: null, success: true };
 }
