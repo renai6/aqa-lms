@@ -1294,9 +1294,9 @@ export default async function StudentCoursesPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Browse Courses</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Browse Programs</h1>
       <p className="text-muted-foreground text-sm mt-1">
-        Select one or more courses to purchase.
+        Select one or more programs.
       </p>
       <div className="mt-6">
         <CourseCart courses={courses} />
@@ -1390,7 +1390,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
           <p className="text-lg font-bold">₱{total.toLocaleString("en-PH")}</p>
         </div>
         <Button onClick={checkout} disabled={selected.size === 0}>
-          Proceed to checkout
+          Proceed to payment
         </Button>
       </div>
     </div>
@@ -1756,7 +1756,7 @@ export default async function StudentPurchasesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">My Purchases</h1>
         <Button asChild size="sm">
-          <Link href="/student/courses">Buy more courses</Link>
+          <Link href="/student/courses">Enroll to other courses</Link>
         </Button>
       </div>
 

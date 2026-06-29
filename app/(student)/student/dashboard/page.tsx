@@ -39,6 +39,8 @@ export default async function StudentDashboardPage() {
     }),
   ]);
 
+  console.log("enrollments", enrollments);
+
   const partialEnrollments = enrollments.filter(
     (e) => e.paymentStatus === "PARTIALLY_PAID",
   );
@@ -51,7 +53,7 @@ export default async function StudentDashboardPage() {
           Welcome{user?.firstName ? `, ${user.firstName}` : ""}!
         </h1>
         <Button asChild size="sm" className="shrink-0">
-          <Link href="/student/courses">Buy more courses</Link>
+          <Link href="/student/courses">Enroll to other courses</Link>
         </Button>
       </div>
 

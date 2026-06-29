@@ -183,7 +183,7 @@ export default async function CoursesPage({
                           href="/register"
                           className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                         >
-                          Register to purchase
+                          Register to Enroll
                         </Link>
                       </div>
                     </div>

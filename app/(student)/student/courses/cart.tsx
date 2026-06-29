@@ -44,9 +44,9 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Browse Courses</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Browse Programs</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Select one or more courses to purchase.
+            Select one or more programs.
           </p>
         </div>
         <Button
@@ -54,7 +54,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
           disabled={selected.size === 0}
           className="shrink-0"
         >
-          Proceed to checkout ({selected.size})
+          Proceed to payment ({selected.size})
         </Button>
       </div>
 
