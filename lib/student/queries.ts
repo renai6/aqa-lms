@@ -269,7 +269,7 @@ export async function getStudentSubject(
       schedules: { select: { day: true, startTime: true, endTime: true } },
       lessons: {
         orderBy: { order: 'asc' },
-        select: { id: true, title: true, description: true, order: true, materialUrl: true, recordingUrl: true },
+        select: { id: true, title: true, description: true, order: true },
       },
       assessments: {
         select: {
@@ -290,19 +290,29 @@ export async function getStudentSubject(
 
   const enrollment = await db.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: subject.courseId } },
-    select: { id: true },
+    select: { id: true, batchId: true },
   })
   if (!enrollment) return null
 
   const lessonIds = subject.lessons.map(l => l.id)
-  const completions =
+
+  const [completions, batchContents] = await Promise.all([
     lessonIds.length > 0
-      ? await db.lessonCompletion.findMany({
+      ? db.lessonCompletion.findMany({
           where: { userId, lessonId: { in: lessonIds } },
           select: { lessonId: true },
         })
-      : []
+      : Promise.resolve([]),
+    enrollment.batchId && lessonIds.length > 0
+      ? db.batchLessonContent.findMany({
+          where: { batchId: enrollment.batchId, lessonId: { in: lessonIds } },
+          select: { lessonId: true, materialUrl: true, recordingUrl: true },
+        })
+      : Promise.resolve([]),
+  ])
+
   const completedSet = new Set(completions.map(c => c.lessonId))
+  const batchContentMap = new Map(batchContents.map(bc => [bc.lessonId, bc]))
 
   return {
     id: subject.id,
@@ -311,7 +321,15 @@ export async function getStudentSubject(
     description: subject.description,
     course: subject.course,
     schedules: subject.schedules,
-    lessons: subject.lessons.map(l => ({ ...l, isCompleted: completedSet.has(l.id) })),
+    lessons: subject.lessons.map(l => {
+      const content = batchContentMap.get(l.id)
+      return {
+        ...l,
+        materialUrl: content?.materialUrl ?? null,
+        recordingUrl: content?.recordingUrl ?? null,
+        isCompleted: completedSet.has(l.id),
+      }
+    }),
     assessments: subject.assessments.map(a => {
       const scored = a.attempts.filter(att => att.score !== null)
       const bestScore = scored.length > 0 ? Math.max(...scored.map(att => att.score!)) : null

@@ -8,18 +8,12 @@ if (!connectionString) throw new Error('DIRECT_URL environment variable is not s
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 async function main() {
+  // NOTE: This script was run once to migrate data before lesson URL fields were removed.
+  // lesson.materialUrl and lesson.recordingUrl no longer exist on the Lesson model.
+  // Re-running this script will only ensure Batch 34 exists and enrollments are assigned.
   const courses = await db.course.findMany({
     where: { enrollments: { some: {} } },
-    select: {
-      id: true,
-      subjects: {
-        select: {
-          lessons: {
-            select: { id: true, materialUrl: true, recordingUrl: true },
-          },
-        },
-      },
-    },
+    select: { id: true },
   })
 
   console.log(`Found ${courses.length} courses with enrollments.`)
@@ -31,26 +25,6 @@ async function main() {
       update: { isActive: true },
     })
     console.log(`Batch 34 ready for course ${course.id} (batchId: ${batch.id})`)
-
-    const lessons = course.subjects.flatMap(s => s.lessons)
-    for (const lesson of lessons) {
-      if (lesson.materialUrl || lesson.recordingUrl) {
-        await db.batchLessonContent.upsert({
-          where: { batchId_lessonId: { batchId: batch.id, lessonId: lesson.id } },
-          create: {
-            batchId: batch.id,
-            lessonId: lesson.id,
-            materialUrl: lesson.materialUrl,
-            recordingUrl: lesson.recordingUrl,
-          },
-          update: {
-            materialUrl: lesson.materialUrl,
-            recordingUrl: lesson.recordingUrl,
-          },
-        })
-      }
-    }
-    console.log(`Migrated ${lessons.length} lessons for batch ${batch.id}`)
 
     const updated = await db.enrollment.updateMany({
       where: { courseId: course.id, batchId: null },

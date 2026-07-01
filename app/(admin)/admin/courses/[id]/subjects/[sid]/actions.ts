@@ -12,8 +12,6 @@ const lessonSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().optional(),
   order: z.coerce.number().int().min(1, 'Order must be at least 1.'),
-  materialUrl: z.string().optional(),
-  recordingUrl: z.string().optional(),
 })
 
 export async function createLessonAction(
@@ -34,8 +32,6 @@ export async function createLessonAction(
     title: formData.get('title'),
     description: formData.get('description'),
     order: formData.get('order') ?? '1',
-    materialUrl: formData.get('materialUrl'),
-    recordingUrl: formData.get('recordingUrl'),
   }
 
   const result = lessonSchema.safeParse(raw)
@@ -43,7 +39,7 @@ export async function createLessonAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, order, materialUrl, recordingUrl } = result.data
+  const { title, description, order } = result.data
 
   try {
     await db.lesson.create({
@@ -52,8 +48,6 @@ export async function createLessonAction(
         title,
         description: description || null,
         order,
-        materialUrl: materialUrl || null,
-        recordingUrl: recordingUrl || null,
       },
     })
   } catch (err) {
@@ -86,8 +80,6 @@ export async function updateLessonAction(
     title: formData.get('title'),
     description: formData.get('description'),
     order: formData.get('order') ?? '1',
-    materialUrl: formData.get('materialUrl'),
-    recordingUrl: formData.get('recordingUrl'),
   }
 
   const result = lessonSchema.safeParse(raw)
@@ -95,7 +87,7 @@ export async function updateLessonAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, order, materialUrl, recordingUrl } = result.data
+  const { title, description, order } = result.data
 
   try {
     await db.lesson.update({
@@ -104,8 +96,6 @@ export async function updateLessonAction(
         title,
         description: description || null,
         order,
-        materialUrl: materialUrl || null,
-        recordingUrl: recordingUrl || null,
       },
     })
   } catch (err) {
