@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { VerificationToken } from '@prisma/client'
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -17,12 +18,12 @@ describe('createVerificationToken', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('creates a DB record with the correct userId and type', async () => {
-    vi.mocked(db.verificationToken.create).mockResolvedValue({} as any)
+    vi.mocked(db.verificationToken.create).mockResolvedValue({} as VerificationToken)
 
     const token = await createVerificationToken('user-1', 'EMAIL_VERIFICATION')
 
     expect(typeof token).toBe('string')
-    expect(token.length).toBe(64) // 32 bytes → 64 hex chars
+    expect(token.length).toBe(64) // 32 bytes -> 64 hex chars
     expect(db.verificationToken.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -51,8 +52,7 @@ describe('verifyAndConsumeToken', () => {
       type: 'PASSWORD_RESET',
       expiresAt: new Date(Date.now() + 3600000),
       createdAt: new Date(),
-      user: {} as any,
-    } as any)
+    })
     const result = await verifyAndConsumeToken('abc', 'EMAIL_VERIFICATION')
     expect(result).toBeNull()
   })
@@ -65,8 +65,7 @@ describe('verifyAndConsumeToken', () => {
       type: 'EMAIL_VERIFICATION',
       expiresAt: new Date(Date.now() - 1000),
       createdAt: new Date(),
-      user: {} as any,
-    } as any)
+    })
     const result = await verifyAndConsumeToken('abc', 'EMAIL_VERIFICATION')
     expect(result).toBeNull()
   })
@@ -79,9 +78,8 @@ describe('verifyAndConsumeToken', () => {
       type: 'EMAIL_VERIFICATION',
       expiresAt: new Date(Date.now() + 3600000),
       createdAt: new Date(),
-      user: {} as any,
-    } as any)
-    vi.mocked(db.verificationToken.delete).mockResolvedValue({} as any)
+    })
+    vi.mocked(db.verificationToken.delete).mockResolvedValue({} as VerificationToken)
 
     const result = await verifyAndConsumeToken('abc', 'EMAIL_VERIFICATION')
 
