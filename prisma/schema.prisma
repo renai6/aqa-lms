@@ -166,6 +166,7 @@ model Course {
   enrollments   Enrollment[]
   certificates  Certificate[]
   purchaseItems PurchaseItem[]
+  batches       Batch[]
 }
 
 model Subject {
@@ -213,6 +214,35 @@ model SubjectSchedule {
   @@index([subjectId])
 }
 
+model Batch {
+  id       String  @id @default(cuid())
+  courseId String
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  number   Int
+  isActive Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  enrollments   Enrollment[]
+  lessonContent BatchLessonContent[]
+
+  @@unique([courseId, number])
+  @@index([courseId])
+}
+
+model BatchLessonContent {
+  id       String @id @default(cuid())
+  batchId  String
+  batch    Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  materialUrl  String?
+  recordingUrl String?
+
+  @@unique([batchId, lessonId])
+}
+
 model Lesson {
   id String @id @default(cuid())
 
@@ -230,7 +260,8 @@ model Lesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  completions LessonCompletion[]
+  completions  LessonCompletion[]
+  batchContent BatchLessonContent[]
 }
 
 //
@@ -255,6 +286,9 @@ model Enrollment {
 
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+
+  batchId String?
+  batch   Batch?  @relation(fields: [batchId], references: [id])
 
   @@unique([userId, courseId])
 }
