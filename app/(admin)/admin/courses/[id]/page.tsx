@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCourseById } from '@/lib/courses/queries'
+import { getActiveBatch } from '@/lib/batches/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import { EditCourseForm } from './edit-course-form'
 import { TogglePublishedButton } from './toggle-published-button'
 import { DeleteCourseButton } from './delete-course-button'
 import { CourseImageCard } from './course-image-card'
+import { StartBatchButton } from './start-batch-button'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -27,6 +29,8 @@ export default async function CourseDetailPage({ params }: Props) {
 
   const course = await getCourseById(id)
   if (!course) notFound()
+
+  const activeBatch = await getActiveBatch(course.id)
 
   return (
     <div className="p-6 space-y-6">
@@ -57,6 +61,30 @@ export default async function CourseDetailPage({ params }: Props) {
             </CardContent>
           </Card>
           <CourseImageCard courseId={course.id} imageUrl={course.imageUrl} />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-sm">
+                Batches
+                {activeBatch
+                  ? <Badge variant="outline">Batch {activeBatch.number}</Badge>
+                  : <Badge variant="destructive" className="text-xs">No Active Batch</Badge>
+                }
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {!activeBatch && (
+                <p className="text-xs text-destructive">
+                  New enrollments will have no batch until you start one.
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <StartBatchButton courseId={course.id} />
+                <Button asChild variant="ghost" size="sm">
+                  <Link href={'/admin/courses/' + course.id + '/batches'}>View all batches</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="border-destructive/30">
             <CardHeader>
               <CardTitle className="text-destructive text-sm">Danger Zone</CardTitle>

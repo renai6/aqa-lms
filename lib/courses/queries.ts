@@ -118,8 +118,6 @@ export type LessonRow = {
   title: string
   description: string | null
   order: number
-  materialUrl: string | null
-  recordingUrl: string | null
 }
 
 export type TeacherRow = {
@@ -156,8 +154,6 @@ export type LessonDetail = {
   title: string
   description: string | null
   order: number
-  materialUrl: string | null
-  recordingUrl: string | null
   updatedAt: Date
   subject: { id: string; title: string; courseId: string; course: { title: string } }
 }
@@ -250,8 +246,6 @@ export async function getSubjectById(sid: string): Promise<SubjectDetail | null>
           title: true,
           description: true,
           order: true,
-          materialUrl: true,
-          recordingUrl: true,
         },
       },
       teachers: {
@@ -289,8 +283,6 @@ export async function getLessonById(lid: string): Promise<LessonDetail | null> {
       title: true,
       description: true,
       order: true,
-      materialUrl: true,
-      recordingUrl: true,
       updatedAt: true,
       subject: {
         select: {

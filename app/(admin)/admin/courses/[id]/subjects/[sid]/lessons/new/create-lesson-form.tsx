@@ -32,16 +32,6 @@ export function CreateLessonForm({ subjectId, courseId, nextOrder }: Props) {
             <Label htmlFor="lesson-description">Description</Label>
             <Textarea id="lesson-description" name="description" rows={2} placeholder="Brief description..." />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="lesson-material">Material URL</Label>
-              <Input id="lesson-material" name="materialUrl" type="text" placeholder="Google Drive link..." />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lesson-recording">Recording URL</Label>
-              <Input id="lesson-recording" name="recordingUrl" type="text" placeholder="Google Drive link..." />
-            </div>
-          </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Creating...' : 'Create Lesson'}

@@ -32,14 +32,6 @@ export function EditLessonForm({ lesson, courseId }: Props) {
             <Label htmlFor="lesson-order">Order</Label>
             <Input id="lesson-order" name="order" type="number" min="1" defaultValue={String(lesson.order)} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="lesson-material">Material URL</Label>
-            <Input id="lesson-material" name="materialUrl" type="text" placeholder="Google Drive link..." defaultValue={lesson.materialUrl ?? ''} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lesson-recording">Recording URL</Label>
-            <Input id="lesson-recording" name="recordingUrl" type="text" placeholder="Google Drive link..." defaultValue={lesson.recordingUrl ?? ''} />
-          </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           {state.success && !state.error && <p className="text-sm text-green-600">Saved successfully.</p>}
           <Button type="submit" disabled={isPending}>

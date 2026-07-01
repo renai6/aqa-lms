@@ -73,12 +73,17 @@ export async function approvePurchaseAction(
           select: { id: true },
         });
         if (exists) continue;
+        const activeBatch = await tx.batch.findFirst({
+          where: { courseId: item.courseId, isActive: true },
+          select: { id: true },
+        });
         await tx.enrollment.create({
           data: {
             userId: purchase.user.id,
             courseId: item.courseId,
             paymentStatus,
             purchaseId: id,
+            batchId: activeBatch?.id ?? null,
           },
         });
       }

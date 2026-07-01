@@ -31,14 +31,19 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
-export const createPurchaseSchema = z.object({
-  courseIds: z.array(z.string().min(1)).min(1, "Select at least one course."),
-  paymentType: z.enum(["PARTIAL", "FULL"], {
-    error: "Payment type is required.",
-  }),
-  amountPaid: z.coerce.number().positive("Amount paid must be greater than 0."),
-  studentType: z.enum(["NEW", "OLD"]),
-});
+export const createPurchaseSchema = z
+  .object({
+    courseIds: z.array(z.string().min(1)).min(1, "Select at least one course."),
+    paymentType: z.enum(["PARTIAL", "FULL"], {
+      error: "Payment type is required.",
+    }),
+    amountPaid: z.coerce.number().positive("Amount paid must be greater than 0."),
+    studentType: z.enum(["NEW", "OLD"]),
+  })
+  .refine((d) => !(d.studentType === "NEW" && d.paymentType === "PARTIAL"), {
+    message: "New students must pay in full.",
+    path: ["paymentType"],
+  });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
