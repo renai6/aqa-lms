@@ -1,9 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSubjectById, getTeachers } from '@/lib/courses/queries'
+import { getSubjectAssessments } from '@/lib/assessments/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ChevronRight } from 'lucide-react'
 import { EditSubjectForm } from './edit-subject-form'
 import { DeleteSubjectButton } from './delete-subject-button'
@@ -24,7 +26,11 @@ export default async function SubjectDetailPage({ params }: Props) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [subject, allTeachers] = await Promise.all([getSubjectById(sid), getTeachers()])
+  const [subject, allTeachers, assessments] = await Promise.all([
+    getSubjectById(sid),
+    getTeachers(),
+    getSubjectAssessments(sid),
+  ])
   if (!subject) notFound()
   if (subject.courseId !== id) notFound()
 
@@ -104,6 +110,63 @@ export default async function SubjectDetailPage({ params }: Props) {
                         courseId={id}
                         lessonTitle={lesson.title}
                       />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Assessments</h2>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/assessments'}>Manage all</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/assessments/new'}>New Assessment</Link>
+            </Button>
+          </div>
+        </div>
+
+        {assessments.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+            No assessments yet.
+          </p>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted">
+                <tr>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Title</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Type</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Status</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Questions</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Attempts</th>
+                  <th scope="col" aria-label="Actions" className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {assessments.map(a => (
+                  <tr key={a.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 font-medium">{a.title}</td>
+                    <td className="px-4 py-3"><Badge variant="outline">{a.type}</Badge></td>
+                    <td className="px-4 py-3">
+                      {a.isPublished
+                        ? <Badge variant="default">Published</Badge>
+                        : <Badge variant="secondary">Draft</Badge>}
+                    </td>
+                    <td className="px-4 py-3">{a.questionCount}</td>
+                    <td className="px-4 py-3">{a.attemptCount}</td>
+                    <td className="px-4 py-3">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={'/admin/courses/' + id + '/subjects/' + sid + '/assessments/' + a.id}>
+                          Edit <ChevronRight className="w-3 h-3 ml-1" aria-hidden="true" />
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}

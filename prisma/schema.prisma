@@ -346,6 +346,7 @@ model Assessment {
   subjectId String
   subject   Subject @relation(fields: [subjectId], references: [id])
 
+  isPublished  Boolean @default(false)
   durationMins Int?
   passingScore Float?
   maxAttempts  Int?

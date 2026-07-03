@@ -272,6 +272,7 @@ export async function getStudentSubject(
         select: { id: true, title: true, description: true, order: true },
       },
       assessments: {
+        where: { isPublished: true },
         select: {
           id: true,
           title: true,
