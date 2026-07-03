@@ -26,8 +26,7 @@ const DAY_LABEL: Record<string, string> = {
   SUNDAY: "Sun",
 };
 
-export async function generateMetadata({ params }: Props) {
-  const { id } = await params;
+export function generateMetadata() {
   return { title: "Course — AQA Student" };
 }
 

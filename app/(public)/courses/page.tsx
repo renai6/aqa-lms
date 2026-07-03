@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Video } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { getPublishedCourses } from "@/lib/courses/queries";
 import type { CourseType } from "@prisma/client";
 
