@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Video } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { getStudentDashboard } from "@/lib/student/queries";
 import { db } from "@/lib/db";

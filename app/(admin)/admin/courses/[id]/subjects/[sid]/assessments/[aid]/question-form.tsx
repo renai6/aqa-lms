@@ -30,7 +30,12 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
     ? question.options.findIndex(o => o.isCorrect)
     : -1
 
+  // All fields are controlled: React 19 resets uncontrolled inputs after a
+  // form action completes, which would wipe user input when the action errors.
   const [type, setType] = useState<string>(initialType)
+  const [questionText, setQuestionText] = useState(question?.questionText ?? '')
+  const [points, setPoints] = useState(String(question?.points ?? 1))
+  const [tfCorrect, setTfCorrect] = useState(initialTfCorrect)
   const [options, setOptions] = useState<string[]>(
     initialType === 'MULTIPLE_CHOICE' ? initialOptions : ['', '']
   )
@@ -101,7 +106,8 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
               required
               rows={3}
               disabled={locked}
-              defaultValue={question?.questionText ?? ''}
+              value={questionText}
+              onChange={e => setQuestionText(e.target.value)}
               placeholder="Enter the question..."
             />
           </div>
@@ -115,7 +121,8 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
               min="1"
               required
               disabled={locked}
-              defaultValue={question?.points ?? 1}
+              value={points}
+              onChange={e => setPoints(e.target.value)}
               className="max-w-[120px]"
             />
           </div>
@@ -173,7 +180,8 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
                     type="radio"
                     name="tfCorrect"
                     value="true"
-                    defaultChecked={initialTfCorrect === 'true'}
+                    checked={tfCorrect === 'true'}
+                    onChange={() => setTfCorrect('true')}
                     disabled={locked}
                     className="accent-primary"
                   />
@@ -184,7 +192,8 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
                     type="radio"
                     name="tfCorrect"
                     value="false"
-                    defaultChecked={initialTfCorrect === 'false'}
+                    checked={tfCorrect === 'false'}
+                    onChange={() => setTfCorrect('false')}
                     disabled={locked}
                     className="accent-primary"
                   />
