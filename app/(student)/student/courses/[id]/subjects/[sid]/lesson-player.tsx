@@ -105,21 +105,22 @@ export function LessonPlayer({ lessons, assessments, subjectId, courseId }: Prop
 
                     {/* Expanded content */}
                     {isOpen && (
-                      <div className="px-4 pb-4 pt-1 space-y-2 bg-muted/30">
+                      <div className="pl-12 pr-4 pb-4 pt-1 flex flex-col gap-3 bg-muted/30 border-l-2 border-primary/20">
                         {lesson.description && (
-                          <p className="text-xs text-muted-foreground">{lesson.description}</p>
+                          <p className="text-xs leading-relaxed text-muted-foreground">{lesson.description}</p>
                         )}
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-col divide-y divide-border/60 rounded-md border border-border/60 bg-background/40 overflow-hidden">
                           {lesson.materialUrl && (
                             <a
                               href={lesson.materialUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/60"
                             >
-                              <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                              Download Material
+                              <Download className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
+                              <span className="flex-1">Download Material</span>
+                              <ChevronRight className="flex-none w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
                             </a>
                           )}
 
@@ -127,17 +128,24 @@ export function LessonPlayer({ lessons, assessments, subjectId, courseId }: Prop
                             <button
                               onClick={() => playRecording(lesson)}
                               className={
-                                'inline-flex items-center gap-1.5 text-xs font-medium transition-colors ' +
-                                (isPlaying ? 'text-primary font-semibold' : 'text-primary hover:underline')
+                                'flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-left transition-colors hover:bg-muted/60 ' +
+                                (isPlaying ? 'text-primary' : 'text-foreground')
                               }
                             >
-                              <PlayCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                              {isPlaying ? 'Now Playing' : 'Watch Recording'}
+                              <PlayCircle className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
+                              <span className="flex-1">{isPlaying ? 'Now Playing' : 'Watch Recording'}</span>
+                              {isPlaying && (
+                                <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">Live</span>
+                              )}
                             </button>
+                          )}
+
+                          {!lesson.materialUrl && !previewUrl && (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">No materials available.</p>
                           )}
                         </div>
 
-                        <div className="pt-1">
+                        <div>
                           <LessonDoneButton
                             lessonId={lesson.id}
                             subjectId={subjectId}
