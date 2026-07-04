@@ -1,24 +1,34 @@
 // app/(student)/student/courses/[id]/subjects/[sid]/lesson-done-button.tsx
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import { markLessonDoneAction, unmarkLessonDoneAction } from './actions'
-import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { useActionState } from "react";
+import { markLessonDoneAction, unmarkLessonDoneAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Check, RotateCw } from "lucide-react";
 
 type Props = {
-  lessonId: string
-  subjectId: string
-  courseId: string
-  isCompleted: boolean
-}
+  lessonId: string;
+  subjectId: string;
+  courseId: string;
+  isCompleted: boolean;
+};
 
-export function LessonDoneButton({ lessonId, subjectId, courseId, isCompleted }: Props) {
-  const [, markAction, markPending] = useActionState(markLessonDoneAction, { error: null })
-  const [, unmarkAction, unmarkPending] = useActionState(unmarkLessonDoneAction, { error: null })
+export function LessonDoneButton({
+  lessonId,
+  subjectId,
+  courseId,
+  isCompleted,
+}: Props) {
+  const [, markAction, markPending] = useActionState(markLessonDoneAction, {
+    error: null,
+  });
+  const [, unmarkAction, unmarkPending] = useActionState(
+    unmarkLessonDoneAction,
+    { error: null },
+  );
 
-  const isPending = markPending || unmarkPending
-  const formAction = isCompleted ? unmarkAction : markAction
+  const isPending = markPending || unmarkPending;
+  const formAction = isCompleted ? unmarkAction : markAction;
 
   return (
     <form action={formAction}>
@@ -27,17 +37,23 @@ export function LessonDoneButton({ lessonId, subjectId, courseId, isCompleted }:
       <input type="hidden" name="courseId" value={courseId} />
       <Button
         type="submit"
-        variant={isCompleted ? 'default' : 'outline'}
+        variant={isCompleted ? "default" : "ghost"}
         size="sm"
         disabled={isPending}
-        className={isCompleted ? 'bg-green-600 hover:bg-green-700' : ''}
+        className={
+          isCompleted
+            ? "bg-green-600 hover:bg-green-700 rounded-xl p-2"
+            : "w-full p-4"
+        }
       >
         {isCompleted ? (
-          <><Check className="w-3 h-3 mr-1" aria-hidden="true" />Done</>
+          <>
+            <RotateCw className="w-3 h-3" aria-hidden="true" />
+          </>
         ) : (
-          'Mark as Done'
+          "Mark as Done"
         )}
       </Button>
     </form>
-  )
+  );
 }
