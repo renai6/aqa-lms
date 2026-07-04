@@ -39,6 +39,14 @@ const DAY_NUM: Record<string, number> = {
   FRIDAY: 5, SATURDAY: 6, SUNDAY: 7,
 }
 
+// One relevant attempt per assessment (D4): prefer a completed (non-in-progress)
+// attempt over an in-progress one, otherwise the most recent.
+function pickRelevantAttempt<T extends { status: AttemptStatus }>(
+  attempts: T[],
+): T | null {
+  return attempts.find(a => a.status !== 'IN_PROGRESS') ?? attempts[0] ?? null
+}
+
 export async function getStudentDashboard(userId: string): Promise<StudentDashboard> {
   const [enrollmentsRaw, announcements] = await Promise.all([
     db.enrollment.findMany({
@@ -138,6 +146,9 @@ export type CourseSubject = {
   order: number
   totalLessons: number
   completedLessons: number
+  totalAssessments: number
+  gradedAssessments: number
+  averageScore: number | null
   schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
   teachers: Array<{ firstName: string; lastName: string }>
 }
@@ -180,6 +191,17 @@ export async function getStudentCourse(
             teachers: {
               select: { user: { select: { firstName: true, lastName: true } } },
             },
+            assessments: {
+              where: { isPublished: true },
+              select: {
+                id: true,
+                attempts: {
+                  where: { userId },
+                  orderBy: { startedAt: 'desc' },
+                  select: { status: true, score: true },
+                },
+              },
+            },
           },
         },
       },
@@ -206,6 +228,19 @@ export async function getStudentCourse(
     const subDone = s.lessons.filter(l => completedSet.has(l.id)).length
     totalLessons += subTotal
     completedLessons += subDone
+
+    // Equal-weight average of each assessment's graded percentage.
+    let scoreSum = 0
+    let gradedAssessments = 0
+    for (const a of s.assessments) {
+      const attempt = pickRelevantAttempt(a.attempts)
+      if (attempt && attempt.score != null) {
+        scoreSum += attempt.score
+        gradedAssessments++
+      }
+    }
+    const averageScore = gradedAssessments > 0 ? scoreSum / gradedAssessments : null
+
     return {
       id: s.id,
       title: s.title,
@@ -213,6 +248,9 @@ export async function getStudentCourse(
       order: s.order,
       totalLessons: subTotal,
       completedLessons: subDone,
+      totalAssessments: s.assessments.length,
+      gradedAssessments,
+      averageScore,
       schedules: s.schedules,
       teachers: s.teachers.map(t => ({ firstName: t.user.firstName, lastName: t.user.lastName })),
     }
@@ -342,10 +380,7 @@ export async function getStudentSubject(
       }
     }),
     assessments: subject.assessments.map(a => {
-      // One completed attempt per assessment (D4); prefer a completed attempt
-      // over an in-progress one, otherwise the most recent.
-      const completed = a.attempts.find(att => att.status !== 'IN_PROGRESS')
-      const attempt = completed ?? a.attempts[0] ?? null
+      const attempt = pickRelevantAttempt(a.attempts)
       return {
         id: a.id,
         title: a.title,
@@ -408,8 +443,7 @@ export async function getStudentAssessmentLaunch(
   })
   if (!enrollment) return null
 
-  const completed = assessment.attempts.find(att => att.status !== 'IN_PROGRESS')
-  const attempt = completed ?? assessment.attempts[0] ?? null
+  const attempt = pickRelevantAttempt(assessment.attempts)
 
   return {
     id: assessment.id,
