@@ -26,6 +26,12 @@ const DAY_LABEL: Record<string, string> = {
   SUNDAY: "Sun",
 };
 
+function gradeBadgeClass(score: number): string {
+  if (score >= 75) return "bg-emerald-100 text-emerald-700";
+  if (score >= 50) return "bg-amber-100 text-amber-700";
+  return "bg-rose-100 text-rose-700";
+}
+
 export function generateMetadata() {
   return { title: "Course — AQA Student" };
 }
@@ -154,17 +160,41 @@ export default async function StudentCoursePage({ params }: Props) {
                       </p>
                     )}
                   </div>
-                  <div className="shrink-0 w-28 space-y-1 text-right">
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: subPct + "%" }}
-                      />
+                  <div className="shrink-0 w-32 space-y-3 text-right">
+                    {subject.totalAssessments > 0 && (
+                      <div className="space-y-1">
+                        {subject.averageScore != null ? (
+                          <span
+                            className={
+                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold " +
+                              gradeBadgeClass(subject.averageScore)
+                            }
+                          >
+                            {Math.round(subject.averageScore)}% grade
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                            Not graded yet
+                          </span>
+                        )}
+                        <p className="text-[11px] text-muted-foreground">
+                          graded {subject.gradedAssessments} /{" "}
+                          {subject.totalAssessments}
+                        </p>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: subPct + "%" }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {subject.completedLessons} / {subject.totalLessons}{" "}
+                        lessons
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {subject.completedLessons} / {subject.totalLessons}{" "}
-                      lessons
-                    </p>
                   </div>
                 </Link>
               );
