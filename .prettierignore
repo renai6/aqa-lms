@@ -1,0 +1,16 @@
+# Build output
+.next/
+out/
+build/
+dist/
+
+# Dependencies
+node_modules/
+
+# Generated
+prisma/generated/
+pnpm-lock.yaml
+
+# Misc
+coverage/
+*.log
