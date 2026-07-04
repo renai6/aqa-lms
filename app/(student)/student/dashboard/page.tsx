@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Video } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
-import { getStudentDashboard } from "@/lib/student/queries";
+import { getStudentDashboard, getStudentRecentResults } from "@/lib/student/queries";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 
@@ -31,15 +30,15 @@ export default async function StudentDashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [{ enrollments, schedules, announcements }, user] = await Promise.all([
-    getStudentDashboard(session.userId),
-    db.user.findUnique({
-      where: { id: session.userId },
-      select: { firstName: true },
-    }),
-  ]);
-
-  console.log("enrollments", enrollments);
+  const [{ enrollments, schedules, announcements }, recentResults, user] =
+    await Promise.all([
+      getStudentDashboard(session.userId),
+      getStudentRecentResults(session.userId),
+      db.user.findUnique({
+        where: { id: session.userId },
+        select: { firstName: true },
+      }),
+    ]);
 
   const partialEnrollments = enrollments.filter(
     (e) => e.paymentStatus === "PARTIALLY_PAID",
@@ -180,6 +179,65 @@ export default async function StudentDashboardPage() {
           </div>
         )}
       </section>
+
+      {/* Recent Results */}
+      {recentResults.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+            Recent Results
+          </h2>
+          <div className="space-y-2">
+            {recentResults.map((r) => {
+              const awaiting = r.score === null;
+              const passed =
+                r.score !== null && r.passingScore !== null
+                  ? r.score >= r.passingScore
+                  : null;
+              return (
+                <Link
+                  key={r.attemptId}
+                  href={`/student/courses/${r.courseId}/subjects/${r.subjectId}/assessments/${r.assessmentId}/attempt/${r.attemptId}`}
+                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4 hover:border-zinc-300 hover:shadow-md transition-all"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-zinc-900 truncate">
+                      {r.assessmentTitle}
+                    </p>
+                    <p className="text-xs text-zinc-400 mt-0.5 truncate">
+                      {r.courseTitle} · {r.subjectTitle}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-3">
+                    {awaiting ? (
+                      <span className="text-xs font-medium text-amber-600">
+                        Awaiting grading
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                          {Math.round(r.score as number)}%
+                        </span>
+                        {passed !== null && (
+                          <span
+                            className={[
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border",
+                              passed
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-red-50 text-red-700 border-red-200",
+                            ].join(" ")}
+                          >
+                            {passed ? "Pass" : "Fail"}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Payment summary */}
       {partialEnrollments.length > 0 && (

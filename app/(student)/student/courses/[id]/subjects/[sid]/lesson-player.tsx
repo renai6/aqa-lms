@@ -1,14 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Download, PlayCircle, Check, VideoOff } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronRight, Download, PlayCircle, Check, VideoOff, ClipboardList, ChevronsRight } from 'lucide-react'
 import { LessonDoneButton } from './lesson-done-button'
-import type { StudentLesson } from '@/lib/student/queries'
+import type { StudentLesson, StudentAssessment } from '@/lib/student/queries'
 
 type Props = {
   lessons: StudentLesson[]
+  assessments: StudentAssessment[]
   subjectId: string
   courseId: string
+}
+
+function assessmentStatus(a: StudentAssessment): { label: string; className: string } {
+  if (a.attempt == null) {
+    return { label: 'Take', className: 'bg-primary/10 text-primary' }
+  }
+  if (a.attempt.status === 'IN_PROGRESS') {
+    return { label: 'Resume', className: 'bg-amber-100 text-amber-700' }
+  }
+  if (a.attempt.score == null) {
+    return { label: 'Pending', className: 'bg-amber-100 text-amber-700' }
+  }
+  return { label: Math.round(a.attempt.score) + '%', className: 'bg-emerald-100 text-emerald-700' }
 }
 
 type ActiveVideo = {
@@ -23,7 +38,7 @@ function toPreviewUrl(url: string): string | null {
   return `https://drive.google.com/file/d/${match[1]}/preview`
 }
 
-export function LessonPlayer({ lessons, subjectId, courseId }: Props) {
+export function LessonPlayer({ lessons, assessments, subjectId, courseId }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null)
 
@@ -136,6 +151,45 @@ export function LessonPlayer({ lessons, subjectId, courseId }: Props) {
                 )
               })}
             </ul>
+          )}
+
+          {/* ── Assessments ── */}
+          {assessments.length > 0 && (
+            <div className="border-t border-border">
+              <p className="px-4 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Assessments
+              </p>
+              <ul className="divide-y divide-border">
+                {assessments.map(a => {
+                  const status = assessmentStatus(a)
+                  return (
+                    <li key={a.id}>
+                      <Link
+                        href={`/student/courses/${courseId}/subjects/${subjectId}/assessments/${a.id}`}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                      >
+                        <ClipboardList className="flex-none w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-medium truncate">{a.title}</span>
+                          <span className="block text-[11px] text-muted-foreground uppercase tracking-wide">
+                            {a.type}
+                          </span>
+                        </span>
+                        <span
+                          className={
+                            'flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold ' +
+                            status.className
+                          }
+                        >
+                          {status.label}
+                        </span>
+                        <ChevronsRight className="flex-none w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           )}
         </div>
 

@@ -1,6 +1,6 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
-import type { DayOfWeek, AssessmentType } from '@prisma/client'
+import type { DayOfWeek, AssessmentType, QuestionType, AttemptStatus } from '@prisma/client'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -233,14 +233,21 @@ export type StudentLesson = {
   isCompleted: boolean
 }
 
+export type StudentAttemptSummary = {
+  id: string
+  status: AttemptStatus
+  score: number | null
+}
+
 export type StudentAssessment = {
   id: string
   title: string
   type: AssessmentType
   durationMins: number | null
-  maxAttempts: number | null
-  bestScore: number | null
-  attemptCount: number
+  passingScore: number | null
+  questionCount: number
+  // The student's single relevant attempt (in-progress or completed), if any.
+  attempt: StudentAttemptSummary | null
 }
 
 export type StudentSubject = {
@@ -273,15 +280,18 @@ export async function getStudentSubject(
       },
       assessments: {
         where: { isPublished: true },
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           title: true,
           type: true,
           durationMins: true,
-          maxAttempts: true,
+          passingScore: true,
+          _count: { select: { questions: true } },
           attempts: {
             where: { userId },
-            select: { score: true },
+            orderBy: { startedAt: 'desc' },
+            select: { id: true, status: true, score: true },
           },
         },
       },
@@ -332,17 +342,273 @@ export async function getStudentSubject(
       }
     }),
     assessments: subject.assessments.map(a => {
-      const scored = a.attempts.filter(att => att.score !== null)
-      const bestScore = scored.length > 0 ? Math.max(...scored.map(att => att.score!)) : null
+      // One completed attempt per assessment (D4); prefer a completed attempt
+      // over an in-progress one, otherwise the most recent.
+      const completed = a.attempts.find(att => att.status !== 'IN_PROGRESS')
+      const attempt = completed ?? a.attempts[0] ?? null
       return {
         id: a.id,
         title: a.title,
         type: a.type,
         durationMins: a.durationMins,
-        maxAttempts: a.maxAttempts,
-        bestScore,
-        attemptCount: a.attempts.length,
+        passingScore: a.passingScore,
+        questionCount: a._count.questions,
+        attempt: attempt
+          ? { id: attempt.id, status: attempt.status, score: attempt.score }
+          : null,
       }
     }),
   }
+}
+
+// ─── Assessment launch ────────────────────────────────────────────────────────
+
+export type AssessmentLaunch = {
+  id: string
+  title: string
+  type: AssessmentType
+  durationMins: number | null
+  passingScore: number | null
+  questionCount: number
+  courseId: string
+  subjectId: string
+  subjectTitle: string
+  attempt: StudentAttemptSummary | null
+}
+
+// Loads an assessment the student may take. Enforces publish + enrollment
+// (D8) and returns null when either is not satisfied.
+export async function getStudentAssessmentLaunch(
+  userId: string,
+  aid: string,
+): Promise<AssessmentLaunch | null> {
+  const assessment = await db.assessment.findFirst({
+    where: { id: aid, isPublished: true },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      durationMins: true,
+      passingScore: true,
+      subjectId: true,
+      subject: { select: { title: true, courseId: true } },
+      _count: { select: { questions: true } },
+      attempts: {
+        where: { userId },
+        orderBy: { startedAt: 'desc' },
+        select: { id: true, status: true, score: true },
+      },
+    },
+  })
+  if (!assessment) return null
+
+  const enrollment = await db.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId: assessment.subject.courseId } },
+    select: { id: true },
+  })
+  if (!enrollment) return null
+
+  const completed = assessment.attempts.find(att => att.status !== 'IN_PROGRESS')
+  const attempt = completed ?? assessment.attempts[0] ?? null
+
+  return {
+    id: assessment.id,
+    title: assessment.title,
+    type: assessment.type,
+    durationMins: assessment.durationMins,
+    passingScore: assessment.passingScore,
+    questionCount: assessment._count.questions,
+    courseId: assessment.subject.courseId,
+    subjectId: assessment.subjectId,
+    subjectTitle: assessment.subject.title,
+    attempt: attempt
+      ? { id: attempt.id, status: attempt.status, score: attempt.score }
+      : null,
+  }
+}
+
+// ─── Attempt (take + review) ──────────────────────────────────────────────────
+
+export type AttemptOption = {
+  id: string
+  label: string
+  value: string
+  isCorrect: boolean
+}
+
+export type AttemptQuestion = {
+  id: string
+  questionText: string
+  type: QuestionType
+  points: number
+  order: number
+  options: AttemptOption[]
+  // The student's answer for this question (null while in progress / unanswered).
+  answer: string | null
+  isCorrect: boolean | null
+  pointsEarned: number | null
+}
+
+export type StudentAttempt = {
+  id: string
+  status: AttemptStatus
+  score: number | null
+  startedAt: Date
+  submittedAt: Date | null
+  assessmentId: string
+  assessmentTitle: string
+  type: AssessmentType
+  durationMins: number | null
+  passingScore: number | null
+  courseId: string
+  subjectId: string
+  subjectTitle: string
+  questions: AttemptQuestion[]
+}
+
+// Loads a single attempt owned by the student. Enforces publish + ownership
+// + enrollment (D8) and returns null otherwise.
+export async function getStudentAttempt(
+  userId: string,
+  attemptId: string,
+): Promise<StudentAttempt | null> {
+  const attempt = await db.assessmentAttempt.findFirst({
+    where: { id: attemptId, userId, assessment: { isPublished: true } },
+    select: {
+      id: true,
+      status: true,
+      score: true,
+      startedAt: true,
+      submittedAt: true,
+      assessmentId: true,
+      assessment: {
+        select: {
+          title: true,
+          type: true,
+          durationMins: true,
+          passingScore: true,
+          subjectId: true,
+          subject: { select: { title: true, courseId: true } },
+          questions: {
+            orderBy: { order: 'asc' },
+            select: {
+              id: true,
+              questionText: true,
+              type: true,
+              points: true,
+              order: true,
+              options: { select: { id: true, label: true, value: true, isCorrect: true } },
+            },
+          },
+        },
+      },
+      answers: {
+        select: { questionId: true, answer: true, isCorrect: true, pointsEarned: true },
+      },
+    },
+  })
+  if (!attempt) return null
+
+  const enrollment = await db.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId: attempt.assessment.subject.courseId } },
+    select: { id: true },
+  })
+  if (!enrollment) return null
+
+  const answerMap = new Map(attempt.answers.map(a => [a.questionId, a]))
+  const questions = attempt.assessment.questions.map(q => {
+    const a = answerMap.get(q.id)
+    return {
+      id: q.id,
+      questionText: q.questionText,
+      type: q.type,
+      points: q.points,
+      order: q.order,
+      options: q.options,
+      answer: a?.answer ?? null,
+      isCorrect: a?.isCorrect ?? null,
+      pointsEarned: a?.pointsEarned ?? null,
+    }
+  })
+
+  return {
+    id: attempt.id,
+    status: attempt.status,
+    score: attempt.score,
+    startedAt: attempt.startedAt,
+    submittedAt: attempt.submittedAt,
+    assessmentId: attempt.assessmentId,
+    assessmentTitle: attempt.assessment.title,
+    type: attempt.assessment.type,
+    durationMins: attempt.assessment.durationMins,
+    passingScore: attempt.assessment.passingScore,
+    courseId: attempt.assessment.subject.courseId,
+    subjectId: attempt.assessment.subjectId,
+    subjectTitle: attempt.assessment.subject.title,
+    questions,
+  }
+}
+
+// ─── Dashboard recent results ─────────────────────────────────────────────────
+
+export type RecentResult = {
+  attemptId: string
+  assessmentId: string
+  assessmentTitle: string
+  courseId: string
+  subjectId: string
+  subjectTitle: string
+  courseTitle: string
+  status: AttemptStatus
+  score: number | null
+  passingScore: number | null
+  submittedAt: Date | null
+}
+
+// Latest completed (SUBMITTED/GRADED) attempts across the student's enrolled
+// courses. Filters on publish (D8).
+export async function getStudentRecentResults(
+  userId: string,
+  limit = 5,
+): Promise<RecentResult[]> {
+  const attempts = await db.assessmentAttempt.findMany({
+    where: {
+      userId,
+      status: { in: ['SUBMITTED', 'GRADED'] },
+      assessment: { isPublished: true },
+    },
+    orderBy: { submittedAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      status: true,
+      score: true,
+      submittedAt: true,
+      assessmentId: true,
+      assessment: {
+        select: {
+          title: true,
+          passingScore: true,
+          subjectId: true,
+          subject: {
+            select: { title: true, courseId: true, course: { select: { title: true } } },
+          },
+        },
+      },
+    },
+  })
+
+  return attempts.map(a => ({
+    attemptId: a.id,
+    assessmentId: a.assessmentId,
+    assessmentTitle: a.assessment.title,
+    courseId: a.assessment.subject.courseId,
+    subjectId: a.assessment.subjectId,
+    subjectTitle: a.assessment.subject.title,
+    courseTitle: a.assessment.subject.course.title,
+    status: a.status,
+    score: a.score,
+    passingScore: a.assessment.passingScore,
+    submittedAt: a.submittedAt,
+  }))
 }

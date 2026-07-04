@@ -42,6 +42,7 @@ export default async function StudentSubjectPage({ params }: Props) {
       <div className="flex-1 min-h-0">
         <LessonPlayer
           lessons={subject.lessons}
+          assessments={subject.assessments}
           subjectId={sid}
           courseId={id}
         />
