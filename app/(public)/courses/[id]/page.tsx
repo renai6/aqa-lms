@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, Monitor, MapPin } from "lucide-react";
 import { getPublicCourseDetail } from "@/lib/courses/queries";
+import Eyebrow from "@/components/homepage/Eyebrow";
+import Reveal from "@/components/homepage/Reveal";
+import GeoMotif from "@/components/homepage/GeoMotif";
 
 const DAY_LABEL: Record<string, string> = {
   MONDAY: "Mon",
@@ -43,49 +46,39 @@ export default async function PublicCourseDetailPage({ params }: Props) {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative bg-zinc-900 min-h-[70vh] flex items-center pt-20 pb-0 overflow-hidden">
-        {/* Grain overlay */}
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full opacity-[0.04] pointer-events-none mix-blend-overlay"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <filter id="grain-detail">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.65"
-              numOctaves="3"
-              stitchTiles="stitch"
-            />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#grain-detail)" />
-        </svg>
+      <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-black pt-28 pb-0">
+        {/* Base wash + depth */}
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,#0b0b0f_0%,#070709_45%,#000000_100%)]" />
+        <div className="pointer-events-none absolute -top-40 -left-24 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.12),transparent_65%)]" />
 
-        {/* Crimson glow */}
+        {/* Fine grid lines */}
         <div
-          className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full pointer-events-none"
+          className="absolute inset-0 opacity-60"
           style={{
-            background:
-              "radial-gradient(circle, oklch(0.525 0.223 3.958 / 0.25) 0%, transparent 70%)",
+            backgroundImage:
+              "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
           }}
         />
 
-        <div className="relative z-10 max-w-6xl mx-auto w-full px-4 sm:px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* Geometric motif */}
+        <GeoMotif className="-top-20 right-[-6rem]" />
+
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 sm:px-10 lg:grid-cols-2 lg:px-16">
           {/* Left: course image */}
-          <div className="order-2 lg:order-1">
+          <div className="order-2 animate-[fadeUp_0.9s_0.3s_both] lg:order-1">
             {course.imageUrl && /^https?:\/\//.test(course.imageUrl) ? (
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 aspect-[4/3]">
+              <div className="ring-gold/15 relative aspect-[4/3] overflow-hidden shadow-2xl ring-1">
                 <img
                   src={course.imageUrl}
                   alt={course.title}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               </div>
             ) : (
-              <div className="rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 aspect-[4/3] bg-zinc-800 flex items-center justify-center">
-                <span className="text-7xl font-bold text-primary">
+              <div className="bg-primary ring-gold/15 flex aspect-[4/3] items-center justify-center overflow-hidden shadow-2xl ring-1">
+                <span className="text-gold text-7xl font-semibold">
                   {course.title.charAt(0)}
                 </span>
               </div>
@@ -93,58 +86,58 @@ export default async function PublicCourseDetailPage({ params }: Props) {
           </div>
 
           {/* Right: course info card */}
-          <div className="order-1 lg:order-2 flex flex-col gap-6">
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
+          <div className="order-1 flex flex-col gap-6 lg:order-2">
+            <div className="space-y-3">
+              <div className="flex animate-[fadeUp_0.9s_0.1s_both] flex-wrap gap-2">
                 <span
                   className={[
-                    "text-[11px] font-bold px-2.5 py-1 rounded-full",
+                    "px-3 py-1 text-[11px] font-bold tracking-[0.12em] uppercase ring-1",
                     course.courseType === "ONLINE"
-                      ? "bg-blue-600/20 text-blue-300 ring-1 ring-blue-500/30"
-                      : "bg-amber-600/20 text-amber-300 ring-1 ring-amber-500/30",
+                      ? "bg-gold/15 text-gold ring-gold/30"
+                      : "bg-white/10 text-white/80 ring-white/20",
                   ].join(" ")}
                 >
                   {course.courseType === "ONLINE" ? (
-                    <span className="flex items-center gap-1">
-                      <Monitor className="w-3 h-3" />
+                    <span className="flex items-center gap-1.5">
+                      <Monitor className="h-3 w-3" />
                       Online
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3" />
                       On-Site
                     </span>
                   )}
                 </span>
                 {course.courseDuration && (
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-zinc-700/50 text-zinc-300 ring-1 ring-zinc-600/30 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 text-[11px] font-bold tracking-[0.12em] text-white/60 uppercase ring-1 ring-white/10">
+                    <Clock className="h-3 w-3" />
                     {course.courseDuration === "SHORT"
                       ? "Short Course"
                       : "Long Course"}
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
+              <h1 className="animate-[fadeUp_0.9s_0.2s_both] text-3xl leading-tight font-semibold text-white sm:text-4xl lg:text-5xl">
                 {course.title}
               </h1>
               {course.description && (
-                <p className="text-white/70 text-base leading-relaxed">
+                <p className="animate-[fadeUp_0.9s_0.3s_both] text-base leading-relaxed font-light text-white/70">
                   {course.description}
                 </p>
               )}
             </div>
 
             {/* Stats row */}
-            <div className="flex flex-wrap gap-4 text-sm text-white/60">
+            <div className="flex animate-[fadeUp_0.9s_0.4s_both] flex-wrap gap-5 text-sm text-white/60">
               <span className="flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-primary" />
+                <BookOpen className="text-gold h-4 w-4" />
                 {course.subjects.length}{" "}
                 {course.subjects.length === 1 ? "Subject" : "Subjects"}
               </span>
               {totalLessons > 0 && (
                 <span className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 flex items-center justify-center text-primary font-bold text-xs">
+                  <span className="text-gold flex h-4 w-4 items-center justify-center text-xs font-bold">
                     ▶
                   </span>
                   {totalLessons} Lessons
@@ -153,13 +146,13 @@ export default async function PublicCourseDetailPage({ params }: Props) {
             </div>
 
             {/* Price + CTA */}
-            <div className="rounded-xl bg-white/5 ring-1 ring-white/10 p-5 space-y-4">
+            <div className="ring-gold/15 animate-[fadeUp_0.9s_0.5s_both] space-y-4 bg-white/5 p-6 ring-1">
               {course.tuitionFee != null ? (
                 <div>
                   <p className="text-2xl font-bold text-white">
                     ₱{course.tuitionFee.toLocaleString("en-PH")}
                   </p>
-                  <p className="text-xs text-white/50 mt-0.5">
+                  <p className="mt-0.5 text-xs text-white/50">
                     Flexible installments available
                   </p>
                 </div>
@@ -170,13 +163,13 @@ export default async function PublicCourseDetailPage({ params }: Props) {
               )}
               <Link
                 href="/register"
-                className="block w-full text-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                className="bg-gold text-primary hover:bg-gold-soft block w-full px-6 py-3 text-center text-[11px] font-bold tracking-[0.18em] uppercase transition-colors"
               >
                 Enroll Now
               </Link>
               <Link
                 href="/login"
-                className="block w-full text-center rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/5"
+                className="block w-full border border-white/20 px-6 py-3 text-center text-[11px] font-semibold tracking-[0.15em] text-white/80 uppercase transition-colors hover:border-white/50 hover:text-white"
               >
                 Already enrolled? Log in
               </Link>
@@ -186,129 +179,131 @@ export default async function PublicCourseDetailPage({ params }: Props) {
       </section>
 
       {/* ── Curriculum tagline band ── */}
-      <section className="bg-primary py-10 px-4">
-        <p className="max-w-3xl mx-auto text-center text-white font-semibold text-base sm:text-lg leading-relaxed">
-          AQA Curriculum is published from the Saudi Ministry curriculum &amp;
-          designed for comprehensive Islamic education.
-        </p>
+      <section className="bg-primary relative overflow-hidden px-6 py-14">
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(236,204,105,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.04) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
+        <Reveal className="relative mx-auto max-w-3xl text-center">
+          <Eyebrow center className="mb-5">
+            AQA Curriculum
+          </Eyebrow>
+          <p className="text-lg leading-relaxed font-light text-white/85 sm:text-xl">
+            AQA Curriculum is published from the Saudi Ministry curriculum &amp;
+            designed for comprehensive Islamic education.
+          </p>
+        </Reveal>
       </section>
 
       {/* ── Subjects ── */}
       {course.subjects.length > 0 && (
-        <section className="bg-background py-20 px-4">
-          <div className="max-w-5xl mx-auto space-y-4">
-            <h2 className="text-center text-2xl font-bold text-foreground mb-12">
-              Course Subjects
-            </h2>
+        <section className="bg-[#f4f7fa] px-6 py-24">
+          <div className="mx-auto max-w-5xl">
+            <Reveal className="mb-16 text-center">
+              <Eyebrow center className="mb-3">
+                Curriculum
+              </Eyebrow>
+              <h2 className="text-primary text-3xl font-semibold tracking-tight sm:text-4xl">
+                Course Subjects
+              </h2>
+            </Reveal>
 
             <div className="space-y-16">
               {course.subjects.map((subject, index) => {
                 const isEven = index % 2 === 0;
                 return (
-                  <div
-                    key={subject.id}
-                    className={[
-                      "flex flex-col gap-8 items-center",
-                      isEven ? "lg:flex-row" : "lg:flex-row-reverse",
-                    ].join(" ")}
-                  >
-                    {/* Visual block */}
-                    <div className="w-full lg:w-2/5 shrink-0">
-                      <div className="rounded-2xl overflow-hidden shadow-lg aspect-[4/3] relative bg-zinc-900 flex items-center justify-center">
-                        {/* Decorative background pattern */}
-                        <div
-                          className="absolute inset-0"
-                          style={{
-                            background: `linear-gradient(135deg, oklch(0.525 0.223 3.958 / 0.15) 0%, oklch(0.3 0.1 3.958 / 0.3) 100%)`,
-                          }}
-                        />
-                        <svg
-                          aria-hidden="true"
-                          className="absolute inset-0 h-full w-full opacity-[0.06] pointer-events-none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <filter id={`grain-subj-${index}`}>
-                            <feTurbulence
-                              type="fractalNoise"
-                              baseFrequency="0.65"
-                              numOctaves="3"
-                              stitchTiles="stitch"
-                            />
-                            <feColorMatrix type="saturate" values="0" />
-                          </filter>
-                          <rect
-                            width="100%"
-                            height="100%"
-                            filter={`url(#grain-subj-${index})`}
+                  <Reveal key={subject.id}>
+                    <div
+                      className={[
+                        "flex flex-col items-center gap-8",
+                        isEven ? "lg:flex-row" : "lg:flex-row-reverse",
+                      ].join(" ")}
+                    >
+                      {/* Visual block */}
+                      <div className="w-full shrink-0 lg:w-2/5">
+                        <div className="bg-primary relative flex aspect-[4/3] items-center justify-center overflow-hidden shadow-xl">
+                          {/* Grid + glow */}
+                          <div
+                            className="absolute inset-0 opacity-60"
+                            style={{
+                              backgroundImage:
+                                "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+                              backgroundSize: "40px 40px",
+                            }}
                           />
-                        </svg>
-                        <div className="relative z-10 text-center px-6">
-                          <span className="block text-6xl font-black text-white/20 leading-none select-none">
-                            {String(index + 1).padStart(2, "0")}
+                          <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.15),transparent_65%)]" />
+                          <div className="relative z-10 px-6 text-center">
+                            <span className="text-gold/25 block text-6xl leading-none font-bold select-none">
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <p className="mt-2 text-lg leading-tight font-semibold text-white/85">
+                              {subject.title}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Text block */}
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-gold text-[10px] font-bold tracking-[0.28em] uppercase">
+                            Subject {index + 1}
                           </span>
-                          <p className="mt-2 text-lg font-bold text-white/80 leading-tight">
-                            {subject.title}
+                          <div className="bg-gold/30 h-px flex-1" />
+                        </div>
+                        <h3 className="text-primary text-xl font-semibold sm:text-2xl">
+                          {subject.title}
+                        </h3>
+                        {subject.description ? (
+                          <p className="text-muted-foreground leading-relaxed font-light">
+                            {subject.description}
                           </p>
+                        ) : (
+                          <p className="text-muted-foreground/60 text-sm italic">
+                            No description available.
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {subject.gender && (
+                            <span className="border-gold/40 text-primary bg-gold/10 flex items-center gap-1.5 border px-3 py-1 text-xs font-semibold">
+                              {subject.gender === "MALE"
+                                ? "Brothers only"
+                                : "Sisters only"}
+                            </span>
+                          )}
+                          {subject._count.lessons > 0 && (
+                            <span className="bg-muted text-muted-foreground flex items-center gap-1.5 px-3 py-1 text-xs font-medium">
+                              <BookOpen className="h-3.5 w-3.5" />
+                              {subject._count.lessons}{" "}
+                              {subject._count.lessons === 1
+                                ? "Lesson"
+                                : "Lessons"}
+                            </span>
+                          )}
+                          {subject.units > 0 && (
+                            <span className="bg-muted text-muted-foreground flex items-center gap-1.5 px-3 py-1 text-xs font-medium">
+                              {subject.units}{" "}
+                              {subject.units === 1 ? "Unit" : "Units"}
+                            </span>
+                          )}
+                          {subject.schedules.map((s, si) => (
+                            <span
+                              key={si}
+                              className="border-primary/20 text-primary bg-primary/5 flex items-center gap-1.5 border px-3 py-1 text-xs font-medium"
+                            >
+                              <Clock className="h-3 w-3" />
+                              {DAY_LABEL[s.day]} {formatTime(s.startTime)}–
+                              {formatTime(s.endTime)}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
-
-                    {/* Text block */}
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-primary uppercase tracking-widest">
-                          Subject {index + 1}
-                        </span>
-                        <div className="h-px flex-1 bg-border" />
-                      </div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-foreground">
-                        {subject.title}
-                      </h3>
-                      {subject.description ? (
-                        <p className="text-muted-foreground leading-relaxed">
-                          {subject.description}
-                        </p>
-                      ) : (
-                        <p className="text-muted-foreground/60 italic text-sm">
-                          No description available.
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {subject.gender && (
-                          <span className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-xs font-semibold text-primary">
-                            {subject.gender === 'MALE'
-                              ? 'Brothers only'
-                              : 'Sisters only'}
-                          </span>
-                        )}
-                        {subject._count.lessons > 0 && (
-                          <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            {subject._count.lessons}{" "}
-                            {subject._count.lessons === 1
-                              ? "Lesson"
-                              : "Lessons"}
-                          </span>
-                        )}
-                        {subject.units > 0 && (
-                          <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                            {subject.units}{" "}
-                            {subject.units === 1 ? "Unit" : "Units"}
-                          </span>
-                        )}
-                        {subject.schedules.map((s, si) => (
-                          <span
-                            key={si}
-                            className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-medium text-primary"
-                          >
-                            <Clock className="w-3 h-3" />
-                            {DAY_LABEL[s.day]} {formatTime(s.startTime)}–
-                            {formatTime(s.endTime)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  </Reveal>
                 );
               })}
             </div>
@@ -317,19 +312,23 @@ export default async function PublicCourseDetailPage({ params }: Props) {
       )}
 
       {/* ── Bottom CTA ── */}
-      <section className="bg-zinc-900 py-16 px-4">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <p className="text-white/70 text-sm leading-relaxed">
+      <section className="relative overflow-hidden bg-black px-6 py-20">
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,#0b0b0f_0%,#070709_50%,#000000_100%)]" />
+        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.1),transparent_65%)]" />
+        <GeoMotif className="-top-40 left-[-8rem]" />
+        <Reveal className="relative mx-auto max-w-2xl space-y-7 text-center">
+          <Eyebrow center>Begin Your Journey</Eyebrow>
+          <p className="text-sm leading-relaxed font-light text-white/70">
             All courses support flexible installment payments. Pay a partial
             amount upfront and complete your tuition over time.
           </p>
           <Link
             href="/register"
-            className="inline-flex items-center rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="bg-gold text-primary hover:bg-gold-soft inline-flex items-center px-8 py-3.5 text-[11px] font-bold tracking-[0.2em] uppercase transition-all hover:-translate-y-0.5"
           >
             Register to Enroll
           </Link>
-        </div>
+        </Reveal>
       </section>
     </>
   );
