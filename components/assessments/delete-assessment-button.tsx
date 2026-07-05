@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { deleteAssessmentAction } from '../actions'
+import { deleteAssessmentAction } from '@/lib/assessments/actions'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -18,22 +18,38 @@ import {
 type Props = {
   assessmentId: string
   subjectId: string
-  courseId: string
+  basePath: string
   assessmentTitle: string
   attemptCount: number
 }
 
-export function DeleteAssessmentButton({ assessmentId, subjectId, courseId, assessmentTitle, attemptCount }: Props) {
-  const [state, formAction, isPending] = useActionState(deleteAssessmentAction, { error: null })
+export function DeleteAssessmentButton({
+  assessmentId,
+  subjectId,
+  basePath,
+  assessmentTitle,
+  attemptCount,
+}: Props) {
+  const [state, formAction, isPending] = useActionState(
+    deleteAssessmentAction,
+    { error: null },
+  )
 
   if (attemptCount > 0) {
     return (
       <div className="space-y-2">
-        <Button variant="outline" size="sm" disabled className="w-full text-muted-foreground">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled
+          className="text-muted-foreground w-full"
+        >
           Delete Assessment
         </Button>
-        <p className="text-xs text-muted-foreground">
-          Cannot delete - {attemptCount} student {attemptCount === 1 ? 'attempt' : 'attempts'} exist. Unpublish instead.
+        <p className="text-muted-foreground text-xs">
+          Cannot delete - {attemptCount} student{' '}
+          {attemptCount === 1 ? 'attempt' : 'attempts'} exist. Unpublish
+          instead.
         </p>
       </div>
     )
@@ -47,14 +63,16 @@ export function DeleteAssessmentButton({ assessmentId, subjectId, courseId, asse
             variant="outline"
             size="sm"
             disabled={isPending}
-            className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
+            className="text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5 w-full"
           >
             Delete Assessment
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &quot;{assessmentTitle}&quot;?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete &quot;{assessmentTitle}&quot;?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               This assessment and all its questions will be permanently deleted.
             </AlertDialogDescription>
@@ -64,7 +82,7 @@ export function DeleteAssessmentButton({ assessmentId, subjectId, courseId, asse
             <form action={formAction}>
               <input type="hidden" name="id" value={assessmentId} />
               <input type="hidden" name="subjectId" value={subjectId} />
-              <input type="hidden" name="courseId" value={courseId} />
+              <input type="hidden" name="basePath" value={basePath} />
               <AlertDialogAction
                 type="submit"
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -75,7 +93,7 @@ export function DeleteAssessmentButton({ assessmentId, subjectId, courseId, asse
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
     </div>
   )
 }

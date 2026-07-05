@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getAssessmentById } from '@/lib/assessments/queries'
 import { getSession } from '@/lib/auth/session'
-import { QuestionForm } from '../../question-form'
+import { QuestionForm } from '@/components/assessments/question-form'
 
 type Props = { params: Promise<{ id: string; sid: string; aid: string }> }
 
@@ -43,7 +43,7 @@ export default async function NewQuestionPage({ params }: Props) {
       <QuestionForm
         assessmentId={aid}
         subjectId={sid}
-        courseId={id}
+        basePath={'/admin/courses/' + id + '/subjects/' + sid}
         locked={locked}
       />
     </div>

@@ -434,6 +434,9 @@ model StudentAnswer {
   // Null for essays until manually graded
   isCorrect    Boolean?
   pointsEarned Float?
+
+  // Teacher's written feedback on an essay answer (null until graded / for objective questions)
+  feedback String?
 }
 
 //

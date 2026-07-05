@@ -1,7 +1,10 @@
 'use client'
 
 import { useActionState } from 'react'
-import { moveQuestionAction, deleteQuestionAction } from '../actions'
+import {
+  moveQuestionAction,
+  deleteQuestionAction,
+} from '@/lib/assessments/actions'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -20,7 +23,7 @@ type Props = {
   questionId: string
   assessmentId: string
   subjectId: string
-  courseId: string
+  basePath: string
   questionText: string
   isFirst: boolean
   isLast: boolean
@@ -31,21 +34,27 @@ export function QuestionRowActions({
   questionId,
   assessmentId,
   subjectId,
-  courseId,
+  basePath,
   questionText,
   isFirst,
   isLast,
   locked,
 }: Props) {
-  const [moveState, moveAction, movePending] = useActionState(moveQuestionAction, { error: null })
-  const [deleteState, deleteAction, deletePending] = useActionState(deleteQuestionAction, { error: null })
+  const [moveState, moveAction, movePending] = useActionState(
+    moveQuestionAction,
+    { error: null },
+  )
+  const [deleteState, deleteAction, deletePending] = useActionState(
+    deleteQuestionAction,
+    { error: null },
+  )
 
   const hidden = (
     <>
       <input type="hidden" name="id" value={questionId} />
       <input type="hidden" name="assessmentId" value={assessmentId} />
       <input type="hidden" name="subjectId" value={subjectId} />
-      <input type="hidden" name="courseId" value={courseId} />
+      <input type="hidden" name="basePath" value={basePath} />
     </>
   )
 
@@ -62,7 +71,7 @@ export function QuestionRowActions({
           disabled={isFirst || movePending}
           aria-label="Move up"
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronUp className="h-4 w-4" />
         </Button>
       </form>
       <form action={moveAction}>
@@ -76,7 +85,7 @@ export function QuestionRowActions({
           disabled={isLast || movePending}
           aria-label="Move down"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="h-4 w-4" />
         </Button>
       </form>
       {!locked && (
@@ -95,7 +104,11 @@ export function QuestionRowActions({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this question?</AlertDialogTitle>
               <AlertDialogDescription>
-                &quot;{questionText.length > 80 ? questionText.slice(0, 80) + '…' : questionText}&quot; will be permanently deleted.
+                &quot;
+                {questionText.length > 80
+                  ? questionText.slice(0, 80) + '…'
+                  : questionText}
+                &quot; will be permanently deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -114,7 +127,9 @@ export function QuestionRowActions({
         </AlertDialog>
       )}
       {(moveState.error || deleteState.error) && (
-        <p className="text-xs text-destructive">{moveState.error ?? deleteState.error}</p>
+        <p className="text-destructive text-xs">
+          {moveState.error ?? deleteState.error}
+        </p>
       )}
     </div>
   )
