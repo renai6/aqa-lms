@@ -384,16 +384,16 @@ import { describe, it, expect } from "vitest";
 import { registerSchema, createPurchaseSchema } from "@/lib/purchases/schema";
 
 const validRegister = {
-  firstName: "Juan",
-  lastName: "dela Cruz",
-  email: "juan@example.com",
+  firstName: "Ahmad",
+  lastName: "Bayan",
+  email: "ahmad@example.com",
   password: "Password123",
   confirmPassword: "Password123",
   gender: "MALE",
   address: "123 Main St",
   contactNumber: "09171234567",
-  facebookName: "Juan dela Cruz",
-  facebookLink: "https://facebook.com/juan",
+  facebookName: "Ahmad Bayan",
+  facebookLink: "https://facebook.com/ahmad",
   studentType: "NEW",
 };
 
@@ -664,12 +664,12 @@ export const metadata = { title: "Create an account — Al-Qur'an Academy" };
 
 export default function RegisterPage() {
   return (
-    <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-3 w-full max-w-[420px] duration-500">
       <div className="mb-8">
-        <h2 className="text-[1.75rem] font-bold text-foreground tracking-tight leading-none">
+        <h2 className="text-foreground text-[1.75rem] leading-none font-bold tracking-tight">
           Create your account
         </h2>
-        <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
           Register to browse and purchase courses.
         </p>
       </div>
@@ -708,16 +708,11 @@ export function RegisterForm() {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" name="firstName" required placeholder="Juan" />
+          <Input id="firstName" name="firstName" required placeholder="Ahmad" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input
-            id="lastName"
-            name="lastName"
-            required
-            placeholder="dela Cruz"
-          />
+          <Input id="lastName" name="lastName" required placeholder="Bayan" />
         </div>
       </div>
 
@@ -728,7 +723,7 @@ export function RegisterForm() {
           name="email"
           type="email"
           required
-          placeholder="juan@example.com"
+          placeholder="ahmad@example.com"
         />
       </div>
 
@@ -778,7 +773,7 @@ export function RegisterForm() {
                     : "border-border bg-card",
                 ].join(" ")}
               >
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-foreground text-sm font-semibold">
                   {g === "MALE" ? "Male" : "Female"}
                 </p>
               </div>
@@ -815,7 +810,7 @@ export function RegisterForm() {
           id="facebookName"
           name="facebookName"
           required
-          placeholder="Juan dela Cruz"
+          placeholder="Ahmad Bayan"
         />
       </div>
 
@@ -851,7 +846,7 @@ export function RegisterForm() {
                     : "border-border bg-card",
                 ].join(" ")}
               >
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-foreground text-sm font-semibold">
                   {t === "NEW" ? "New Student" : "Old Student"}
                 </p>
               </div>
@@ -863,9 +858,9 @@ export function RegisterForm() {
       {state.error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="border-destructive/30 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {state.error}
         </div>
       )}
@@ -873,12 +868,12 @@ export function RegisterForm() {
       <Button
         type="submit"
         disabled={isPending}
-        className="w-full h-11 font-semibold"
+        className="h-11 w-full font-semibold"
       >
         {isPending ? "Creating account…" : "Create account"}
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
         <Link
           href="/login"
@@ -980,12 +975,12 @@ git commit -m "feat(auth): route /register through auth middleware"
 Replace the existing `{/* Divider + course CTA (mobile) */}` block at the bottom of the login form with a register link visible on all viewports:
 
 ```tsx
-<div className="mt-7 pt-6 border-t border-border/60 text-center">
-  <p className="text-sm text-muted-foreground">
+<div className="border-border/60 mt-7 border-t pt-6 text-center">
+  <p className="text-muted-foreground text-sm">
     New here?{" "}
     <Link
       href="/register"
-      className="font-medium hover:opacity-80 transition-opacity"
+      className="font-medium transition-opacity hover:opacity-80"
       style={{ color: "oklch(0.525 0.223 3.958)" }}
     >
       Create an account
@@ -1293,9 +1288,9 @@ export default async function StudentCoursesPage() {
   const courses = await getPurchasableCourses(session.userId);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Browse Programs</h1>
-      <p className="text-muted-foreground text-sm mt-1">
+      <p className="text-muted-foreground mt-1 text-sm">
         Select one or more programs.
       </p>
       <div className="mt-6">
@@ -1342,7 +1337,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
 
   if (courses.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         No courses available to purchase right now.
       </p>
     );
@@ -1360,19 +1355,19 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
               onClick={() => toggle(c.id)}
               aria-pressed={isSel}
               className={[
-                "text-left rounded-xl border-2 p-4 transition-colors",
+                "rounded-xl border-2 p-4 text-left transition-colors",
                 isSel
                   ? "border-primary bg-primary/5"
                   : "border-border bg-card hover:border-primary/40",
               ].join(" ")}
             >
-              <p className="font-semibold text-foreground">{c.title}</p>
+              <p className="text-foreground font-semibold">{c.title}</p>
               {c.description && (
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                   {c.description}
                 </p>
               )}
-              <p className="mt-2 text-sm font-bold text-foreground">
+              <p className="text-foreground mt-2 text-sm font-bold">
                 {c.tuitionFee != null
                   ? `₱${c.tuitionFee.toLocaleString("en-PH")}`
                   : "Contact us for pricing"}
@@ -1382,9 +1377,9 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
         })}
       </div>
 
-      <div className="sticky bottom-0 flex items-center justify-between rounded-xl border bg-card p-4">
+      <div className="bg-card sticky bottom-0 flex items-center justify-between rounded-xl border p-4">
         <div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {selected.size} selected
           </p>
           <p className="text-lg font-bold">₱{total.toLocaleString("en-PH")}</p>
@@ -1452,9 +1447,9 @@ export default async function CheckoutPage({ searchParams }: Props) {
   if (courses.length === 0) redirect("/student/courses");
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-8">
+    <div className="mx-auto max-w-xl px-6 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
-      <p className="text-muted-foreground text-sm mt-1">
+      <p className="text-muted-foreground mt-1 text-sm">
         Review your selection, then upload your proof of payment.
       </p>
       <div className="mt-6">
@@ -1499,10 +1494,10 @@ export function CheckoutForm({ courses, studentType }: Props) {
         <input key={c.id} type="hidden" name="courseIds" value={c.id} />
       ))}
 
-      <div className="rounded-xl border bg-card divide-y">
+      <div className="bg-card divide-y rounded-xl border">
         {courses.map((c) => (
           <div key={c.id} className="flex items-center justify-between p-4">
-            <span className="font-medium text-foreground">{c.title}</span>
+            <span className="text-foreground font-medium">{c.title}</span>
             <span className="text-sm font-semibold">
               {c.tuitionFee != null
                 ? `₱${c.tuitionFee.toLocaleString("en-PH")}`
@@ -1511,7 +1506,7 @@ export function CheckoutForm({ courses, studentType }: Props) {
           </div>
         ))}
         <div className="flex items-center justify-between p-4">
-          <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
             Total
           </span>
           <span className="text-lg font-bold">
@@ -1525,9 +1520,9 @@ export function CheckoutForm({ courses, studentType }: Props) {
         {isNew ? (
           <>
             <input type="hidden" name="paymentType" value="FULL" />
-            <div className="rounded-xl border-2 border-primary bg-primary/5 p-4 text-sm">
-              <p className="font-semibold text-foreground">Full Payment</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+            <div className="border-primary bg-primary/5 rounded-xl border-2 p-4 text-sm">
+              <p className="text-foreground font-semibold">Full Payment</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
                 New students are required to pay in full.
               </p>
             </div>
@@ -1552,7 +1547,7 @@ export function CheckoutForm({ courses, studentType }: Props) {
                       : "border-border bg-card",
                   ].join(" ")}
                 >
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-foreground text-sm font-semibold">
                     {p === "FULL" ? "Full Payment" : "Partial Payment"}
                   </p>
                 </div>
@@ -1584,7 +1579,7 @@ export function CheckoutForm({ courses, studentType }: Props) {
           accept="image/jpeg,image/png,image/webp"
           required
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           JPG, PNG, or WEBP. Max 5MB.
         </p>
       </div>
@@ -1592,9 +1587,9 @@ export function CheckoutForm({ courses, studentType }: Props) {
       {state.error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="border-destructive/30 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {state.error}
         </div>
       )}
@@ -1602,7 +1597,7 @@ export function CheckoutForm({ courses, studentType }: Props) {
       <Button
         type="submit"
         disabled={isPending}
-        className="w-full h-11 font-semibold"
+        className="h-11 w-full font-semibold"
       >
         {isPending ? "Submitting…" : "Submit purchase"}
       </Button>
@@ -1752,7 +1747,7 @@ export default async function StudentPurchasesPage() {
   const purchases = await getStudentPurchases(session.userId);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">My Purchases</h1>
         <Button asChild size="sm">
@@ -1761,19 +1756,19 @@ export default async function StudentPurchasesPage() {
       </div>
 
       {purchases.length === 0 ? (
-        <p className="mt-8 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-8 text-sm">
           You haven&apos;t purchased any courses yet.
         </p>
       ) : (
         <div className="mt-6 space-y-4">
           {purchases.map((p) => (
-            <div key={p.id} className="rounded-xl border bg-card p-4">
+            <div key={p.id} className="bg-card rounded-xl border p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {dateFmt.format(p.createdAt)}
                 </p>
                 {p.status === "APPROVED" ? (
-                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                  <Badge className="border-green-200 bg-green-100 text-green-800">
                     Approved
                   </Badge>
                 ) : p.status === "REJECTED" ? (
@@ -1782,19 +1777,19 @@ export default async function StudentPurchasesPage() {
                   <Badge variant="outline">Pending review</Badge>
                 )}
               </div>
-              <ul className="mt-2 list-disc pl-5 text-sm text-foreground">
+              <ul className="text-foreground mt-2 list-disc pl-5 text-sm">
                 {p.courses.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
               </ul>
               <p className="mt-2 text-sm font-semibold">
                 ₱{p.amountPaid.toLocaleString("en-PH")}{" "}
-                <span className="font-normal text-muted-foreground">
+                <span className="text-muted-foreground font-normal">
                   ({p.paymentType === "FULL" ? "Full" : "Partial"})
                 </span>
               </p>
               {p.status === "REJECTED" && p.adminRemarks && (
-                <p className="mt-2 text-sm text-destructive">
+                <p className="text-destructive mt-2 text-sm">
                   <strong>Reason:</strong> {p.adminRemarks}
                 </p>
               )}
@@ -2251,7 +2246,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
   const getStatusBadge = (s: EnrollmentStatus) => {
     if (s === "APPROVED")
       return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">
+        <Badge className="border-green-200 bg-green-100 text-green-800">
           Approved
         </Badge>
       );
@@ -2260,10 +2255,10 @@ export default async function PurchasesPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <PageHeader title="Course Purchases" />
 
-      <div className="flex gap-1 border-b -mt-2">
+      <div className="-mt-2 flex gap-1 border-b">
         {tabs.map((t) => {
           const isActive = t.enumStatus === status;
           const count = countMap[t.enumStatus] ?? 0;
@@ -2274,12 +2269,12 @@ export default async function PurchasesPage({ searchParams }: Props) {
               className={cn(
                 "flex items-center gap-1.5 px-4 pb-3 text-sm transition-colors",
                 isActive
-                  ? "border-b-2 border-primary text-foreground font-medium"
+                  ? "border-primary text-foreground border-b-2 font-medium"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t.label}
-              <span className="inline-block bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-medium">
+              <span className="bg-muted text-muted-foreground inline-block rounded px-1.5 py-0.5 text-xs font-medium">
                 {count}
               </span>
             </Link>
@@ -2288,48 +2283,48 @@ export default async function PurchasesPage({ searchParams }: Props) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-          <Inbox className="w-8 h-8" aria-hidden="true" />
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-12">
+          <Inbox className="h-8 w-8" aria-hidden="true" />
           <p className="text-sm">No {status.toLowerCase()} purchases.</p>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-hidden rounded-lg border">
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Student
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Email
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Courses
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Amount
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Submitted
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Status
                 </th>
@@ -2340,14 +2335,14 @@ export default async function PurchasesPage({ searchParams }: Props) {
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-2 font-medium">{r.studentName}</td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-2">
                     {r.studentEmail}
                   </td>
                   <td className="px-4 py-2">{r.courseCount}</td>
                   <td className="px-4 py-2">
                     ₱{r.amountPaid.toLocaleString("en-PH")}
                   </td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-2">
                     {dateFormatter.format(r.createdAt)}
                   </td>
                   <td className="px-4 py-2">{getStatusBadge(r.status)}</td>
@@ -2356,7 +2351,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
                       <Link href={"/admin/purchases/" + r.id}>
                         View{" "}
                         <ChevronRight
-                          className="w-3 h-3 ml-1"
+                          className="ml-1 h-3 w-3"
                           aria-hidden="true"
                         />
                       </Link>
@@ -2423,11 +2418,11 @@ export function ProofImage({ purchaseId }: { purchaseId: string }) {
 
   if (error)
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         Could not load proof image.
       </p>
     );
-  if (!url) return <div className="h-48 animate-pulse rounded-lg bg-muted" />;
+  if (!url) return <div className="bg-muted h-48 animate-pulse rounded-lg" />;
   // eslint-disable-next-line @next/next/no-img-element
   return (
     <img src={url} alt="Payment proof" className="max-h-96 rounded-lg border" />
@@ -2453,7 +2448,7 @@ export function ApproveForm({ id }: { id: string }) {
     <form action={action}>
       <input type="hidden" name="id" value={id} />
       {state.error && (
-        <p className="mb-2 text-sm text-destructive">{state.error}</p>
+        <p className="text-destructive mb-2 text-sm">{state.error}</p>
       )}
       <Button
         type="submit"
@@ -2494,7 +2489,7 @@ export function RejectForm({ id }: { id: string }) {
         rows={3}
         placeholder="Explain why this purchase is rejected"
       />
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       <Button type="submit" variant="destructive" disabled={isPending}>
         {isPending ? "Rejecting…" : "Reject purchase"}
       </Button>
@@ -2525,16 +2520,16 @@ export default async function PurchaseDetailPage({ params }: Props) {
   const isPending = purchase.status === "PENDING";
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6 p-6">
       <PageHeader title="Purchase Detail" />
 
-      <div className="rounded-xl border bg-card p-4 space-y-1">
+      <div className="bg-card space-y-1 rounded-xl border p-4">
         <div className="flex items-center justify-between">
           <p className="font-semibold">
             {purchase.student.firstName} {purchase.student.lastName}
           </p>
           {purchase.status === "APPROVED" ? (
-            <Badge className="bg-green-100 text-green-800 border-green-200">
+            <Badge className="border-green-200 bg-green-100 text-green-800">
               Approved
             </Badge>
           ) : purchase.status === "REJECTED" ? (
@@ -2543,18 +2538,18 @@ export default async function PurchaseDetailPage({ params }: Props) {
             <Badge variant="outline">Pending</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {purchase.student.email}
         </p>
         {purchase.student.contactNumber && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {purchase.student.contactNumber}
           </p>
         )}
       </div>
 
-      <div className="rounded-xl border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+      <div className="bg-card rounded-xl border p-4">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           Courses
         </p>
         <ul className="divide-y">
@@ -2582,21 +2577,21 @@ export default async function PurchaseDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+      <div className="bg-card rounded-xl border p-4">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           Proof of payment
         </p>
         <ProofImage purchaseId={purchase.id} />
       </div>
 
       {purchase.status === "REJECTED" && purchase.adminRemarks && (
-        <p className="text-sm text-destructive">
+        <p className="text-destructive text-sm">
           <strong>Rejection reason:</strong> {purchase.adminRemarks}
         </p>
       )}
 
       {isPending && (
-        <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+        <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
           <ApproveForm id={purchase.id} />
           <div className="border-t pt-4">
             <RejectForm id={purchase.id} />

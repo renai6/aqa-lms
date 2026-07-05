@@ -2,16 +2,16 @@ import { describe, it, expect } from "vitest";
 import { registerSchema, createPurchaseSchema } from "@/lib/purchases/schema";
 
 const validRegister = {
-  firstName: "Juan",
-  lastName: "dela Cruz",
-  email: "juan@example.com",
+  firstName: "Ahmad",
+  lastName: "Bayan",
+  email: "ahmad@example.com",
   password: "Password123",
   confirmPassword: "Password123",
   gender: "MALE",
   address: "123 Main St",
   contactNumber: "09171234567",
-  facebookName: "Juan dela Cruz",
-  facebookLink: "https://facebook.com/juan",
+  facebookName: "Ahmad Bayan",
+  facebookLink: "https://facebook.com/ahmad",
   studentType: "NEW",
 };
 

@@ -288,7 +288,7 @@ Add after the passing grade field:
     defaultValue={course.tuitionFee !== null ? String(course.tuitionFee) : ""}
     placeholder="e.g. 10000"
   />
-  <p className="text-xs text-muted-foreground">
+  <p className="text-muted-foreground text-xs">
     Leave blank if not applicable.
   </p>
 </div>
@@ -484,22 +484,22 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="courseId" value={courseId} />
-      <div className="p-3 bg-muted rounded-md text-sm">
+      <div className="bg-muted rounded-md p-3 text-sm">
         <span className="text-muted-foreground">Enrolling in: </span>
         <strong>{courseTitle}</strong>
         {tuitionFee !== null && (
-          <span className="block text-muted-foreground mt-1">
+          <span className="text-muted-foreground mt-1 block">
             Tuition fee: <strong>₱{tuitionFee.toLocaleString("en-PH")}</strong>
           </span>
         )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="firstName">First Name</Label>
-        <Input id="firstName" name="firstName" required placeholder="Juan" />
+        <Input id="firstName" name="firstName" required placeholder="Ahmad" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="lastName">Last Name</Label>
-        <Input id="lastName" name="lastName" required placeholder="dela Cruz" />
+        <Input id="lastName" name="lastName" required placeholder="Bayan" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email Address</Label>
@@ -508,13 +508,13 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
           name="email"
           type="email"
           required
-          placeholder="juan@example.com"
+          placeholder="ahmad@example.com"
         />
       </div>
       <div className="space-y-2">
         <Label>Payment Type</Label>
         <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="radio"
               name="paymentType"
@@ -524,7 +524,7 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
             />
             <span className="text-sm">Full Payment</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="radio"
               name="paymentType"
@@ -547,7 +547,7 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
           placeholder="e.g. 5000"
         />
       </div>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       <Button type="submit" disabled={isPending} className="w-full">
         {isPending ? "Submitting..." : "Submit Application"}
       </Button>
@@ -767,7 +767,7 @@ export function ApproveForm({ requestId, defaultPaymentStatus }: Props) {
           id="paymentStatus"
           name="paymentStatus"
           defaultValue={defaultPaymentStatus}
-          className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+          className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
         >
           <option value="PARTIALLY_PAID">Partially Paid</option>
           <option value="FULLY_PAID">Fully Paid</option>
@@ -776,7 +776,7 @@ export function ApproveForm({ requestId, defaultPaymentStatus }: Props) {
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Processing..." : "Approve Enrollment"}
       </Button>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
     </form>
   );
 }
@@ -1114,7 +1114,7 @@ export function AdditionalPaymentForm() {
 
   if (state.success) {
     return (
-      <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+      <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
         Payment proof submitted. An admin will review it and update your payment
         status.
       </p>
@@ -1152,11 +1152,11 @@ export function AdditionalPaymentForm() {
           accept="image/jpeg,image/png,image/webp"
           required
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Accepted: JPG, PNG, WEBP. Max 5MB.
         </p>
       </div>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       <Button type="submit" disabled={isPending}>
         {isPending ? "Uploading..." : "Submit Payment Proof"}
       </Button>
@@ -1188,7 +1188,7 @@ export default async function StudentDashboardPage() {
   const enrollment = await getStudentEnrollment(session.id);
 
   return (
-    <main className="p-8 max-w-3xl space-y-6">
+    <main className="max-w-3xl space-y-6 p-8">
       <h1 className="text-2xl font-bold">Student Dashboard</h1>
 
       {!enrollment && (
@@ -1204,15 +1204,15 @@ export default async function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{enrollment.course.title}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Enrolled {dateFormatter.format(enrollment.enrolledAt)}
                 </p>
               </div>
               <Badge
                 className={
                   enrollment.paymentStatus === "FULLY_PAID"
-                    ? "bg-green-100 text-green-800 border-green-200"
-                    : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                    ? "border-green-200 bg-green-100 text-green-800"
+                    : "border-yellow-200 bg-yellow-100 text-yellow-800"
                 }
               >
                 {enrollment.paymentStatus === "FULLY_PAID"
@@ -1234,8 +1234,8 @@ export default async function StudentDashboardPage() {
 
             {enrollment.paymentProofs.length > 0 && (
               <div>
-                <p className="text-sm font-medium mb-2">Payment History</p>
-                <div className="divide-y border rounded-md">
+                <p className="mb-2 text-sm font-medium">Payment History</p>
+                <div className="divide-y rounded-md border">
                   {enrollment.paymentProofs.map((proof) => (
                     <div
                       key={proof.id}
@@ -1250,7 +1250,7 @@ export default async function StudentDashboardPage() {
                             — {proof.note}
                           </span>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {dateFormatter.format(proof.submittedAt)}
                         </p>
                       </div>
@@ -1262,7 +1262,7 @@ export default async function StudentDashboardPage() {
 
             {enrollment.paymentStatus === "PARTIALLY_PAID" && (
               <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-3">
+                <p className="mb-3 text-sm font-medium">
                   Submit Additional Payment
                 </p>
                 <AdditionalPaymentForm />
@@ -1470,7 +1470,7 @@ export function UpdatePaymentStatusForm({ requestId, currentStatus }: Props) {
           id="paymentStatus"
           name="paymentStatus"
           defaultValue={currentStatus}
-          className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+          className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
         >
           <option value="PARTIALLY_PAID">Partially Paid</option>
           <option value="FULLY_PAID">Fully Paid</option>
@@ -1484,7 +1484,7 @@ export function UpdatePaymentStatusForm({ requestId, currentStatus }: Props) {
       >
         {isPending ? "Updating..." : "Update Status"}
       </Button>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       {state.success && !state.error && (
         <p className="text-sm text-green-600">Payment status updated.</p>
       )}
@@ -1523,8 +1523,8 @@ export async function PaymentSection({ requestId, userId, courseId }: Props) {
           <Badge
             className={
               payment.paymentStatus === "FULLY_PAID"
-                ? "bg-green-100 text-green-800 border-green-200"
-                : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                ? "border-green-200 bg-green-100 text-green-800"
+                : "border-yellow-200 bg-yellow-100 text-yellow-800"
             }
           >
             {payment.paymentStatus === "FULLY_PAID"
@@ -1544,8 +1544,8 @@ export async function PaymentSection({ requestId, userId, courseId }: Props) {
 
         {payment.paymentProofs.length > 0 && (
           <div>
-            <p className="text-sm font-medium mb-2">Payment History</p>
-            <div className="divide-y border rounded-md">
+            <p className="mb-2 text-sm font-medium">Payment History</p>
+            <div className="divide-y rounded-md border">
               {payment.paymentProofs.map((proof) => (
                 <div key={proof.id} className="px-3 py-2 text-sm">
                   <div className="flex justify-between">
@@ -1557,7 +1557,7 @@ export async function PaymentSection({ requestId, userId, courseId }: Props) {
                     </span>
                   </div>
                   {proof.note && (
-                    <p className="text-muted-foreground text-xs mt-0.5">
+                    <p className="text-muted-foreground mt-0.5 text-xs">
                       {proof.note}
                     </p>
                   )}
