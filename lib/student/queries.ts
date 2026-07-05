@@ -30,10 +30,17 @@ export type DashboardAnnouncement = {
   createdAt: Date
 }
 
+export type DashboardPendingPurchase = {
+  id: string
+  createdAt: Date
+  courseTitles: string[]
+}
+
 export type StudentDashboard = {
   enrollments: DashboardEnrollment[]
   schedules: DashboardSchedule[]
   announcements: DashboardAnnouncement[]
+  pendingPurchases: DashboardPendingPurchase[]
 }
 
 const DAY_NUM: Record<string, number> = {
@@ -42,7 +49,7 @@ const DAY_NUM: Record<string, number> = {
 }
 
 export async function getStudentDashboard(userId: string): Promise<StudentDashboard> {
-  const [enrollmentsRaw, announcements] = await Promise.all([
+  const [enrollmentsRaw, announcements, pendingPurchasesRaw] = await Promise.all([
     db.enrollment.findMany({
       where: { userId },
       orderBy: { enrolledAt: 'desc' },
@@ -73,7 +80,22 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, content: true, createdAt: true },
     }),
+    db.purchase.findMany({
+      where: { userId, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        items: { select: { course: { select: { title: true } } } },
+      },
+    }),
   ])
+
+  const pendingPurchases: DashboardPendingPurchase[] = pendingPurchasesRaw.map(p => ({
+    id: p.id,
+    createdAt: p.createdAt,
+    courseTitles: p.items.map(i => i.course.title),
+  }))
 
   const allLessonIds = enrollmentsRaw.flatMap(e =>
     e.course.subjects.flatMap(s => s.lessons.map(l => l.id))
@@ -128,7 +150,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
     return a.startTime.localeCompare(b.startTime)
   })
 
-  return { enrollments, schedules, announcements }
+  return { enrollments, schedules, announcements, pendingPurchases }
 }
 
 // ─── Course page ─────────────────────────────────────────────────────────────
