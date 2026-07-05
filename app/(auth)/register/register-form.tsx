@@ -62,7 +62,6 @@ export function RegisterForm() {
             type="password"
             required
             autoComplete="new-password"
-            placeholder="••••••••"
             defaultValue={state.values?.password}
           />
         </div>
@@ -74,7 +73,6 @@ export function RegisterForm() {
             type="password"
             required
             autoComplete="new-password"
-            placeholder="••••••••"
             defaultValue={state.values?.confirmPassword}
           />
         </div>
@@ -135,7 +133,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="facebookName">Facebook Name</Label>
+        <Label htmlFor="facebookName">Facebook/Messenger Name</Label>
         <Input
           id="facebookName"
           name="facebookName"
@@ -146,7 +144,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="facebookLink">Facebook Link</Label>
+        <Label htmlFor="facebookLink">Facebook/Messenger Link</Label>
         <Input
           id="facebookLink"
           name="facebookLink"
