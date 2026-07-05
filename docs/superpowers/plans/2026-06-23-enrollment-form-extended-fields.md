@@ -12,19 +12,20 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|---|---|---|
-| `prisma/schema.prisma` | Modify | Add `StudentType` enum + 6 fields to `EnrollmentRequest` |
-| `lib/enrollments/queries.ts` | Modify | Extend `EnrollmentRequestDetail` type + select in `getEnrollmentRequestById` |
-| `lib/enrollments/actions.ts` | Modify | Extend Zod schema, add cross-field refinement, update `db.create` |
-| `app/(public)/courses/[id]/enroll/enroll-form.tsx` | Modify | Add grouped sections, new fields, dynamic New/Old student logic |
-| `app/(admin)/admin/enrollments/[id]/page.tsx` | Modify | Display 6 new fields in Applicant Information card |
+| File                                               | Action | Responsibility                                                               |
+| -------------------------------------------------- | ------ | ---------------------------------------------------------------------------- |
+| `prisma/schema.prisma`                             | Modify | Add `StudentType` enum + 6 fields to `EnrollmentRequest`                     |
+| `lib/enrollments/queries.ts`                       | Modify | Extend `EnrollmentRequestDetail` type + select in `getEnrollmentRequestById` |
+| `lib/enrollments/actions.ts`                       | Modify | Extend Zod schema, add cross-field refinement, update `db.create`            |
+| `app/(public)/courses/[id]/enroll/enroll-form.tsx` | Modify | Add grouped sections, new fields, dynamic New/Old student logic              |
+| `app/(admin)/admin/enrollments/[id]/page.tsx`      | Modify | Display 6 new fields in Applicant Information card                           |
 
 ---
 
 ## Task 1: Schema — Add StudentType enum and 6 fields to EnrollmentRequest
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 
 - [ ] **Step 1: Add the StudentType enum after the existing PaymentStatus enum**
@@ -79,6 +80,7 @@ git commit -m "feat(schema): add StudentType enum and extended fields to Enrollm
 ## Task 2: Queries — Extend EnrollmentRequestDetail type and select
 
 **Files:**
+
 - Modify: `lib/enrollments/queries.ts`
 
 - [ ] **Step 1: Update the import to include the new types**
@@ -86,7 +88,13 @@ git commit -m "feat(schema): add StudentType enum and extended fields to Enrollm
 Replace the top import line:
 
 ```ts
-import { EnrollmentStatus, Gender, PaymentStatus, PaymentType, StudentType } from '@prisma/client'
+import {
+  EnrollmentStatus,
+  Gender,
+  PaymentStatus,
+  PaymentType,
+  StudentType,
+} from "@prisma/client";
 ```
 
 - [ ] **Step 2: Extend the EnrollmentRequestDetail type**
@@ -95,20 +103,20 @@ Replace the existing `EnrollmentRequestDetail` type (lines ~40-48):
 
 ```ts
 export type EnrollmentRequestDetail = EnrollmentRequestRow & {
-  courseId: string
-  paymentProofUrl: string | null
-  adminRemarks: string | null
-  userId: string | null
-  updatedAt: Date
-  paymentType: PaymentType
-  amountPaid: number
-  gender: Gender
-  address: string
-  contactNumber: string
-  facebookName: string
-  facebookLink: string
-  studentType: StudentType
-}
+  courseId: string;
+  paymentProofUrl: string | null;
+  adminRemarks: string | null;
+  userId: string | null;
+  updatedAt: Date;
+  paymentType: PaymentType;
+  amountPaid: number;
+  gender: Gender;
+  address: string;
+  contactNumber: string;
+  facebookName: string;
+  facebookLink: string;
+  studentType: StudentType;
+};
 ```
 
 - [ ] **Step 3: Add the 6 new fields to the select in getEnrollmentRequestById**
@@ -144,6 +152,7 @@ git commit -m "feat(queries): extend EnrollmentRequestDetail with new enrollment
 ## Task 3: Server Action — Extend Zod schema and db.create
 
 **Files:**
+
 - Modify: `lib/enrollments/actions.ts`
 
 - [ ] **Step 1: Replace the enrollSchema with the extended version**
@@ -153,26 +162,33 @@ Replace the entire `enrollSchema` constant (lines ~13-20):
 ```ts
 const enrollSchema = z
   .object({
-    firstName: z.string().min(1, 'First name is required.'),
-    lastName: z.string().min(1, 'Last name is required.'),
-    email: z.string().email('A valid email address is required.'),
-    courseId: z.string().min(1, 'Course is required.'),
-    gender: z.enum(['MALE', 'FEMALE'], { error: 'Gender is required.' }),
-    address: z.string().min(1, 'Address is required.'),
-    contactNumber: z.string().regex(
-      /^(09\d{9}|\+639\d{9})$/,
-      'Enter a valid PH mobile number (e.g. 09XXXXXXXXX).',
-    ),
-    facebookName: z.string().min(1, 'Facebook name is required.'),
-    facebookLink: z.string().url('Enter a valid URL.'),
-    studentType: z.enum(['NEW', 'OLD'], { error: 'Student type is required.' }),
-    paymentType: z.enum(['PARTIAL', 'FULL']),
-    amountPaid: z.coerce.number().positive('Amount paid must be greater than 0.'),
+    firstName: z.string().min(1, "First name is required."),
+    lastName: z.string().min(1, "Last name is required."),
+    email: z.string().email("A valid email address is required."),
+    courseId: z.string().min(1, "Course is required."),
+    gender: z.enum(["MALE", "FEMALE"], { error: "Gender is required." }),
+    address: z.string().min(1, "Address is required."),
+    contactNumber: z
+      .string()
+      .regex(
+        /^(09\d{9}|\+639\d{9})$/,
+        "Enter a valid PH mobile number (e.g. 09XXXXXXXXX).",
+      ),
+    facebookName: z.string().min(1, "Facebook name is required."),
+    facebookLink: z.string().url("Enter a valid URL."),
+    studentType: z.enum(["NEW", "OLD"], { error: "Student type is required." }),
+    paymentType: z.enum(["PARTIAL", "FULL"]),
+    amountPaid: z.coerce
+      .number()
+      .positive("Amount paid must be greater than 0."),
   })
-  .refine((data) => !(data.studentType === 'NEW' && data.paymentType !== 'FULL'), {
-    message: 'New students must pay in full.',
-    path: ['paymentType'],
-  })
+  .refine(
+    (data) => !(data.studentType === "NEW" && data.paymentType !== "FULL"),
+    {
+      message: "New students must pay in full.",
+      path: ["paymentType"],
+    },
+  );
 ```
 
 - [ ] **Step 2: Update the raw object to include the 6 new fields**
@@ -180,20 +196,20 @@ const enrollSchema = z
 Replace the entire `raw` object inside `submitEnrollmentAction` (lines ~27-34):
 
 ```ts
-  const raw = {
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
-    email: formData.get('email'),
-    courseId: formData.get('courseId'),
-    gender: formData.get('gender'),
-    address: formData.get('address'),
-    contactNumber: formData.get('contactNumber'),
-    facebookName: formData.get('facebookName'),
-    facebookLink: formData.get('facebookLink'),
-    studentType: formData.get('studentType'),
-    paymentType: formData.get('paymentType'),
-    amountPaid: formData.get('amountPaid'),
-  }
+const raw = {
+  firstName: formData.get("firstName"),
+  lastName: formData.get("lastName"),
+  email: formData.get("email"),
+  courseId: formData.get("courseId"),
+  gender: formData.get("gender"),
+  address: formData.get("address"),
+  contactNumber: formData.get("contactNumber"),
+  facebookName: formData.get("facebookName"),
+  facebookLink: formData.get("facebookLink"),
+  studentType: formData.get("studentType"),
+  paymentType: formData.get("paymentType"),
+  amountPaid: formData.get("amountPaid"),
+};
 ```
 
 - [ ] **Step 3: Update the destructure and db.create call**
@@ -201,42 +217,55 @@ Replace the entire `raw` object inside `submitEnrollmentAction` (lines ~27-34):
 Replace the destructure line and `db.enrollmentRequest.create` call (lines ~40-58):
 
 ```ts
-  const { firstName, lastName, email, courseId, gender, address, contactNumber, facebookName, facebookLink, studentType, paymentType, amountPaid } = result.data
+const {
+  firstName,
+  lastName,
+  email,
+  courseId,
+  gender,
+  address,
+  contactNumber,
+  facebookName,
+  facebookLink,
+  studentType,
+  paymentType,
+  amountPaid,
+} = result.data;
 
-  const course = await db.course.findFirst({
-    where: { id: courseId, isPublished: true },
-    select: { title: true },
-  })
-  if (!course) return { error: 'Course not found.' }
+const course = await db.course.findFirst({
+  where: { id: courseId, isPublished: true },
+  select: { title: true },
+});
+if (!course) return { error: "Course not found." };
 
-  const duplicate = await db.enrollmentRequest.findFirst({
-    where: { email, courseId, status: { in: ['PENDING', 'APPROVED'] } },
-  })
-  if (duplicate) return { error: 'You have already applied for this course.' }
+const duplicate = await db.enrollmentRequest.findFirst({
+  where: { email, courseId, status: { in: ["PENDING", "APPROVED"] } },
+});
+if (duplicate) return { error: "You have already applied for this course." };
 
-  let requestId: string
-  try {
-    const request = await db.enrollmentRequest.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        courseId,
-        gender,
-        address,
-        contactNumber,
-        facebookName,
-        facebookLink,
-        studentType,
-        paymentType,
-        amountPaid,
-      },
-    })
-    requestId = request.id
-  } catch (err) {
-    console.error('[submitEnrollment] DB error:', err)
-    return { error: 'A database error occurred. Please try again.' }
-  }
+let requestId: string;
+try {
+  const request = await db.enrollmentRequest.create({
+    data: {
+      firstName,
+      lastName,
+      email,
+      courseId,
+      gender,
+      address,
+      contactNumber,
+      facebookName,
+      facebookLink,
+      studentType,
+      paymentType,
+      amountPaid,
+    },
+  });
+  requestId = request.id;
+} catch (err) {
+  console.error("[submitEnrollment] DB error:", err);
+  return { error: "A database error occurred. Please try again." };
+}
 ```
 
 - [ ] **Step 4: Verify TypeScript compiles**
@@ -259,80 +288,104 @@ git commit -m "feat(actions): extend enrollment submission with new required fie
 ## Task 4: Enrollment Form — Add grouped sections and new fields
 
 **Files:**
+
 - Modify: `app/(public)/courses/[id]/enroll/enroll-form.tsx`
 
 - [ ] **Step 1: Replace the entire file with the updated form**
 
 ```tsx
-'use client'
+"use client";
 
-import { useState, useActionState } from 'react'
-import { submitEnrollmentAction } from '@/lib/enrollments/actions'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { AlertCircle, Banknote, CreditCard, GraduationCap, BookOpen } from 'lucide-react'
+import { useState, useActionState } from "react";
+import { submitEnrollmentAction } from "@/lib/enrollments/actions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertCircle,
+  Banknote,
+  CreditCard,
+  GraduationCap,
+  BookOpen,
+} from "lucide-react";
 
-type Props = { courseId: string; courseTitle: string; tuitionFee: number | null }
+type Props = {
+  courseId: string;
+  courseTitle: string;
+  tuitionFee: number | null;
+};
 
 export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
-  const [state, formAction, isPending] = useActionState(submitEnrollmentAction, { error: null })
-  const [gender, setGender] = useState<'MALE' | 'FEMALE'>('MALE')
-  const [studentType, setStudentType] = useState<'NEW' | 'OLD'>('NEW')
-  const [paymentType, setPaymentType] = useState<'FULL' | 'PARTIAL'>('FULL')
+  const [state, formAction, isPending] = useActionState(
+    submitEnrollmentAction,
+    { error: null },
+  );
+  const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
+  const [studentType, setStudentType] = useState<"NEW" | "OLD">("NEW");
+  const [paymentType, setPaymentType] = useState<"FULL" | "PARTIAL">("FULL");
 
-  function handleStudentTypeChange(type: 'NEW' | 'OLD') {
-    setStudentType(type)
-    if (type === 'NEW') setPaymentType('FULL')
+  function handleStudentTypeChange(type: "NEW" | "OLD") {
+    setStudentType(type);
+    if (type === "NEW") setPaymentType("FULL");
   }
 
-  const isNewStudent = studentType === 'NEW'
+  const isNewStudent = studentType === "NEW";
 
   return (
     <form action={formAction} className="space-y-8">
       <input type="hidden" name="courseId" value={courseId} />
 
       {/* Course info strip */}
-      <div className="rounded-xl border bg-card p-4">
-        <p className="font-semibold text-foreground">{courseTitle}</p>
+      <div className="bg-card rounded-xl border p-4">
+        <p className="text-foreground font-semibold">{courseTitle}</p>
         {tuitionFee != null ? (
           <>
-            <span className="text-lg font-bold text-foreground">
-              ₱{tuitionFee.toLocaleString('en-PH')}
+            <span className="text-foreground text-lg font-bold">
+              ₱{tuitionFee.toLocaleString("en-PH")}
             </span>
-            <p className="mt-0.5 text-xs text-muted-foreground">Flexible installments available</p>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              Flexible installments available
+            </p>
           </>
         ) : (
-          <p className="mt-1 text-sm text-muted-foreground">Contact us for pricing</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Contact us for pricing
+          </p>
         )}
       </div>
 
       {/* ── Personal Information ── */}
       <div className="space-y-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
           Personal Information
         </p>
 
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" name="firstName" required placeholder="Juan" />
+          <Input id="firstName" name="firstName" required placeholder="Ahmad" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" name="lastName" required placeholder="dela Cruz" />
+          <Input id="lastName" name="lastName" required placeholder="Bayan" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="email">Email Address</Label>
-          <Input id="email" name="email" type="email" required placeholder="juan@example.com" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            required
+            placeholder="ahmad@example.com"
+          />
         </div>
 
         {/* Gender */}
         <div className="space-y-2">
           <Label>Gender</Label>
           <div className="flex gap-3">
-            {(['MALE', 'FEMALE'] as const).map((g) => (
+            {(["MALE", "FEMALE"] as const).map((g) => (
               <label key={g} className="flex-1 cursor-pointer">
                 <input
                   type="radio"
@@ -344,12 +397,14 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
                 />
                 <div
                   className={[
-                    'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                    gender === g ? 'border-primary bg-primary/5' : 'border-border bg-card',
-                  ].join(' ')}
+                    "peer-focus-visible:ring-primary rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
+                    gender === g
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card",
+                  ].join(" ")}
                 >
-                  <p className="text-sm font-semibold text-foreground">
-                    {g === 'MALE' ? 'Male' : 'Female'}
+                  <p className="text-foreground text-sm font-semibold">
+                    {g === "MALE" ? "Male" : "Female"}
                   </p>
                 </div>
               </label>
@@ -381,7 +436,12 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
 
         <div className="space-y-2">
           <Label htmlFor="facebookName">Facebook Name</Label>
-          <Input id="facebookName" name="facebookName" required placeholder="Juan dela Cruz" />
+          <Input
+            id="facebookName"
+            name="facebookName"
+            required
+            placeholder="Ahmad Bayan"
+          />
         </div>
 
         <div className="space-y-2">
@@ -398,7 +458,7 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
 
       {/* ── Payment ── */}
       <div className="space-y-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
           Payment
         </p>
 
@@ -411,19 +471,25 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
                 type="radio"
                 name="studentType"
                 value="NEW"
-                checked={studentType === 'NEW'}
-                onChange={() => handleStudentTypeChange('NEW')}
+                checked={studentType === "NEW"}
+                onChange={() => handleStudentTypeChange("NEW")}
                 className="peer sr-only"
               />
               <div
                 className={[
-                  'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                  studentType === 'NEW' ? 'border-primary bg-primary/5' : 'border-border bg-card',
-                ].join(' ')}
+                  "peer-focus-visible:ring-primary rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
+                  studentType === "NEW"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card",
+                ].join(" ")}
               >
-                <GraduationCap className="mb-2 w-5 h-5 text-primary" />
-                <p className="text-sm font-semibold text-foreground">New Student</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">First time enrolling</p>
+                <GraduationCap className="text-primary mb-2 h-5 w-5" />
+                <p className="text-foreground text-sm font-semibold">
+                  New Student
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  First time enrolling
+                </p>
               </div>
             </label>
 
@@ -432,19 +498,25 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
                 type="radio"
                 name="studentType"
                 value="OLD"
-                checked={studentType === 'OLD'}
-                onChange={() => handleStudentTypeChange('OLD')}
+                checked={studentType === "OLD"}
+                onChange={() => handleStudentTypeChange("OLD")}
                 className="peer sr-only"
               />
               <div
                 className={[
-                  'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                  studentType === 'OLD' ? 'border-primary bg-primary/5' : 'border-border bg-card',
-                ].join(' ')}
+                  "peer-focus-visible:ring-primary rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
+                  studentType === "OLD"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card",
+                ].join(" ")}
               >
-                <BookOpen className="mb-2 w-5 h-5 text-primary" />
-                <p className="text-sm font-semibold text-foreground">Old Student</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Previously enrolled</p>
+                <BookOpen className="text-primary mb-2 h-5 w-5" />
+                <p className="text-foreground text-sm font-semibold">
+                  Old Student
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Previously enrolled
+                </p>
               </div>
             </label>
           </div>
@@ -456,10 +528,12 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
           {isNewStudent ? (
             <>
               <input type="hidden" name="paymentType" value="FULL" />
-              <div className="rounded-xl border-2 border-primary bg-primary/5 p-4">
-                <Banknote className="mb-2 w-5 h-5 text-primary" />
-                <p className="text-sm font-semibold text-foreground">Full Payment</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+              <div className="border-primary bg-primary/5 rounded-xl border-2 p-4">
+                <Banknote className="text-primary mb-2 h-5 w-5" />
+                <p className="text-foreground text-sm font-semibold">
+                  Full Payment
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   New students are required to pay in full
                 </p>
               </div>
@@ -471,21 +545,25 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
                   type="radio"
                   name="paymentType"
                   value="FULL"
-                  checked={paymentType === 'FULL'}
-                  onChange={() => setPaymentType('FULL')}
+                  checked={paymentType === "FULL"}
+                  onChange={() => setPaymentType("FULL")}
                   className="peer sr-only"
                 />
                 <div
                   className={[
-                    'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                    paymentType === 'FULL'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card',
-                  ].join(' ')}
+                    "peer-focus-visible:ring-primary rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
+                    paymentType === "FULL"
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card",
+                  ].join(" ")}
                 >
-                  <Banknote className="mb-2 w-5 h-5 text-primary" />
-                  <p className="text-sm font-semibold text-foreground">Full Payment</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">Pay the full tuition upfront</p>
+                  <Banknote className="text-primary mb-2 h-5 w-5" />
+                  <p className="text-foreground text-sm font-semibold">
+                    Full Payment
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Pay the full tuition upfront
+                  </p>
                 </div>
               </label>
 
@@ -494,21 +572,25 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
                   type="radio"
                   name="paymentType"
                   value="PARTIAL"
-                  checked={paymentType === 'PARTIAL'}
-                  onChange={() => setPaymentType('PARTIAL')}
+                  checked={paymentType === "PARTIAL"}
+                  onChange={() => setPaymentType("PARTIAL")}
                   className="peer sr-only"
                 />
                 <div
                   className={[
-                    'rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2',
-                    paymentType === 'PARTIAL'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card',
-                  ].join(' ')}
+                    "peer-focus-visible:ring-primary rounded-xl border-2 p-4 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
+                    paymentType === "PARTIAL"
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card",
+                  ].join(" ")}
                 >
-                  <CreditCard className="mb-2 w-5 h-5 text-primary" />
-                  <p className="text-sm font-semibold text-foreground">Partial Payment</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">Pay a portion now, rest later</p>
+                  <CreditCard className="text-primary mb-2 h-5 w-5" />
+                  <p className="text-foreground text-sm font-semibold">
+                    Partial Payment
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Pay a portion now, rest later
+                  </p>
                 </div>
               </label>
             </div>
@@ -534,9 +616,9 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
       {state.error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="border-destructive/30 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {state.error}
         </div>
       )}
@@ -545,12 +627,12 @@ export function EnrollForm({ courseId, courseTitle, tuitionFee }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-full px-6 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? 'Submitting...' : 'Submit Application'}
+        {isPending ? "Submitting..." : "Submit Application"}
       </button>
     </form>
-  )
+  );
 }
 ```
 
@@ -563,6 +645,7 @@ pnpm dev
 Open `http://localhost:3000`, navigate to a published course, click Enroll.
 
 Verify:
+
 - All 8 new inputs are visible (gender, address, contact, facebook name, facebook link, student type, and the grouped layout)
 - Selecting **New Student** hides the Partial Payment card and shows the locked Full Payment display
 - Selecting **Old Student** restores the Full/Partial toggle
@@ -581,6 +664,7 @@ git commit -m "feat(enroll): add grouped form sections with extended personal an
 ## Task 5: Admin Detail Page — Display new fields
 
 **Files:**
+
 - Modify: `app/(admin)/admin/enrollments/[id]/page.tsx`
 
 - [ ] **Step 1: Add 6 new rows to the Applicant Information card**
@@ -588,14 +672,16 @@ git commit -m "feat(enroll): add grouped form sections with extended personal an
 In `app/(admin)/admin/enrollments/[id]/page.tsx`, locate the `CardContent` inside the Applicant Information card. After the existing `adminRemarks` block (around line 97), and before the closing `</CardContent>`, add the following rows. Insert them between the Email row and the Course row so the personal details are grouped:
 
 Find the Email row block:
+
 ```tsx
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                <span className="text-sm text-muted-foreground w-32 shrink-0">Email</span>
-                <span className="text-sm">{request.email}</span>
-              </div>
+<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+  <span className="text-muted-foreground w-32 shrink-0 text-sm">Email</span>
+  <span className="text-sm">{request.email}</span>
+</div>
 ```
 
 After that block, add:
+
 ```tsx
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                 <span className="text-sm text-muted-foreground w-32 shrink-0">Gender</span>

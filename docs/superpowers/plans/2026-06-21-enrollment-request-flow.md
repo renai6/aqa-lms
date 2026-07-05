@@ -342,7 +342,7 @@ export default async function CoursesPage() {
   const courses = await getPublishedCourses();
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-12">
       <div>
         <h1 className="text-3xl font-bold">Courses</h1>
         <p className="text-muted-foreground mt-2">
@@ -355,23 +355,23 @@ export default async function CoursesPage() {
           No courses available at this time.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
             <div
               key={course.id}
-              className="border rounded-lg p-6 space-y-4 flex flex-col"
+              className="flex flex-col space-y-4 rounded-lg border p-6"
             >
               <div className="flex-1 space-y-2">
                 <h2 className="text-lg font-semibold">{course.title}</h2>
                 {course.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">
+                  <p className="text-muted-foreground line-clamp-3 text-sm">
                     {course.description}
                   </p>
                 )}
               </div>
               <Link
                 href={`/courses/${course.id}/enroll`}
-                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors"
               >
                 Enroll Now
               </Link>
@@ -430,17 +430,17 @@ export function EnrollForm({ courseId, courseTitle }: Props) {
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="courseId" value={courseId} />
-      <div className="p-3 bg-muted rounded-md text-sm">
+      <div className="bg-muted rounded-md p-3 text-sm">
         <span className="text-muted-foreground">Enrolling in: </span>
         <strong>{courseTitle}</strong>
       </div>
       <div className="space-y-2">
         <Label htmlFor="firstName">First Name</Label>
-        <Input id="firstName" name="firstName" required placeholder="Juan" />
+        <Input id="firstName" name="firstName" required placeholder="Ahmad" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="lastName">Last Name</Label>
-        <Input id="lastName" name="lastName" required placeholder="dela Cruz" />
+        <Input id="lastName" name="lastName" required placeholder="Bayan" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email Address</Label>
@@ -449,10 +449,10 @@ export function EnrollForm({ courseId, courseTitle }: Props) {
           name="email"
           type="email"
           required
-          placeholder="juan@example.com"
+          placeholder="ahmad@example.com"
         />
       </div>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       <Button type="submit" disabled={isPending} className="w-full">
         {isPending ? "Submitting..." : "Submit Application"}
       </Button>
@@ -486,8 +486,8 @@ export default async function EnrollPage({ params }: Props) {
   if (!course) notFound();
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-2">Enrollment Application</h1>
+    <div className="mx-auto max-w-lg px-4 py-12">
+      <h1 className="mb-2 text-2xl font-bold">Enrollment Application</h1>
       <p className="text-muted-foreground mb-8">
         Fill in your details below to apply for enrollment.
       </p>
@@ -543,7 +543,7 @@ export function UploadProofForm({ requestId }: Props) {
 
   if (state.success) {
     return (
-      <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+      <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
         Thank you — your proof of payment has been received. We will notify you
         by email once reviewed.
       </p>
@@ -562,11 +562,11 @@ export function UploadProofForm({ requestId }: Props) {
           accept="image/jpeg,image/png,image/webp"
           required
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Accepted: JPG, PNG, WEBP. Max 5MB.
         </p>
       </div>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-destructive text-sm">{state.error}</p>}
       <Button type="submit" disabled={isPending}>
         {isPending ? "Uploading..." : "Upload Proof of Payment"}
       </Button>
@@ -610,7 +610,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
   if (!request) notFound();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12 space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-12">
       <div>
         <h1 className="text-2xl font-bold">Application Received</h1>
         <p className="text-muted-foreground mt-1">
@@ -666,7 +666,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
               Account Name: {BANK_ACCOUNT_NAME}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground pt-1">
+          <p className="text-muted-foreground pt-1 text-xs">
             After payment, upload your screenshot or receipt below. You will be
             notified by email once your payment is verified.
           </p>
@@ -679,7 +679,7 @@ export default async function EnrollmentConfirmationPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           {request.paymentProofUrl ? (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+            <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
               Proof of payment already received. We will notify you by email
               once reviewed.
             </p>
