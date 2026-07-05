@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import { getStudentDashboard, getStudentRecentResults } from "@/lib/student/queries";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
+import { CheckCircle2, Clock } from "lucide-react";
 
 function formatTime(t: string): string {
   const [hStr, mStr] = t.split(":");
@@ -26,19 +27,27 @@ const DAY_LABEL: Record<string, string> = {
 
 export const metadata = { title: "Dashboard — AQA Student" };
 
-export default async function StudentDashboardPage() {
+type Props = { searchParams: Promise<{ enrolled?: string }> };
+
+export default async function StudentDashboardPage({ searchParams }: Props) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [{ enrollments, schedules, announcements }, recentResults, user] =
-    await Promise.all([
-      getStudentDashboard(session.userId),
-      getStudentRecentResults(session.userId),
-      db.user.findUnique({
-        where: { id: session.userId },
-        select: { firstName: true },
-      }),
-    ]);
+  const { enrolled } = await searchParams;
+  const justEnrolled = enrolled === "1";
+
+  const [
+    { enrollments, schedules, announcements, pendingPurchases },
+    recentResults,
+    user,
+  ] = await Promise.all([
+    getStudentDashboard(session.userId),
+    getStudentRecentResults(session.userId),
+    db.user.findUnique({
+      where: { id: session.userId },
+      select: { firstName: true },
+    }),
+  ]);
 
   const partialEnrollments = enrollments.filter(
     (e) => e.paymentStatus === "PARTIALLY_PAID",
@@ -55,6 +64,53 @@ export default async function StudentDashboardPage() {
           <Link href="/student/courses">Enroll to other courses</Link>
         </Button>
       </div>
+
+      {/* Enrollment success banner (shown right after checkout) */}
+      {justEnrolled && (
+        <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <div className="space-y-1">
+            <p className="font-semibold text-sm text-emerald-900">
+              Congratulations! Your enrollment has been submitted. 🎉
+            </p>
+            <p className="text-sm text-emerald-700">
+              Our admin team will review your enrollment and payment first.
+              Once approved, the program will appear in your dashboard and
+              you&apos;ll be able to access it.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pending enrollments awaiting admin review */}
+      {pendingPurchases.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+            Pending Enrollments
+          </h2>
+          <div className="space-y-2">
+            {pendingPurchases.map((p) => (
+              <div
+                key={p.id}
+                className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm"
+              >
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-semibold text-sm text-amber-900">
+                    {p.courseTitles.length > 0
+                      ? p.courseTitles.join(", ")
+                      : "Enrollment"}
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    Awaiting admin review. You&apos;ll be able to access the
+                    program here once your enrollment is approved.
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Schedules strip */}
       {schedules.length > 0 && (
