@@ -4,6 +4,7 @@ import { getCourseById } from '@/lib/courses/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { BookOpen, ChevronRight } from 'lucide-react'
 
 type Props = { params: Promise<{ id: string }> }
@@ -59,7 +60,16 @@ export default async function SubjectsPage({ params }: Props) {
               {course.subjects.map((subject) => (
                 <tr key={subject.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">{subject.order}</td>
-                  <td className="px-4 py-3 font-medium">{subject.title}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <span className="inline-flex items-center gap-2">
+                      {subject.title}
+                      {subject.gender && (
+                        <Badge variant="outline" className="border-primary/30 text-primary">
+                          {subject.gender === 'MALE' ? 'Male only' : 'Female only'}
+                        </Badge>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">{subject.units}</td>
                   <td className="px-4 py-3">{subject._count.lessons}</td>
                   <td className="px-4 py-3">

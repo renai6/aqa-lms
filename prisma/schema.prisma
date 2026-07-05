@@ -181,6 +181,9 @@ model Subject {
   order Int
   units Int @default(1)
 
+  // null = visible to everyone (mixed); MALE/FEMALE = restricted to that gender
+  gender Gender?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

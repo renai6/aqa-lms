@@ -8,13 +8,18 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { DayOfWeek } from '@prisma/client'
 
-type ActionState = { error: string | null; success?: boolean }
+type ActionState = { error: string | null; success?: boolean; warning?: string }
 
 const subjectSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   description: z.string().optional(),
   order: z.coerce.number().int().min(1, 'Order must be at least 1.'),
   units: z.coerce.number().int().min(1, 'Units must be at least 1.').default(1),
+  // "" from the "Everyone" option maps to null (visible to all).
+  gender: z.preprocess(
+    (v) => (v === '' || v == null ? null : v),
+    z.enum(['MALE', 'FEMALE']).nullable(),
+  ),
 })
 
 const ALL_DAYS = [
@@ -43,6 +48,7 @@ export async function createSubjectAction(
     description: formData.get('description'),
     order: formData.get('order') ?? '1',
     units: formData.get('units') ?? '1',
+    gender: formData.get('gender'),
   }
 
   const result = subjectSchema.safeParse(raw)
@@ -50,11 +56,11 @@ export async function createSubjectAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, order, units } = result.data
+  const { title, description, order, units, gender } = result.data
 
   try {
     await db.subject.create({
-      data: { courseId, title, description: description || null, order, units },
+      data: { courseId, title, description: description || null, order, units, gender },
     })
   } catch (err) {
     console.error('[createSubject]', err)
@@ -84,6 +90,7 @@ export async function updateSubjectAction(
     description: formData.get('description'),
     order: formData.get('order') ?? '1',
     units: formData.get('units') ?? '1',
+    gender: formData.get('gender'),
   }
 
   const result = subjectSchema.safeParse(raw)
@@ -91,12 +98,43 @@ export async function updateSubjectAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  const { title, description, order, units } = result.data
+  const { title, description, order, units, gender } = result.data
+  const confirmed = formData.get('confirm') === 'true'
+
+  // When restricting to a gender, warn (once) if enrollees of a different
+  // gender already have attempts or grades here and would lose access (D6).
+  const current = await db.subject.findUnique({ where: { id }, select: { gender: true } })
+  const genderChanged = (current?.gender ?? null) !== gender
+  if (genderChanged && gender != null && !confirmed) {
+    const affected = await db.user.count({
+      where: {
+        AND: [
+          { enrollments: { some: { courseId } } },
+          // Everyone who will lose access: a different gender OR unknown gender
+          // (null !== the restricted gender is treated as excluded, fail-closed).
+          { OR: [{ gender: null }, { gender: { not: gender } }] },
+          {
+            OR: [
+              { attempts: { some: { assessment: { subjectId: id } } } },
+              { grades: { some: { subjectId: id } } },
+            ],
+          },
+        ],
+      },
+    })
+    if (affected > 0) {
+      const noun = affected === 1 ? 'student' : 'students'
+      return {
+        error: null,
+        warning: `${affected} ${noun} of a different gender have attempts or grades in this subject and will lose access. Confirm to proceed.`,
+      }
+    }
+  }
 
   try {
     await db.subject.update({
       where: { id },
-      data: { title, description: description || null, order, units },
+      data: { title, description: description || null, order, units, gender },
     })
   } catch (err) {
     console.error('[updateSubject]', err)

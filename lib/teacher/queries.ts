@@ -7,6 +7,7 @@ import type {
 } from '@prisma/client'
 import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
+import { enrolleeGenderWhere } from '@/lib/subjects/visibility'
 
 // All queries here are scoped to the teacher's assigned subjects via the
 // SubjectTeacher join. A helper checks assignment; callers return notFound()
@@ -44,6 +45,7 @@ export async function getTeacherSubjects(
           id: true,
           courseId: true,
           title: true,
+          gender: true,
           course: { select: { title: true } },
           _count: { select: { assessments: true } },
         },
@@ -54,7 +56,11 @@ export async function getTeacherSubjects(
   return Promise.all(
     assignments.map(async ({ subject }) => {
       const [studentCount, pendingGrading] = await Promise.all([
-        db.enrollment.count({ where: { courseId: subject.courseId } }),
+        // Count only enrollees who can actually see this (possibly gendered)
+        // subject, so the roster count matches who participates (D5).
+        db.enrollment.count({
+          where: { courseId: subject.courseId, ...enrolleeGenderWhere(subject.gender) },
+        }),
         db.assessmentAttempt.count({
           where: { status: 'SUBMITTED', assessment: { subjectId: subject.id } },
         }),
@@ -169,12 +175,12 @@ export async function getSubjectStudents(
 ): Promise<SubjectStudentRow[]> {
   const subject = await db.subject.findUnique({
     where: { id: subjectId },
-    select: { courseId: true },
+    select: { courseId: true, gender: true },
   })
   if (!subject) return []
 
   const enrollments = await db.enrollment.findMany({
-    where: { courseId: subject.courseId },
+    where: { courseId: subject.courseId, ...enrolleeGenderWhere(subject.gender) },
     orderBy: { user: { lastName: 'asc' } },
     select: {
       enrolledAt: true,
@@ -403,6 +409,7 @@ export async function getSubjectGradebook(
       id: true,
       title: true,
       courseId: true,
+      gender: true,
       course: { select: { passingGrade: true } },
       assessments: {
         orderBy: { createdAt: 'asc' },
@@ -414,7 +421,7 @@ export async function getSubjectGradebook(
 
   const [enrollments, grades] = await Promise.all([
     db.enrollment.findMany({
-      where: { courseId: subject.courseId },
+      where: { courseId: subject.courseId, ...enrolleeGenderWhere(subject.gender) },
       orderBy: { user: { lastName: 'asc' } },
       select: {
         user: { select: { id: true, firstName: true, lastName: true } },

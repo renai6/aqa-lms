@@ -274,6 +274,13 @@ export default async function PublicCourseDetailPage({ params }: Props) {
                         </p>
                       )}
                       <div className="flex flex-wrap gap-2 pt-2">
+                        {subject.gender && (
+                          <span className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-xs font-semibold text-primary">
+                            {subject.gender === 'MALE'
+                              ? 'Brothers only'
+                              : 'Sisters only'}
+                          </span>
+                        )}
                         {subject._count.lessons > 0 && (
                           <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                             <BookOpen className="w-3.5 h-3.5" />
