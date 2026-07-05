@@ -22,6 +22,8 @@ export function EditSubjectForm({ subject }: Props) {
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="id" value={subject.id} />
           <input type="hidden" name="courseId" value={subject.courseId} />
+          {/* Once a re-gender warning has been shown, the next submit confirms it. */}
+          <input type="hidden" name="confirm" value={state.warning ? 'true' : 'false'} />
           <div className="space-y-2">
             <Label htmlFor="sub-title">Title</Label>
             <Input id="sub-title" name="title" required defaultValue={subject.title} />
@@ -57,12 +59,37 @@ export function EditSubjectForm({ subject }: Props) {
               />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="sub-gender">Visible to</Label>
+            <select
+              id="sub-gender"
+              name="gender"
+              defaultValue={subject.gender ?? ''}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Everyone</option>
+              <option value="MALE">Male only</option>
+              <option value="FEMALE">Female only</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Restrict this subject so only students of the selected gender can see it.
+            </p>
+          </div>
+          {state.warning && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {state.warning}
+            </p>
+          )}
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           {state.success && !state.error && (
             <p className="text-sm text-green-600">Saved successfully.</p>
           )}
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Saving...' : 'Save Changes'}
+          <Button type="submit" disabled={isPending} variant={state.warning ? 'destructive' : 'default'}>
+            {isPending
+              ? 'Saving...'
+              : state.warning
+                ? 'Confirm change'
+                : 'Save Changes'}
           </Button>
         </form>
       </CardContent>

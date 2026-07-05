@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import type { DayOfWeek, AssessmentType, QuestionType, AttemptStatus } from '@prisma/client'
 import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
+import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
+import { getUserGender } from '@/lib/subjects/access'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -49,6 +51,7 @@ const DAY_NUM: Record<string, number> = {
 }
 
 export async function getStudentDashboard(userId: string): Promise<StudentDashboard> {
+  const userGender = await getUserGender(userId)
   const [enrollmentsRaw, announcements, pendingPurchasesRaw] = await Promise.all([
     db.enrollment.findMany({
       where: { userId },
@@ -65,6 +68,8 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
             tuitionFee: true,
             meetLink: true,
             subjects: {
+              // Only subjects this student may see count toward progress + schedule.
+              where: subjectGenderFilter(userGender),
               select: {
                 title: true,
                 lessons: { select: { id: true } },
@@ -183,6 +188,7 @@ export async function getStudentCourse(
   userId: string,
   courseId: string,
 ): Promise<StudentCourse | null> {
+  const userGender = await getUserGender(userId)
   const [enrollment, course] = await Promise.all([
     db.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
@@ -196,6 +202,8 @@ export async function getStudentCourse(
         imageUrl: true,
         meetLink: true,
         subjects: {
+          // Hide subjects restricted to a different gender (D2).
+          where: subjectGenderFilter(userGender),
           orderBy: { order: 'asc' },
           select: {
             id: true,
@@ -324,6 +332,7 @@ export async function getStudentSubject(
       courseId: true,
       title: true,
       description: true,
+      gender: true,
       course: { select: { title: true } },
       schedules: { select: { day: true, startTime: true, endTime: true } },
       lessons: {
@@ -350,6 +359,11 @@ export async function getStudentSubject(
     },
   })
   if (!subject) return null
+
+  // Hard boundary: a student of the wrong gender cannot open the subject even
+  // by direct URL (D2).
+  const userGender = await getUserGender(userId)
+  if (!canSeeSubject(userGender, subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: subject.courseId } },
@@ -440,7 +454,7 @@ export async function getStudentAssessmentLaunch(
       durationMins: true,
       passingScore: true,
       subjectId: true,
-      subject: { select: { title: true, courseId: true } },
+      subject: { select: { title: true, courseId: true, gender: true } },
       _count: { select: { questions: true } },
       attempts: {
         where: { userId },
@@ -450,6 +464,9 @@ export async function getStudentAssessmentLaunch(
     },
   })
   if (!assessment) return null
+
+  const userGender = await getUserGender(userId)
+  if (!canSeeSubject(userGender, assessment.subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: assessment.subject.courseId } },
@@ -536,7 +553,7 @@ export async function getStudentAttempt(
           durationMins: true,
           passingScore: true,
           subjectId: true,
-          subject: { select: { title: true, courseId: true } },
+          subject: { select: { title: true, courseId: true, gender: true } },
           questions: {
             orderBy: { order: 'asc' },
             select: {
@@ -556,6 +573,9 @@ export async function getStudentAttempt(
     },
   })
   if (!attempt) return null
+
+  const userGender = await getUserGender(userId)
+  if (!canSeeSubject(userGender, attempt.assessment.subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: attempt.assessment.subject.courseId } },
@@ -619,11 +639,12 @@ export async function getStudentRecentResults(
   userId: string,
   limit = 5,
 ): Promise<RecentResult[]> {
+  const userGender = await getUserGender(userId)
   const attempts = await db.assessmentAttempt.findMany({
     where: {
       userId,
       status: { in: ['SUBMITTED', 'GRADED'] },
-      assessment: { isPublished: true },
+      assessment: { isPublished: true, subject: subjectGenderFilter(userGender) },
     },
     orderBy: { submittedAt: 'desc' },
     take: limit,

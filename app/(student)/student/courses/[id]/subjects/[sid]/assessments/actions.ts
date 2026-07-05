@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { scoreAttempt, type SubmittedAnswer } from '@/lib/assessments/scoring'
+import { canSeeSubject } from '@/lib/subjects/visibility'
+import { getUserGender } from '@/lib/subjects/access'
 
 type ActionState = { error: string | null }
 
@@ -40,9 +42,16 @@ export async function startAttemptAction(
 
   const assessment = await db.assessment.findFirst({
     where: { id: aid, isPublished: true, subjectId, subject: { courseId } },
-    select: { id: true },
+    select: { id: true, subject: { select: { gender: true } } },
   })
   if (!assessment) return { error: 'Assessment is not available.' }
+
+  // Hard boundary: block starting an attempt in a subject restricted to a
+  // different gender (D2).
+  const userGender = await getUserGender(session.userId)
+  if (!canSeeSubject(userGender, assessment.subject.gender)) {
+    return { error: 'Assessment is not available.' }
+  }
 
   const enrollment = await db.enrollment.findUnique({
     where: { userId_courseId: { userId: session.userId, courseId } },
@@ -91,7 +100,7 @@ export async function submitAttemptAction(
         select: {
           isPublished: true,
           subjectId: true,
-          subject: { select: { courseId: true } },
+          subject: { select: { courseId: true, gender: true } },
           questions: {
             select: {
               id: true,
@@ -107,6 +116,10 @@ export async function submitAttemptAction(
   if (!attempt) return { error: 'Attempt not found.' }
   if (attempt.status !== 'IN_PROGRESS') return { error: 'This attempt has already been submitted.' }
   if (!attempt.assessment.isPublished) {
+    return { error: 'This assessment is no longer available.' }
+  }
+  const userGender = await getUserGender(session.userId)
+  if (!canSeeSubject(userGender, attempt.assessment.subject.gender)) {
     return { error: 'This assessment is no longer available.' }
   }
 

@@ -37,6 +37,22 @@ export function CreateSubjectForm({ courseId, nextOrder }: Props) {
               <Input id="subject-units" name="units" type="number" min="1" defaultValue="1" />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="subject-gender">Visible to</Label>
+            <select
+              id="subject-gender"
+              name="gender"
+              defaultValue=""
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Everyone</option>
+              <option value="MALE">Male only</option>
+              <option value="FEMALE">Female only</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Restrict this subject so only students of the selected gender can see it.
+            </p>
+          </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Creating...' : 'Create Subject'}

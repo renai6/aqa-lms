@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import type { CourseType, CourseDuration, DayOfWeek } from '@prisma/client'
+import type { CourseType, CourseDuration, DayOfWeek, Gender } from '@prisma/client'
 
 export type PublishedCourseRow = {
   id: string
@@ -27,6 +27,7 @@ export type PublicSubjectRow = {
   description: string | null
   order: number
   units: number
+  gender: Gender | null
   _count: { lessons: number }
   schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
 }
@@ -55,6 +56,7 @@ export async function getPublicCourseDetail(id: string): Promise<PublicCourseDet
           description: true,
           order: true,
           units: true,
+          gender: true,
           _count: { select: { lessons: true } },
           schedules: { select: { day: true, startTime: true, endTime: true } },
         },
@@ -94,6 +96,7 @@ export type SubjectRow = {
   description: string | null
   order: number
   units: number
+  gender: Gender | null
   _count: { lessons: number }
 }
 
@@ -140,6 +143,7 @@ export type SubjectDetail = {
   description: string | null
   order: number
   units: number
+  gender: Gender | null
   createdAt: Date
   updatedAt: Date
   course: { title: string }
@@ -210,6 +214,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
           description: true,
           order: true,
           units: true,
+          gender: true,
           _count: {
             select: { lessons: true },
           },
@@ -234,6 +239,7 @@ export async function getSubjectById(sid: string): Promise<SubjectDetail | null>
       description: true,
       order: true,
       units: true,
+      gender: true,
       createdAt: true,
       updatedAt: true,
       course: {
