@@ -5,7 +5,14 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import { canManageSubject } from '@/lib/auth/capabilities'
 import { getPublishBlockers } from '@/lib/assessments/publish-validation'
+
+// Neutral assessment + question authoring actions shared by the admin and
+// teacher route groups. Authorization is by capability (canManageSubject), and
+// every redirect/revalidate target is driven by the `basePath` the caller's
+// form supplies (e.g. `/admin/courses/<cid>/subjects/<sid>` or
+// `/teacher/subjects/<sid>`), so one implementation serves both surfaces.
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -28,12 +35,31 @@ async function countAttempts(assessmentId: string): Promise<number> {
   return db.assessmentAttempt.count({ where: { assessmentId } })
 }
 
+// Resolve + authorize the subject the request targets. Returns the trimmed
+// subjectId and basePath, or an error string for the action to surface.
+async function authorize(
+  formData: FormData,
+): Promise<{ subjectId: string; basePath: string } | { error: string }> {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  const subjectId = formData.get('subjectId')
+  if (typeof subjectId !== 'string' || !subjectId)
+    return { error: 'Invalid subject ID.' }
+
+  const basePath = formData.get('basePath')
+  if (typeof basePath !== 'string' || !basePath)
+    return { error: 'Invalid base path.' }
+
+  if (!(await canManageSubject(session, subjectId)))
+    return { error: 'Forbidden' }
+
+  return { subjectId, basePath }
+}
+
 type OptionRow = { label: string; value: string; isCorrect: boolean }
 
-function parseOptions(
-  type: string,
-  formData: FormData,
-): OptionRow[] | string {
+function parseOptions(type: string, formData: FormData): OptionRow[] | string {
   if (type === 'ESSAY') return []
 
   if (type === 'TRUE_FALSE') {
@@ -48,7 +74,7 @@ function parseOptions(
   }
 
   if (type === 'MULTIPLE_CHOICE') {
-    const texts = formData.getAll('optionText').map(v => String(v).trim())
+    const texts = formData.getAll('optionText').map((v) => String(v).trim())
     const correctIndexRaw = formData.get('correctIndex')
     if (correctIndexRaw === null || correctIndexRaw === '') {
       return 'Please select a correct answer.'
@@ -58,39 +84,33 @@ function parseOptions(
     if (texts.length < 2 || texts.length > 6) {
       return 'Multiple choice questions must have 2-6 options.'
     }
-    if (texts.some(t => t === '')) {
+    if (texts.some((t) => t === '')) {
       return 'All option texts must be non-empty.'
     }
-    const lower = texts.map(t => t.toLowerCase())
+    const lower = texts.map((t) => t.toLowerCase())
     if (new Set(lower).size !== lower.length) {
       return 'Options must be unique.'
     }
     if (correctIndex < 0 || correctIndex >= texts.length) {
       return 'Invalid correct answer selection.'
     }
-    return texts.map((t, i) => ({ label: t, value: t, isCorrect: i === correctIndex }))
+    return texts.map((t, i) => ({
+      label: t,
+      value: t,
+      isCorrect: i === correctIndex,
+    }))
   }
 
   return 'Unknown question type.'
-}
-
-function getBase(courseId: string, subjectId: string) {
-  return '/admin/courses/' + courseId + '/subjects/' + subjectId
 }
 
 export async function createAssessmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { subjectId, basePath } = auth
 
   const raw = {
     title: formData.get('title'),
@@ -125,26 +145,20 @@ export async function createAssessmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath(getBase(courseId, subjectId))
-  redirect(getBase(courseId, subjectId) + '/assessments/' + created.id)
+  revalidatePath(basePath)
+  redirect(basePath + '/assessments/' + created.id)
 }
 
 export async function updateAssessmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
   const raw = {
     title: formData.get('title'),
@@ -177,9 +191,8 @@ export async function updateAssessmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + id)
-  revalidatePath(base)
+  revalidatePath(basePath + '/assessments/' + id)
+  revalidatePath(basePath)
   return { error: null, success: true }
 }
 
@@ -187,30 +200,32 @@ export async function deleteAssessmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid assessment ID.' }
 
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
-
   const attempts = await countAttempts(id)
   if (attempts > 0) {
-    return { error: 'Cannot delete an assessment that has student attempts. Unpublish it instead.' }
+    return {
+      error:
+        'Cannot delete an assessment that has student attempts. Unpublish it instead.',
+    }
   }
 
   try {
-    await db.$transaction(async tx => {
-      const questions = await tx.question.findMany({ where: { assessmentId: id }, select: { id: true } })
-      const qids = questions.map(q => q.id)
+    await db.$transaction(async (tx) => {
+      const questions = await tx.question.findMany({
+        where: { assessmentId: id },
+        select: { id: true },
+      })
+      const qids = questions.map((q) => q.id)
       if (qids.length > 0) {
-        await tx.questionOption.deleteMany({ where: { questionId: { in: qids } } })
+        await tx.questionOption.deleteMany({
+          where: { questionId: { in: qids } },
+        })
         await tx.question.deleteMany({ where: { assessmentId: id } })
       }
       await tx.assessment.delete({ where: { id } })
@@ -220,28 +235,21 @@ export async function deleteAssessmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base)
-  revalidatePath(base + '/assessments')
-  redirect(base + '/assessments')
+  revalidatePath(basePath)
+  revalidatePath(basePath + '/assessments')
+  redirect(basePath + '/assessments')
 }
 
 export async function publishAssessmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
   const assessment = await db.assessment.findUnique({
     where: { id },
@@ -264,9 +272,8 @@ export async function publishAssessmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + id)
-  revalidatePath(base)
+  revalidatePath(basePath + '/assessments/' + id)
+  revalidatePath(basePath)
   return { error: null, success: true }
 }
 
@@ -274,18 +281,12 @@ export async function unpublishAssessmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
   try {
     await db.assessment.update({ where: { id }, data: { isPublished: false } })
@@ -294,9 +295,8 @@ export async function unpublishAssessmentAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + id)
-  revalidatePath(base)
+  revalidatePath(basePath + '/assessments/' + id)
+  revalidatePath(basePath)
   return { error: null, success: true }
 }
 
@@ -304,22 +304,20 @@ export async function createQuestionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const assessmentId = formData.get('assessmentId')
-  if (typeof assessmentId !== 'string' || !assessmentId) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  if (typeof assessmentId !== 'string' || !assessmentId)
+    return { error: 'Invalid assessment ID.' }
 
   const attempts = await countAttempts(assessmentId)
   if (attempts > 0) {
-    return { error: 'Questions are locked because students have attempted this assessment.' }
+    return {
+      error:
+        'Questions are locked because students have attempted this assessment.',
+    }
   }
 
   const raw = {
@@ -343,7 +341,7 @@ export async function createQuestionAction(
     })
     const order = (maxOrder._max.order ?? 0) + 1
 
-    await db.$transaction(async tx => {
+    await db.$transaction(async (tx) => {
       const question = await tx.question.create({
         data: {
           assessmentId,
@@ -356,7 +354,7 @@ export async function createQuestionAction(
       })
       if (optionsOrError.length > 0) {
         await tx.questionOption.createMany({
-          data: optionsOrError.map(o => ({ ...o, questionId: question.id })),
+          data: optionsOrError.map((o) => ({ ...o, questionId: question.id })),
         })
       }
     })
@@ -365,34 +363,31 @@ export async function createQuestionAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + assessmentId)
-  redirect(base + '/assessments/' + assessmentId)
+  revalidatePath(basePath + '/assessments/' + assessmentId)
+  redirect(basePath + '/assessments/' + assessmentId)
 }
 
 export async function updateQuestionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid question ID.' }
 
   const assessmentId = formData.get('assessmentId')
-  if (typeof assessmentId !== 'string' || !assessmentId) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  if (typeof assessmentId !== 'string' || !assessmentId)
+    return { error: 'Invalid assessment ID.' }
 
   const attempts = await countAttempts(assessmentId)
   if (attempts > 0) {
-    return { error: 'Questions are locked because students have attempted this assessment.' }
+    return {
+      error:
+        'Questions are locked because students have attempted this assessment.',
+    }
   }
 
   const raw = {
@@ -410,7 +405,7 @@ export async function updateQuestionAction(
   if (typeof optionsOrError === 'string') return { error: optionsOrError }
 
   try {
-    await db.$transaction(async tx => {
+    await db.$transaction(async (tx) => {
       await tx.question.update({
         where: { id },
         data: {
@@ -422,7 +417,7 @@ export async function updateQuestionAction(
       await tx.questionOption.deleteMany({ where: { questionId: id } })
       if (optionsOrError.length > 0) {
         await tx.questionOption.createMany({
-          data: optionsOrError.map(o => ({ ...o, questionId: id })),
+          data: optionsOrError.map((o) => ({ ...o, questionId: id })),
         })
       }
     })
@@ -431,9 +426,8 @@ export async function updateQuestionAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + assessmentId)
-  revalidatePath(base + '/assessments/' + assessmentId + '/questions/' + id)
+  revalidatePath(basePath + '/assessments/' + assessmentId)
+  revalidatePath(basePath + '/assessments/' + assessmentId + '/questions/' + id)
   return { error: null, success: true }
 }
 
@@ -441,25 +435,23 @@ export async function deleteQuestionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid question ID.' }
 
   const assessmentId = formData.get('assessmentId')
-  if (typeof assessmentId !== 'string' || !assessmentId) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  if (typeof assessmentId !== 'string' || !assessmentId)
+    return { error: 'Invalid assessment ID.' }
 
   const attempts = await countAttempts(assessmentId)
   if (attempts > 0) {
-    return { error: 'Questions are locked because students have attempted this assessment.' }
+    return {
+      error:
+        'Questions are locked because students have attempted this assessment.',
+    }
   }
 
   const assessment = await db.assessment.findUnique({
@@ -468,11 +460,13 @@ export async function deleteQuestionAction(
   })
   if (!assessment) return { error: 'Assessment not found.' }
   if (assessment.isPublished && assessment._count.questions <= 1) {
-    return { error: 'Cannot delete the last question of a published assessment.' }
+    return {
+      error: 'Cannot delete the last question of a published assessment.',
+    }
   }
 
   try {
-    await db.$transaction(async tx => {
+    await db.$transaction(async (tx) => {
       await tx.questionOption.deleteMany({ where: { questionId: id } })
       await tx.question.delete({ where: { id } })
     })
@@ -481,8 +475,7 @@ export async function deleteQuestionAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  const base = getBase(courseId, subjectId)
-  revalidatePath(base + '/assessments/' + assessmentId)
+  revalidatePath(basePath + '/assessments/' + assessmentId)
   return { error: null, success: true }
 }
 
@@ -490,24 +483,20 @@ export async function moveQuestionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const auth = await authorize(formData)
+  if ('error' in auth) return auth
+  const { basePath } = auth
 
   const id = formData.get('id')
   if (typeof id !== 'string' || !id) return { error: 'Invalid question ID.' }
 
   const assessmentId = formData.get('assessmentId')
-  if (typeof assessmentId !== 'string' || !assessmentId) return { error: 'Invalid assessment ID.' }
-
-  const subjectId = formData.get('subjectId')
-  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
-
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  if (typeof assessmentId !== 'string' || !assessmentId)
+    return { error: 'Invalid assessment ID.' }
 
   const direction = formData.get('direction')
-  if (direction !== 'up' && direction !== 'down') return { error: 'Invalid direction.' }
+  if (direction !== 'up' && direction !== 'down')
+    return { error: 'Invalid direction.' }
 
   const siblings = await db.question.findMany({
     where: { assessmentId },
@@ -515,7 +504,7 @@ export async function moveQuestionAction(
     select: { id: true, order: true },
   })
 
-  const idx = siblings.findIndex(q => q.id === id)
+  const idx = siblings.findIndex((q) => q.id === id)
   if (idx === -1) return { error: 'Question not found.' }
 
   const targetIdx = direction === 'up' ? idx - 1 : idx + 1
@@ -528,14 +517,20 @@ export async function moveQuestionAction(
 
   try {
     await db.$transaction([
-      db.question.update({ where: { id: current.id }, data: { order: neighbor.order } }),
-      db.question.update({ where: { id: neighbor.id }, data: { order: current.order } }),
+      db.question.update({
+        where: { id: current.id },
+        data: { order: neighbor.order },
+      }),
+      db.question.update({
+        where: { id: neighbor.id },
+        data: { order: current.order },
+      }),
     ])
   } catch (err) {
     console.error('[moveQuestion]', err)
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  revalidatePath(getBase(courseId, subjectId) + '/assessments/' + assessmentId)
+  revalidatePath(basePath + '/assessments/' + assessmentId)
   return { error: null, success: true }
 }

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getSubjectById } from '@/lib/courses/queries'
 import { getSession } from '@/lib/auth/session'
-import { CreateAssessmentForm } from './create-assessment-form'
+import { CreateAssessmentForm } from '@/components/assessments/create-assessment-form'
 
 type Props = { params: Promise<{ id: string; sid: string }> }
 
@@ -35,7 +35,7 @@ export default async function NewAssessmentPage({ params }: Props) {
         <h1 className="text-2xl font-semibold">New Assessment</h1>
         <p className="text-muted-foreground mt-1">{subject.course.title} › {subject.title}</p>
       </div>
-      <CreateAssessmentForm subjectId={sid} courseId={id} />
+      <CreateAssessmentForm subjectId={sid} basePath={'/admin/courses/' + id + '/subjects/' + sid} />
     </div>
   )
 }

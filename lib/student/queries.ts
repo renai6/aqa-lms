@@ -1,6 +1,8 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
 import type { DayOfWeek, AssessmentType, QuestionType, AttemptStatus } from '@prisma/client'
+import { pickRelevantAttempt } from '@/lib/assessments/grading'
+import { weightedSubjectGrade } from '@/lib/grades/compute'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -37,14 +39,6 @@ export type StudentDashboard = {
 const DAY_NUM: Record<string, number> = {
   MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
   FRIDAY: 5, SATURDAY: 6, SUNDAY: 7,
-}
-
-// One relevant attempt per assessment (D4): prefer a completed (non-in-progress)
-// attempt over an in-progress one, otherwise the most recent.
-function pickRelevantAttempt<T extends { status: AttemptStatus }>(
-  attempts: T[],
-): T | null {
-  return attempts.find(a => a.status !== 'IN_PROGRESS') ?? attempts[0] ?? null
 }
 
 export async function getStudentDashboard(userId: string): Promise<StudentDashboard> {
@@ -195,6 +189,7 @@ export async function getStudentCourse(
               where: { isPublished: true },
               select: {
                 id: true,
+                weight: true,
                 attempts: {
                   where: { userId },
                   orderBy: { startedAt: 'desc' },
@@ -229,17 +224,14 @@ export async function getStudentCourse(
     totalLessons += subTotal
     completedLessons += subDone
 
-    // Equal-weight average of each assessment's graded percentage.
-    let scoreSum = 0
-    let gradedAssessments = 0
-    for (const a of s.assessments) {
-      const attempt = pickRelevantAttempt(a.attempts)
-      if (attempt && attempt.score != null) {
-        scoreSum += attempt.score
-        gradedAssessments++
-      }
-    }
-    const averageScore = gradedAssessments > 0 ? scoreSum / gradedAssessments : null
+    // Weighted average (by Assessment.weight) of each assessment's graded
+    // percentage. Shared with the teacher final-grade suggestion so both agree.
+    const gradeItems = s.assessments.map(a => ({
+      weight: a.weight,
+      score: pickRelevantAttempt(a.attempts)?.score ?? null,
+    }))
+    const gradedAssessments = gradeItems.filter(i => i.score != null).length
+    const averageScore = weightedSubjectGrade(gradeItems)
 
     return {
       id: s.id,

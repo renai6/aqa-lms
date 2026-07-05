@@ -1,43 +1,65 @@
 'use client'
 
 import { useActionState } from 'react'
-import { updateAssessmentAction } from '../actions'
+import { updateAssessmentAction } from '@/lib/assessments/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AssessmentDetail } from '@/lib/assessments/queries'
 
-type Props = { assessment: AssessmentDetail }
+type Props = { assessment: AssessmentDetail; basePath: string }
 
-export function EditAssessmentForm({ assessment }: Props) {
-  const [state, formAction, isPending] = useActionState(updateAssessmentAction, { error: null })
+export function EditAssessmentForm({ assessment, basePath }: Props) {
+  const [state, formAction, isPending] = useActionState(
+    updateAssessmentAction,
+    { error: null },
+  )
   return (
     <Card>
-      <CardHeader><CardTitle>Assessment Settings</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Assessment Settings</CardTitle>
+      </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="id" value={assessment.id} />
           <input type="hidden" name="subjectId" value={assessment.subjectId} />
-          <input type="hidden" name="courseId" value={assessment.subject.courseId} />
+          <input type="hidden" name="basePath" value={basePath} />
           <div className="space-y-2">
             <Label htmlFor="assess-title">Title</Label>
-            <Input id="assess-title" name="title" required defaultValue={assessment.title} />
+            <Input
+              id="assess-title"
+              name="title"
+              required
+              defaultValue={assessment.title}
+            />
           </div>
           <div className="space-y-2">
             <Label>Type</Label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="type" value="QUIZ" defaultChecked={assessment.type === 'QUIZ'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="type"
+                  value="QUIZ"
+                  defaultChecked={assessment.type === 'QUIZ'}
+                  className="accent-primary"
+                />
                 Quiz
               </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="type" value="EXAM" defaultChecked={assessment.type === 'EXAM'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="type"
+                  value="EXAM"
+                  defaultChecked={assessment.type === 'EXAM'}
+                  className="accent-primary"
+                />
                 Exam
               </label>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="assess-duration">Duration (mins)</Label>
               <Input
@@ -84,8 +106,12 @@ export function EditAssessmentForm({ assessment }: Props) {
               defaultValue={assessment.weight}
             />
           </div>
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-          {state.success && !state.error && <p className="text-sm text-green-600">Saved successfully.</p>}
+          {state.error && (
+            <p className="text-destructive text-sm">{state.error}</p>
+          )}
+          {state.success && !state.error && (
+            <p className="text-sm text-green-600">Saved successfully.</p>
+          )}
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Saving...' : 'Save Changes'}
           </Button>

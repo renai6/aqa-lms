@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useActionState } from 'react'
-import { createQuestionAction, updateQuestionAction } from '../actions'
+import {
+  createQuestionAction,
+  updateQuestionAction,
+} from '@/lib/assessments/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,22 +16,31 @@ import type { QuestionDetail } from '@/lib/assessments/queries'
 type Props = {
   assessmentId: string
   subjectId: string
-  courseId: string
+  basePath: string
   locked: boolean
   question?: QuestionDetail
 }
 
-export function QuestionForm({ assessmentId, subjectId, courseId, locked, question }: Props) {
+export function QuestionForm({
+  assessmentId,
+  subjectId,
+  basePath,
+  locked,
+  question,
+}: Props) {
   const isEdit = !!question
 
   const initialType = question?.type ?? 'MULTIPLE_CHOICE'
-  const initialTfCorrect = question?.options.find(o => o.isCorrect)?.value ?? ''
-  const initialOptions = question?.type === 'MULTIPLE_CHOICE'
-    ? question.options.map(o => o.label)
-    : ['', '']
-  const initialCorrectIndex = question?.type === 'MULTIPLE_CHOICE'
-    ? question.options.findIndex(o => o.isCorrect)
-    : -1
+  const initialTfCorrect =
+    question?.options.find((o) => o.isCorrect)?.value ?? ''
+  const initialOptions =
+    question?.type === 'MULTIPLE_CHOICE'
+      ? question.options.map((o) => o.label)
+      : ['', '']
+  const initialCorrectIndex =
+    question?.type === 'MULTIPLE_CHOICE'
+      ? question.options.findIndex((o) => o.isCorrect)
+      : -1
 
   // All fields are controlled: React 19 resets uncontrolled inputs after a
   // form action completes, which would wipe user input when the action errors.
@@ -37,7 +49,7 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
   const [points, setPoints] = useState(String(question?.points ?? 1))
   const [tfCorrect, setTfCorrect] = useState(initialTfCorrect)
   const [options, setOptions] = useState<string[]>(
-    initialType === 'MULTIPLE_CHOICE' ? initialOptions : ['', '']
+    initialType === 'MULTIPLE_CHOICE' ? initialOptions : ['', ''],
   )
   const [correctIndex, setCorrectIndex] = useState<number>(initialCorrectIndex)
 
@@ -67,39 +79,51 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
     <Card>
       <CardContent className="pt-6">
         {locked && (
-          <div className="mb-4 rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            Questions are locked because students have attempted this assessment.
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Questions are locked because students have attempted this
+            assessment.
           </div>
         )}
         <form action={formAction} className="space-y-4">
           {isEdit && <input type="hidden" name="id" value={question.id} />}
           <input type="hidden" name="assessmentId" value={assessmentId} />
           <input type="hidden" name="subjectId" value={subjectId} />
-          <input type="hidden" name="courseId" value={courseId} />
+          <input type="hidden" name="basePath" value={basePath} />
           <input type="hidden" name="type" value={type} />
 
           <div className="space-y-2">
             <Label>Question Type</Label>
-            <div className="flex gap-4 flex-wrap">
-              {(['MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY'] as const).map(t => (
-                <label key={t} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="_typeDisplay"
-                    value={t}
-                    checked={type === t}
-                    onChange={() => setType(t)}
-                    disabled={locked}
-                    className="accent-primary"
-                  />
-                  {t === 'MULTIPLE_CHOICE' ? 'Multiple Choice' : t === 'TRUE_FALSE' ? 'True / False' : 'Essay'}
-                </label>
-              ))}
+            <div className="flex flex-wrap gap-4">
+              {(['MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY'] as const).map(
+                (t) => (
+                  <label
+                    key={t}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name="_typeDisplay"
+                      value={t}
+                      checked={type === t}
+                      onChange={() => setType(t)}
+                      disabled={locked}
+                      className="accent-primary"
+                    />
+                    {t === 'MULTIPLE_CHOICE'
+                      ? 'Multiple Choice'
+                      : t === 'TRUE_FALSE'
+                        ? 'True / False'
+                        : 'Essay'}
+                  </label>
+                ),
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="q-text">Question Text <span aria-hidden="true">*</span></Label>
+            <Label htmlFor="q-text">
+              Question Text <span aria-hidden="true">*</span>
+            </Label>
             <Textarea
               id="q-text"
               name="questionText"
@@ -107,13 +131,15 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
               rows={3}
               disabled={locked}
               value={questionText}
-              onChange={e => setQuestionText(e.target.value)}
+              onChange={(e) => setQuestionText(e.target.value)}
               placeholder="Enter the question..."
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="q-points">Points <span aria-hidden="true">*</span></Label>
+            <Label htmlFor="q-points">
+              Points <span aria-hidden="true">*</span>
+            </Label>
             <Input
               id="q-points"
               name="points"
@@ -122,7 +148,7 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
               required
               disabled={locked}
               value={points}
-              onChange={e => setPoints(e.target.value)}
+              onChange={(e) => setPoints(e.target.value)}
               className="max-w-[120px]"
             />
           </div>
@@ -130,7 +156,11 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
           {type === 'MULTIPLE_CHOICE' && (
             <div className="space-y-3">
               <Label>Answer Options</Label>
-              <input type="hidden" name="correctIndex" value={correctIndex >= 0 ? correctIndex : ''} />
+              <input
+                type="hidden"
+                name="correctIndex"
+                value={correctIndex >= 0 ? correctIndex : ''}
+              />
               {options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input
@@ -145,7 +175,7 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
                   <Input
                     name="optionText"
                     value={opt}
-                    onChange={e => updateOption(i, e.target.value)}
+                    onChange={(e) => updateOption(i, e.target.value)}
                     disabled={locked}
                     placeholder={'Option ' + (i + 1)}
                     required
@@ -164,7 +194,12 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
                 </div>
               ))}
               {!locked && options.length < 6 && (
-                <Button type="button" variant="outline" size="sm" onClick={addOption}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addOption}
+                >
                   Add Option
                 </Button>
               )}
@@ -175,7 +210,7 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
             <div className="space-y-2">
               <Label>Correct Answer</Label>
               <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
                   <input
                     type="radio"
                     name="tfCorrect"
@@ -187,7 +222,7 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
                   />
                   True
                 </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
                   <input
                     type="radio"
                     name="tfCorrect"
@@ -204,14 +239,26 @@ export function QuestionForm({ assessmentId, subjectId, courseId, locked, questi
           )}
 
           {type === 'ESSAY' && (
-            <p className="text-sm text-muted-foreground italic">Essay questions are graded manually.</p>
+            <p className="text-muted-foreground text-sm italic">
+              Essay questions are graded manually.
+            </p>
           )}
 
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-          {state.success && !state.error && <p className="text-sm text-green-600">Saved successfully.</p>}
+          {state.error && (
+            <p className="text-destructive text-sm">{state.error}</p>
+          )}
+          {state.success && !state.error && (
+            <p className="text-sm text-green-600">Saved successfully.</p>
+          )}
           {!locked && (
             <Button type="submit" disabled={isPending}>
-              {isPending ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Question')}
+              {isPending
+                ? isEdit
+                  ? 'Saving...'
+                  : 'Creating...'
+                : isEdit
+                  ? 'Save Changes'
+                  : 'Create Question'}
             </Button>
           )}
         </form>
