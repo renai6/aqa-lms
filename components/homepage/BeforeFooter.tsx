@@ -1,18 +1,30 @@
+import Eyebrow from "./Eyebrow";
+import Reveal from "./Reveal";
+
 export default function BeforeFooter() {
   return (
-    <section className="bg-primary py-10">
-      <div className="max-w-7xl mx-auto px-6 text-center">
-        <p className="text-primary-foreground/90 text-sm mb-8 quote-italic">
-          &ldquo;If Muslims really desire to make a difference, then{" "}
-          <span className="font-bold text-orange-300">
-            {" "}
-            strive to attain both academic and Islamic knowledge&rdquo;
+    <section className="relative overflow-hidden bg-[#521021] px-6 py-24">
+      <span className="text-gold/15 pointer-events-none absolute top-8 left-1/2 -translate-x-1/2 text-[180px] leading-[0.5] select-none">
+        &ldquo;
+      </span>
+      <Reveal className="relative mx-auto max-w-3xl text-center">
+        <Eyebrow center className="mb-8">
+          From Our President
+        </Eyebrow>
+        <p className="text-2xl leading-snug font-light tracking-tight text-white sm:text-3xl">
+          If Muslims really desire to make a difference, then{" "}
+          <span className="text-gold font-normal italic">
+            strive to attain both academic and Islamic knowledge.
           </span>
         </p>
-        <p className="text-primary-foreground/90 text-sm mb-8 text-italic">
-          - Sheikh Vladimir Sahiron, AQA President
+        <p className="text-gold mt-8 text-[11px] font-semibold tracking-[0.2em] uppercase">
+          Sheikh Vladimir Sahiron
+          <span className="font-light tracking-normal text-white/40 normal-case">
+            {" "}
+            — AQA President
+          </span>
         </p>
-      </div>
+      </Reveal>
     </section>
   );
 }

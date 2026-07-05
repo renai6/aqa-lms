@@ -205,11 +205,7 @@ export function RegisterForm() {
 
       <p className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-medium"
-          style={{ color: "oklch(0.525 0.223 3.958)" }}
-        >
+        <Link href="/login" className="text-primary font-medium">
           Sign in
         </Link>
       </p>

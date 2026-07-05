@@ -1,44 +1,39 @@
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import Link from 'next/link'
-import { loginAction } from './actions'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useActionState } from "react";
+import Link from "next/link";
+import { loginAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Eyebrow from "@/components/homepage/Eyebrow";
 
 export default function LoginPage() {
-  const [state, action, isPending] = useActionState(loginAction, { error: null })
+  const [state, action, isPending] = useActionState(loginAction, {
+    error: null,
+  });
 
   return (
-    <div className="w-full max-w-[380px] animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-3 w-full max-w-[380px] duration-500">
       {/* AQA mark — visible on mobile (left panel is hidden) */}
-      <div className="lg:hidden flex items-center gap-2.5 mb-8">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-          style={{
-            border: '1.5px solid oklch(0.525 0.223 3.958 / 0.4)',
-            backgroundColor: 'oklch(0.525 0.223 3.958 / 0.07)',
-          }}
-        >
-          <span
-            className="font-bold text-[10px] tracking-tighter"
-            style={{ color: 'oklch(0.525 0.223 3.958)' }}
-          >
+      <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="border-primary/40 bg-primary/[0.07] flex h-9 w-9 shrink-0 rotate-45 items-center justify-center border-[1.5px]">
+          <span className="text-primary -rotate-45 text-[10px] font-bold tracking-tighter">
             AQA
           </span>
         </div>
-        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+        <span className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
           Al-Qur&apos;an Academy
         </span>
       </div>
 
       {/* Heading */}
       <div className="mb-8">
-        <h2 className="text-[1.75rem] font-bold text-foreground tracking-tight leading-none">
+        <Eyebrow className="mb-4">Member Login</Eyebrow>
+        <h2 className="text-foreground text-[1.75rem] leading-none font-bold tracking-tight">
           Welcome back
         </h2>
-        <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
           Sign in to continue your learning journey.
         </p>
       </div>
@@ -46,7 +41,10 @@ export default function LoginPage() {
       {/* Form */}
       <form action={action} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+          <Label
+            htmlFor="email"
+            className="text-foreground text-sm font-medium"
+          >
             Email address
           </Label>
           <Input
@@ -55,20 +53,22 @@ export default function LoginPage() {
             type="email"
             required
             autoComplete="email"
-            placeholder="you@example.com"
-            className="h-11 text-sm px-3.5"
+            placeholder="ahmad@example.com"
+            className="h-11 px-3.5 text-sm"
           />
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+            <Label
+              htmlFor="password"
+              className="text-foreground text-sm font-medium"
+            >
               Password
             </Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium transition-opacity hover:opacity-70"
-              style={{ color: 'oklch(0.525 0.223 3.958)' }}
+              className="text-primary text-xs font-medium transition-opacity hover:opacity-70"
             >
               Forgot password?
             </Link>
@@ -78,34 +78,26 @@ export default function LoginPage() {
             name="password"
             type="password"
             required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="h-11 text-sm px-3.5"
+            autoComplete="off"
+            className="h-11 px-3.5 text-sm"
           />
         </div>
 
         {state.error && (
-          <div
-            className="rounded-lg px-4 py-3 text-sm font-medium"
-            style={{
-              backgroundColor: 'oklch(0.577 0.245 27.325 / 0.08)',
-              border: '1px solid oklch(0.577 0.245 27.325 / 0.2)',
-              color: 'oklch(0.577 0.245 27.325)',
-            }}
-          >
+          <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm font-medium">
             {state.error}
           </div>
         )}
 
         <Button
           type="submit"
-          className="w-full h-11 font-semibold tracking-wide mt-1"
+          className="mt-1 h-11 w-full font-semibold tracking-wide"
           disabled={isPending}
         >
           {isPending ? (
             <span className="flex items-center gap-2">
               <svg
-                className="animate-spin h-4 w-4 shrink-0"
+                className="h-4 w-4 shrink-0 animate-spin"
                 viewBox="0 0 24 24"
                 fill="none"
               >
@@ -126,24 +118,23 @@ export default function LoginPage() {
               Signing in…
             </span>
           ) : (
-            'Sign in'
+            "Sign in"
           )}
         </Button>
       </form>
 
       {/* Register CTA */}
-      <div className="mt-7 pt-6 border-t border-border/60 text-center">
-        <p className="text-sm text-muted-foreground">
-          New here?{' '}
+      <div className="border-border/60 mt-7 border-t pt-6 text-center">
+        <p className="text-muted-foreground text-sm">
+          New here?{" "}
           <Link
             href="/register"
-            className="font-medium hover:opacity-80 transition-opacity"
-            style={{ color: 'oklch(0.525 0.223 3.958)' }}
+            className="text-primary font-medium transition-opacity hover:opacity-80"
           >
             Create an account
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }
