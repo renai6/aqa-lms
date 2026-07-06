@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { getPublishedCourses } from "@/lib/courses/queries";
+import { priceSuffix } from "@/lib/courses/format";
 import type { CourseType } from "@prisma/client";
 import Eyebrow from "@/components/homepage/Eyebrow";
 import Reveal from "@/components/homepage/Reveal";
@@ -165,8 +166,14 @@ export default async function CoursesPage({
                             <span className="text-primary text-xl font-bold">
                               ₱{course.tuitionFee.toLocaleString("en-PH")}
                             </span>
+                            {course.paymentFrequency && (
+                              <span className="text-muted-foreground ml-1 text-sm">
+                                {priceSuffix(course.paymentFrequency)}
+                              </span>
+                            )}
                             <p className="text-muted-foreground mt-0.5 text-xs">
-                              Flexible installments available
+                              {course.miscFeeNote ??
+                                "Flexible installments available"}
                             </p>
                           </div>
                         ) : (

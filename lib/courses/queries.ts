@@ -1,42 +1,68 @@
-import { db } from '@/lib/db'
-import type { CourseType, CourseDuration, DayOfWeek, Gender } from '@prisma/client'
+import { db } from "@/lib/db";
+import type {
+  CourseType,
+  CourseDuration,
+  DayOfWeek,
+  Gender,
+  PaymentFrequency,
+} from "@prisma/client";
 
 export type PublishedCourseRow = {
-  id: string
-  title: string
-  description: string | null
-  imageUrl: string | null
-  tuitionFee: number | null
-  courseType: CourseType
-  meetLink: string | null
-  courseDuration: CourseDuration | null
-}
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  tuitionFee: number | null;
+  courseType: CourseType;
+  meetLink: string | null;
+  courseDuration: CourseDuration | null;
+  paymentFrequency: PaymentFrequency | null;
+  miscFeeNote: string | null;
+};
 
-export async function getPublishedCourses(type?: CourseType): Promise<PublishedCourseRow[]> {
+export async function getPublishedCourses(
+  type?: CourseType,
+): Promise<PublishedCourseRow[]> {
   const rows = await db.course.findMany({
     where: { isPublished: true, ...(type ? { courseType: type } : {}) },
-    orderBy: { title: 'asc' },
-    select: { id: true, title: true, description: true, imageUrl: true, tuitionFee: true, courseType: true, meetLink: true, courseDuration: true },
-  })
-  return rows.map(r => ({ ...r, tuitionFee: r.tuitionFee?.toNumber() ?? null }))
+    orderBy: { title: "asc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      tuitionFee: true,
+      courseType: true,
+      meetLink: true,
+      courseDuration: true,
+      paymentFrequency: true,
+      miscFeeNote: true,
+    },
+  });
+  return rows.map((r) => ({
+    ...r,
+    tuitionFee: r.tuitionFee?.toNumber() ?? null,
+  }));
 }
 
 export type PublicSubjectRow = {
-  id: string
-  title: string
-  description: string | null
-  order: number
-  units: number
-  gender: Gender | null
-  _count: { lessons: number }
-  schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
-}
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+  units: number;
+  gender: Gender | null;
+  _count: { lessons: number };
+  schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>;
+};
 
 export type PublicCourseDetail = PublishedCourseRow & {
-  subjects: PublicSubjectRow[]
-}
+  subjects: PublicSubjectRow[];
+};
 
-export async function getPublicCourseDetail(id: string): Promise<PublicCourseDetail | null> {
+export async function getPublicCourseDetail(
+  id: string,
+): Promise<PublicCourseDetail | null> {
   const raw = await db.course.findUnique({
     where: { id, isPublished: true },
     select: {
@@ -48,8 +74,10 @@ export async function getPublicCourseDetail(id: string): Promise<PublicCourseDet
       courseType: true,
       meetLink: true,
       courseDuration: true,
+      paymentFrequency: true,
+      miscFeeNote: true,
       subjects: {
-        orderBy: { order: 'asc' },
+        orderBy: { order: "asc" },
         select: {
           id: true,
           title: true,
@@ -62,116 +90,148 @@ export async function getPublicCourseDetail(id: string): Promise<PublicCourseDet
         },
       },
     },
-  })
-  if (!raw) return null
-  return { ...raw, tuitionFee: raw.tuitionFee?.toNumber() ?? null }
+  });
+  if (!raw) return null;
+  return { ...raw, tuitionFee: raw.tuitionFee?.toNumber() ?? null };
 }
 
-export async function getPublishedCourseById(id: string): Promise<PublishedCourseRow | null> {
+export async function getPublishedCourseById(
+  id: string,
+): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
     where: { id },
-    select: { id: true, title: true, description: true, imageUrl: true, isPublished: true, tuitionFee: true, courseType: true, meetLink: true, courseDuration: true },
-  })
-  if (!course?.isPublished) return null
-  return { id: course.id, title: course.title, description: course.description, imageUrl: course.imageUrl, tuitionFee: course.tuitionFee?.toNumber() ?? null, courseType: course.courseType, meetLink: course.meetLink, courseDuration: course.courseDuration }
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      isPublished: true,
+      tuitionFee: true,
+      courseType: true,
+      meetLink: true,
+      courseDuration: true,
+      paymentFrequency: true,
+      miscFeeNote: true,
+    },
+  });
+  if (!course?.isPublished) return null;
+  return {
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    imageUrl: course.imageUrl,
+    tuitionFee: course.tuitionFee?.toNumber() ?? null,
+    courseType: course.courseType,
+    meetLink: course.meetLink,
+    courseDuration: course.courseDuration,
+    paymentFrequency: course.paymentFrequency,
+    miscFeeNote: course.miscFeeNote,
+  };
 }
 
 export type CourseRow = {
-  id: string
-  title: string
-  description: string | null
-  imageUrl: string | null
-  isPublished: boolean
-  courseType: CourseType
-  passingGrade: number
-  meetLink: string | null
-  courseDuration: CourseDuration | null
-  createdAt: Date
-  _count: { subjects: number }
-}
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  isPublished: boolean;
+  courseType: CourseType;
+  passingGrade: number;
+  meetLink: string | null;
+  courseDuration: CourseDuration | null;
+  createdAt: Date;
+  _count: { subjects: number };
+};
 
 export type SubjectRow = {
-  id: string
-  title: string
-  description: string | null
-  order: number
-  units: number
-  gender: Gender | null
-  _count: { lessons: number }
-}
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+  units: number;
+  gender: Gender | null;
+  _count: { lessons: number };
+};
 
 export type CourseDetail = {
-  id: string
-  title: string
-  description: string | null
-  imageUrl: string | null
-  isPublished: boolean
-  courseType: CourseType
-  passingGrade: number
-  tuitionFee: number | null
-  meetLink: string | null
-  courseDuration: CourseDuration | null
-  createdAt: Date
-  updatedAt: Date
-  subjects: SubjectRow[]
-}
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  isPublished: boolean;
+  courseType: CourseType;
+  passingGrade: number;
+  tuitionFee: number | null;
+  meetLink: string | null;
+  courseDuration: CourseDuration | null;
+  paymentFrequency: PaymentFrequency | null;
+  miscFeeNote: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  subjects: SubjectRow[];
+};
 
 export type LessonRow = {
-  id: string
-  title: string
-  description: string | null
-  order: number
-}
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+};
 
 export type TeacherRow = {
-  userId: string
-  assignedAt: Date
-  user: { id: string; firstName: string; lastName: string; email: string }
-}
+  userId: string;
+  assignedAt: Date;
+  user: { id: string; firstName: string; lastName: string; email: string };
+};
 
 export type ScheduleRow = {
-  id: string
-  day: DayOfWeek
-  startTime: string
-  endTime: string
-}
+  id: string;
+  day: DayOfWeek;
+  startTime: string;
+  endTime: string;
+};
 
 export type SubjectDetail = {
-  id: string
-  courseId: string
-  title: string
-  description: string | null
-  order: number
-  units: number
-  gender: Gender | null
-  createdAt: Date
-  updatedAt: Date
-  course: { title: string }
-  lessons: LessonRow[]
-  teachers: TeacherRow[]
-  schedules: ScheduleRow[]
-}
+  id: string;
+  courseId: string;
+  title: string;
+  description: string | null;
+  order: number;
+  units: number;
+  gender: Gender | null;
+  createdAt: Date;
+  updatedAt: Date;
+  course: { title: string };
+  lessons: LessonRow[];
+  teachers: TeacherRow[];
+  schedules: ScheduleRow[];
+};
 
 export type LessonDetail = {
-  id: string
-  subjectId: string
-  title: string
-  description: string | null
-  order: number
-  updatedAt: Date
-  subject: { id: string; title: string; courseId: string; course: { title: string } }
-}
+  id: string;
+  subjectId: string;
+  title: string;
+  description: string | null;
+  order: number;
+  updatedAt: Date;
+  subject: {
+    id: string;
+    title: string;
+    courseId: string;
+    course: { title: string };
+  };
+};
 
 export type TeacherOption = {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
 
 export async function getCourses(): Promise<CourseRow[]> {
   return db.course.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       title: true,
@@ -187,7 +247,7 @@ export async function getCourses(): Promise<CourseRow[]> {
         select: { subjects: true },
       },
     },
-  })
+  });
 }
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
@@ -204,10 +264,12 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       tuitionFee: true,
       meetLink: true,
       courseDuration: true,
+      paymentFrequency: true,
+      miscFeeNote: true,
       createdAt: true,
       updatedAt: true,
       subjects: {
-        orderBy: { order: 'asc' },
+        orderBy: { order: "asc" },
         select: {
           id: true,
           title: true,
@@ -221,15 +283,17 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
         },
       },
     },
-  })
-  if (!raw) return null
+  });
+  if (!raw) return null;
   return {
     ...raw,
     tuitionFee: raw.tuitionFee ? raw.tuitionFee.toNumber() : null,
-  }
+  };
 }
 
-export async function getSubjectById(sid: string): Promise<SubjectDetail | null> {
+export async function getSubjectById(
+  sid: string,
+): Promise<SubjectDetail | null> {
   return db.subject.findUnique({
     where: { id: sid },
     select: {
@@ -246,7 +310,7 @@ export async function getSubjectById(sid: string): Promise<SubjectDetail | null>
         select: { title: true },
       },
       lessons: {
-        orderBy: { order: 'asc' },
+        orderBy: { order: "asc" },
         select: {
           id: true,
           title: true,
@@ -277,7 +341,7 @@ export async function getSubjectById(sid: string): Promise<SubjectDetail | null>
         },
       },
     },
-  })
+  });
 }
 
 export async function getLessonById(lid: string): Promise<LessonDetail | null> {
@@ -301,18 +365,18 @@ export async function getLessonById(lid: string): Promise<LessonDetail | null> {
         },
       },
     },
-  })
+  });
 }
 
 export async function getTeachers(): Promise<TeacherOption[]> {
   return db.user.findMany({
-    where: { role: 'TEACHER' },
-    orderBy: { lastName: 'asc' },
+    where: { role: "TEACHER" },
+    orderBy: { lastName: "asc" },
     select: {
       id: true,
       firstName: true,
       lastName: true,
       email: true,
     },
-  })
+  });
 }

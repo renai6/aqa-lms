@@ -1,18 +1,20 @@
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import { updateCourseAction } from '../actions'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { CourseDetail } from '@/lib/courses/queries'
+import { useActionState } from "react";
+import { updateCourseAction } from "../actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { CourseDetail } from "@/lib/courses/queries";
 
-type Props = { course: CourseDetail }
+type Props = { course: CourseDetail };
 
 export function EditCourseForm({ course }: Props) {
-  const [state, formAction, isPending] = useActionState(updateCourseAction, { error: null })
+  const [state, formAction, isPending] = useActionState(updateCourseAction, {
+    error: null,
+  });
   return (
     <Card>
       <CardHeader>
@@ -23,7 +25,12 @@ export function EditCourseForm({ course }: Props) {
           <input type="hidden" name="id" value={course.id} />
           <div className="space-y-2">
             <Label htmlFor="edit-title">Title</Label>
-            <Input id="edit-title" name="title" required defaultValue={course.title} />
+            <Input
+              id="edit-title"
+              name="title"
+              required
+              defaultValue={course.title}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-description">Description</Label>
@@ -31,18 +38,30 @@ export function EditCourseForm({ course }: Props) {
               id="edit-description"
               name="description"
               rows={3}
-              defaultValue={course.description ?? ''}
+              defaultValue={course.description ?? ""}
             />
           </div>
           <div className="space-y-2">
             <Label>Course Type</Label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="courseType" value="ON_SITE" defaultChecked={course.courseType === 'ON_SITE'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseType"
+                  value="ON_SITE"
+                  defaultChecked={course.courseType === "ON_SITE"}
+                  className="accent-primary"
+                />
                 On-Site
               </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="courseType" value="ONLINE" defaultChecked={course.courseType === 'ONLINE'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseType"
+                  value="ONLINE"
+                  defaultChecked={course.courseType === "ONLINE"}
+                  className="accent-primary"
+                />
                 Online
               </label>
             </div>
@@ -54,23 +73,43 @@ export function EditCourseForm({ course }: Props) {
               name="meetLink"
               type="url"
               placeholder="https://meet.google.com/xxx-xxxx-xxx"
-              defaultValue={course.meetLink ?? ''}
+              defaultValue={course.meetLink ?? ""}
             />
-            <p className="text-xs text-muted-foreground">Only applicable for Online courses.</p>
+            <p className="text-muted-foreground text-xs">
+              Only applicable for Online courses.
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Course Duration</Label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="courseDuration" value="" defaultChecked={!course.courseDuration} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseDuration"
+                  value=""
+                  defaultChecked={!course.courseDuration}
+                  className="accent-primary"
+                />
                 Not specified
               </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="courseDuration" value="SHORT" defaultChecked={course.courseDuration === 'SHORT'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseDuration"
+                  value="SHORT"
+                  defaultChecked={course.courseDuration === "SHORT"}
+                  className="accent-primary"
+                />
                 Short
               </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="radio" name="courseDuration" value="LONG" defaultChecked={course.courseDuration === 'LONG'} className="accent-primary" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseDuration"
+                  value="LONG"
+                  defaultChecked={course.courseDuration === "LONG"}
+                  className="accent-primary"
+                />
                 Long
               </label>
             </div>
@@ -95,20 +134,88 @@ export function EditCourseForm({ course }: Props) {
               type="number"
               min="0"
               step="0.01"
-              defaultValue={course.tuitionFee !== null ? String(course.tuitionFee) : ''}
+              defaultValue={
+                course.tuitionFee !== null ? String(course.tuitionFee) : ""
+              }
               placeholder="e.g. 10000"
             />
-            <p className="text-xs text-muted-foreground">Leave blank if not applicable.</p>
+            <p className="text-muted-foreground text-xs">
+              Leave blank if not applicable.
+            </p>
           </div>
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+          <div className="space-y-2">
+            <Label>Payment Frequency</Label>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="paymentFrequency"
+                  value=""
+                  defaultChecked={!course.paymentFrequency}
+                  className="accent-primary"
+                />
+                Not specified
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="paymentFrequency"
+                  value="MONTHLY"
+                  defaultChecked={course.paymentFrequency === "MONTHLY"}
+                  className="accent-primary"
+                />
+                Monthly
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="paymentFrequency"
+                  value="ONE_TIME"
+                  defaultChecked={course.paymentFrequency === "ONE_TIME"}
+                  className="accent-primary"
+                />
+                One-time
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="paymentFrequency"
+                  value="YEARLY"
+                  defaultChecked={course.paymentFrequency === "YEARLY"}
+                  className="accent-primary"
+                />
+                Yearly
+              </label>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Shown next to the price, e.g. &ldquo;₱2,000 / month&rdquo;.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-miscFeeNote">Miscellaneous Fee Note</Label>
+            <Textarea
+              id="edit-miscFeeNote"
+              name="miscFeeNote"
+              rows={2}
+              maxLength={300}
+              defaultValue={course.miscFeeNote ?? ""}
+              placeholder="e.g. Price excludes a miscellaneous fee."
+            />
+            <p className="text-muted-foreground text-xs">
+              Shown under the price. Leave blank to hide.
+            </p>
+          </div>
+          {state.error && (
+            <p className="text-destructive text-sm">{state.error}</p>
+          )}
           {state.success && !state.error && (
             <p className="text-sm text-green-600">Saved successfully.</p>
           )}
           <Button type="submit" disabled={isPending}>
-            {isPending ? 'Saving...' : 'Save Changes'}
+            {isPending ? "Saving..." : "Save Changes"}
           </Button>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

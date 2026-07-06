@@ -1,78 +1,109 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { z } from 'zod'
-import type { Prisma } from '@prisma/client'
-import { db } from '@/lib/db'
-import { getSession } from '@/lib/auth/session'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import type { CourseType, CourseDuration } from '@prisma/client'
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import type { Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth/session";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import type {
+  CourseType,
+  CourseDuration,
+  PaymentFrequency,
+} from "@prisma/client";
 
-type ActionState = { error: string | null; success?: boolean }
+type ActionState = { error: string | null; success?: boolean };
 
 const MIME_EXTS = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-} as const
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+} as const;
 
 const MAGIC_BYTES: Record<string, number[]> = {
-  'image/jpeg': [0xff, 0xd8, 0xff],
-  'image/png': [0x89, 0x50, 0x4e, 0x47],
-  'image/webp': [0x52, 0x49, 0x46, 0x46],
-}
+  "image/jpeg": [0xff, 0xd8, 0xff],
+  "image/png": [0x89, 0x50, 0x4e, 0x47],
+  "image/webp": [0x52, 0x49, 0x46, 0x46],
+};
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const courseSchema = z.object({
-  title: z.string().min(1, 'Title is required.'),
+  title: z.string().min(1, "Title is required."),
   description: z.string().optional(),
-  courseType: z.enum(['ON_SITE', 'ONLINE'], { error: 'Please select a course type.' }),
-  passingGrade: z.coerce.number().min(0, 'Must be at least 0.').max(100, 'Must be at most 100.'),
+  courseType: z.enum(["ON_SITE", "ONLINE"], {
+    error: "Please select a course type.",
+  }),
+  passingGrade: z.coerce
+    .number()
+    .min(0, "Must be at least 0.")
+    .max(100, "Must be at most 100."),
   tuitionFee: z.preprocess(
-    v => (v === '' || v === null || v === undefined ? undefined : v),
-    z.coerce.number().min(0, 'Tuition fee cannot be negative.').optional(),
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce.number().min(0, "Tuition fee cannot be negative.").optional(),
   ),
   meetLink: z.preprocess(
-    v => (v === '' || v === null || v === undefined ? undefined : v),
-    z.string()
-      .url('Meet link must be a valid URL.')
-      .refine(u => /^https:\/\//i.test(u), 'Meet link must use https://.')
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z
+      .string()
+      .url("Meet link must be a valid URL.")
+      .refine((u) => /^https:\/\//i.test(u), "Meet link must use https://.")
       .optional(),
   ),
   courseDuration: z.preprocess(
-    v => (v === '' || v === null || v === undefined ? undefined : v),
-    z.enum(['SHORT', 'LONG']).optional(),
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.enum(["SHORT", "LONG"]).optional(),
   ),
-})
+  paymentFrequency: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.enum(["MONTHLY", "ONE_TIME", "YEARLY"]).optional(),
+  ),
+  miscFeeNote: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.string().max(300, "Note is too long.").optional(),
+  ),
+});
 
 export async function createCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
   const raw = {
-    title: formData.get('title'),
-    description: formData.get('description'),
-    courseType: formData.get('courseType'),
-    passingGrade: formData.get('passingGrade') ?? '75',
-    tuitionFee: formData.get('tuitionFee'),
-    meetLink: formData.get('meetLink'),
-    courseDuration: formData.get('courseDuration'),
-  }
+    title: formData.get("title"),
+    description: formData.get("description"),
+    courseType: formData.get("courseType"),
+    passingGrade: formData.get("passingGrade") ?? "75",
+    tuitionFee: formData.get("tuitionFee"),
+    meetLink: formData.get("meetLink"),
+    courseDuration: formData.get("courseDuration"),
+    paymentFrequency: formData.get("paymentFrequency"),
+    miscFeeNote: formData.get("miscFeeNote"),
+  };
 
-  const result = courseSchema.safeParse(raw)
+  const result = courseSchema.safeParse(raw);
   if (!result.success) {
-    return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
+    return { error: result.error.issues[0]?.message ?? "Validation failed." };
   }
 
-  const { title, description, courseType, passingGrade, tuitionFee, meetLink, courseDuration } = result.data
+  const {
+    title,
+    description,
+    courseType,
+    passingGrade,
+    tuitionFee,
+    meetLink,
+    courseDuration,
+    paymentFrequency,
+    miscFeeNote,
+  } = result.data;
 
-  let newCourse: { id: string }
+  let newCourse: { id: string };
   try {
     newCourse = await db.course.create({
       data: {
@@ -83,45 +114,60 @@ export async function createCourseAction(
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
+        paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
+        miscFeeNote: miscFeeNote || null,
       },
       select: { id: true },
-    })
+    });
   } catch (err) {
-    console.error('[createCourse]', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[createCourse]", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  redirect('/admin/courses/' + newCourse.id)
+  revalidatePath("/admin/courses");
+  redirect("/admin/courses/" + newCourse.id);
 }
 
 export async function updateCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
-  const id = formData.get('id')
-  if (typeof id !== 'string' || !id) return { error: 'Invalid course ID.' }
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid course ID." };
 
   const raw = {
-    title: formData.get('title'),
-    description: formData.get('description'),
-    courseType: formData.get('courseType'),
-    passingGrade: formData.get('passingGrade') ?? '75',
-    tuitionFee: formData.get('tuitionFee'),
-    meetLink: formData.get('meetLink'),
-    courseDuration: formData.get('courseDuration'),
-  }
+    title: formData.get("title"),
+    description: formData.get("description"),
+    courseType: formData.get("courseType"),
+    passingGrade: formData.get("passingGrade") ?? "75",
+    tuitionFee: formData.get("tuitionFee"),
+    meetLink: formData.get("meetLink"),
+    courseDuration: formData.get("courseDuration"),
+    paymentFrequency: formData.get("paymentFrequency"),
+    miscFeeNote: formData.get("miscFeeNote"),
+  };
 
-  const result = courseSchema.safeParse(raw)
+  const result = courseSchema.safeParse(raw);
   if (!result.success) {
-    return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
+    return { error: result.error.issues[0]?.message ?? "Validation failed." };
   }
 
-  const { title, description, courseType, passingGrade, tuitionFee, meetLink, courseDuration } = result.data
+  const {
+    title,
+    description,
+    courseType,
+    passingGrade,
+    tuitionFee,
+    meetLink,
+    courseDuration,
+    paymentFrequency,
+    miscFeeNote,
+  } = result.data;
 
   try {
     await db.course.update({
@@ -134,181 +180,208 @@ export async function updateCourseAction(
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
+        paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
+        miscFeeNote: miscFeeNote || null,
       },
-    })
+    });
   } catch (err) {
-    console.error('[updateCourse]', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[updateCourse]", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  revalidatePath('/admin/courses/' + id)
-  return { error: null, success: true }
+  revalidatePath("/admin/courses");
+  revalidatePath("/admin/courses/" + id);
+  return { error: null, success: true };
 }
 
 export async function deleteCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
-  const id = formData.get('id')
-  if (typeof id !== 'string' || !id) return { error: 'Invalid course ID.' }
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid course ID." };
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
-      const subjects = await tx.subject.findMany({ where: { courseId: id }, select: { id: true } })
-      const subjectIds = subjects.map(s => s.id)
-      await tx.lesson.deleteMany({ where: { subjectId: { in: subjectIds } } })
-      await tx.subject.deleteMany({ where: { courseId: id } })
-      await tx.course.delete({ where: { id } })
-    })
+      const subjects = await tx.subject.findMany({
+        where: { courseId: id },
+        select: { id: true },
+      });
+      const subjectIds = subjects.map((s) => s.id);
+      await tx.lesson.deleteMany({ where: { subjectId: { in: subjectIds } } });
+      await tx.subject.deleteMany({ where: { courseId: id } });
+      await tx.course.delete({ where: { id } });
+    });
   } catch (err) {
-    console.error('[deleteCourse]', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[deleteCourse]", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  redirect('/admin/courses')
+  revalidatePath("/admin/courses");
+  redirect("/admin/courses");
 }
 
 export async function togglePublishedAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
-  const id = formData.get('id')
-  if (typeof id !== 'string' || !id) return { error: 'Invalid course ID.' }
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid course ID." };
 
-  const currentValue = formData.get('currentValue')
-  const next = currentValue !== 'true'
+  const currentValue = formData.get("currentValue");
+  const next = currentValue !== "true";
 
   try {
-    await db.course.update({ where: { id }, data: { isPublished: next } })
+    await db.course.update({ where: { id }, data: { isPublished: next } });
   } catch (err) {
-    console.error('[togglePublished]', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[togglePublished]", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  revalidatePath('/admin/courses/' + id)
-  return { error: null }
+  revalidatePath("/admin/courses");
+  revalidatePath("/admin/courses/" + id);
+  return { error: null };
 }
 
 export async function uploadCourseImageAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  const courseId = formData.get("courseId");
+  if (typeof courseId !== "string" || !courseId)
+    return { error: "Invalid course ID." };
 
-  const courseExists = await db.course.findUnique({ where: { id: courseId }, select: { id: true, imageUrl: true } })
-  if (!courseExists) return { error: 'Course not found.' }
+  const courseExists = await db.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, imageUrl: true },
+  });
+  if (!courseExists) return { error: "Course not found." };
 
-  const file = formData.get('file')
-  if (!(file instanceof File) || file.size === 0) return { error: 'Please select an image file.' }
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0)
+    return { error: "Please select an image file." };
 
   if (!(file.type in MIME_EXTS)) {
-    return { error: 'Only JPEG, PNG, and WebP images are allowed.' }
+    return { error: "Only JPEG, PNG, and WebP images are allowed." };
   }
 
   if (file.size > MAX_IMAGE_BYTES) {
-    return { error: 'Image must be 10 MB or smaller.' }
+    return { error: "Image must be 10 MB or smaller." };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const magic = MAGIC_BYTES[file.type]!
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const magic = MAGIC_BYTES[file.type]!;
   if (!magic.every((byte, i) => buffer[i] === byte)) {
-    return { error: 'File content does not match its declared type.' }
+    return { error: "File content does not match its declared type." };
   }
 
-  if (file.type === 'image/webp') {
-    const webpMarker = [0x57, 0x45, 0x42, 0x50]
+  if (file.type === "image/webp") {
+    const webpMarker = [0x57, 0x45, 0x42, 0x50];
     if (!webpMarker.every((byte, i) => buffer[i + 8] === byte)) {
-      return { error: 'File content does not match its declared type.' }
+      return { error: "File content does not match its declared type." };
     }
   }
 
-  const ext = MIME_EXTS[file.type as keyof typeof MIME_EXTS]
-  const storagePath = `courses/${courseId}/image.${ext}`
-  const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!
+  const ext = MIME_EXTS[file.type as keyof typeof MIME_EXTS];
+  const storagePath = `courses/${courseId}/image.${ext}`;
+  const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!;
 
   if (courseExists.imageUrl) {
-    const oldExt = new URL(courseExists.imageUrl).pathname.split('.').pop()
+    const oldExt = new URL(courseExists.imageUrl).pathname.split(".").pop();
     if (oldExt && oldExt !== ext) {
-      await supabaseAdmin.storage.from(bucket).remove([`courses/${courseId}/image.${oldExt}`])
+      await supabaseAdmin.storage
+        .from(bucket)
+        .remove([`courses/${courseId}/image.${oldExt}`]);
     }
   }
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from(bucket)
-    .upload(storagePath, buffer, { contentType: file.type, upsert: true })
+    .upload(storagePath, buffer, { contentType: file.type, upsert: true });
 
   if (uploadError) {
-    console.error('[uploadCourseImage]', uploadError)
-    return { error: 'Failed to upload image. Please try again.' }
+    console.error("[uploadCourseImage]", uploadError);
+    return { error: "Failed to upload image. Please try again." };
   }
 
-  const { data: { publicUrl } } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath)
+  const {
+    data: { publicUrl },
+  } = supabaseAdmin.storage.from(bucket).getPublicUrl(storagePath);
 
   try {
-    await db.course.update({ where: { id: courseId }, data: { imageUrl: publicUrl } })
+    await db.course.update({
+      where: { id: courseId },
+      data: { imageUrl: publicUrl },
+    });
   } catch (err) {
-    console.error('[uploadCourseImage] db', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[uploadCourseImage] db", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  revalidatePath('/admin/courses/' + courseId)
-  revalidatePath('/courses')
-  return { error: null, success: true }
+  revalidatePath("/admin/courses");
+  revalidatePath("/admin/courses/" + courseId);
+  revalidatePath("/courses");
+  return { error: null, success: true };
 }
 
 export async function removeCourseImageAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
 
-  const courseId = formData.get('courseId')
-  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+  const courseId = formData.get("courseId");
+  if (typeof courseId !== "string" || !courseId)
+    return { error: "Invalid course ID." };
 
   const course = await db.course.findUnique({
     where: { id: courseId },
     select: { imageUrl: true },
-  })
-  if (!course?.imageUrl) return { error: 'No image to remove.' }
+  });
+  if (!course?.imageUrl) return { error: "No image to remove." };
 
-  const ext = new URL(course.imageUrl).pathname.split('.').pop()
-  const storagePath = `courses/${courseId}/image.${ext}`
-  const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!
+  const ext = new URL(course.imageUrl).pathname.split(".").pop();
+  const storagePath = `courses/${courseId}/image.${ext}`;
+  const bucket = process.env.SUPABASE_COURSE_IMAGES_BUCKET!;
 
-  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove([storagePath])
+  const { error: removeError } = await supabaseAdmin.storage
+    .from(bucket)
+    .remove([storagePath]);
   if (removeError) {
-    console.error('[removeCourseImage]', removeError)
-    return { error: 'Failed to remove image. Please try again.' }
+    console.error("[removeCourseImage]", removeError);
+    return { error: "Failed to remove image. Please try again." };
   }
 
   try {
-    await db.course.update({ where: { id: courseId }, data: { imageUrl: null } })
+    await db.course.update({
+      where: { id: courseId },
+      data: { imageUrl: null },
+    });
   } catch (err) {
-    console.error('[removeCourseImage] db', err)
-    return { error: 'A database error occurred. Please try again.' }
+    console.error("[removeCourseImage] db", err);
+    return { error: "A database error occurred. Please try again." };
   }
 
-  revalidatePath('/admin/courses')
-  revalidatePath('/admin/courses/' + courseId)
-  revalidatePath('/courses')
-  return { error: null, success: true }
+  revalidatePath("/admin/courses");
+  revalidatePath("/admin/courses/" + courseId);
+  revalidatePath("/courses");
+  return { error: null, success: true };
 }

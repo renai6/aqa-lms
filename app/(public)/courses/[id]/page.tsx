@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, Monitor, MapPin } from "lucide-react";
 import { getPublicCourseDetail } from "@/lib/courses/queries";
+import { priceSuffix } from "@/lib/courses/format";
 import Eyebrow from "@/components/homepage/Eyebrow";
 import Reveal from "@/components/homepage/Reveal";
 import GeoMotif from "@/components/homepage/GeoMotif";
@@ -151,9 +152,14 @@ export default async function PublicCourseDetailPage({ params }: Props) {
                 <div>
                   <p className="text-2xl font-bold text-white">
                     ₱{course.tuitionFee.toLocaleString("en-PH")}
+                    {course.paymentFrequency && (
+                      <span className="ml-1 text-base font-normal text-white/60">
+                        {priceSuffix(course.paymentFrequency)}
+                      </span>
+                    )}
                   </p>
                   <p className="mt-0.5 text-xs text-white/50">
-                    Flexible installments available
+                    {course.miscFeeNote ?? "Flexible installments available"}
                   </p>
                 </div>
               ) : (

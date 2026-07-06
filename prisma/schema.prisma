@@ -86,6 +86,12 @@ enum CourseDuration {
   LONG
 }
 
+enum PaymentFrequency {
+  MONTHLY
+  ONE_TIME
+  YEARLY
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -155,9 +161,11 @@ model Course {
   courseType   CourseType @default(ON_SITE)
   isPublished  Boolean    @default(false)
   passingGrade Float      @default(75.0)
-  tuitionFee     Decimal?
-  meetLink       String?
-  courseDuration CourseDuration?
+  tuitionFee       Decimal?
+  meetLink         String?
+  courseDuration   CourseDuration?
+  paymentFrequency PaymentFrequency?
+  miscFeeNote      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
