@@ -6,6 +6,7 @@ import Image from "next/image";
 import { BookOpen, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PurchasableCourse } from "@/lib/purchases/queries";
+import { priceSuffix } from "@/lib/courses/format";
 
 type TypeFilter = "ALL" | "ON_SITE" | "ONLINE";
 
@@ -45,7 +46,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Browse Programs</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Select one or more programs.
           </p>
         </div>
@@ -66,7 +67,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
             type="button"
             onClick={() => setTypeFilter(f.value)}
             className={[
-              "rounded-full px-4 py-1.5 text-sm font-medium border transition-colors",
+              "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
               typeFilter === f.value
                 ? "bg-primary text-primary-foreground border-primary"
                 : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
@@ -78,7 +79,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           No courses available to purchase right now.
         </p>
       ) : (
@@ -92,13 +93,13 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                 onClick={() => toggle(c.id)}
                 aria-pressed={isSel}
                 className={[
-                  "group flex flex-col overflow-hidden text-left rounded-xl border-2 transition-colors",
+                  "group flex flex-col overflow-hidden rounded-xl border-2 text-left transition-colors",
                   isSel
                     ? "border-primary bg-primary/5"
                     : "border-border bg-card hover:border-primary/40",
                 ].join(" ")}
               >
-                <div className="relative h-72 aspect-video w-full bg-muted">
+                <div className="bg-muted relative aspect-video h-72 w-full">
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
@@ -108,14 +109,14 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <div className="text-muted-foreground flex h-full w-full items-center justify-center">
                       <BookOpen className="h-8 w-8" aria-hidden="true" />
                     </div>
                   )}
                   {/* Type badge */}
                   <span
                     className={[
-                      "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full",
+                      "absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold",
                       c.courseType === "ONLINE"
                         ? "bg-blue-600 text-white"
                         : "bg-amber-600 text-white",
@@ -124,22 +125,31 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                     {c.courseType === "ONLINE" ? "Online" : "On-Site"}
                   </span>
                   {isSel && (
-                    <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <div className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full shadow">
                       <Check className="h-4 w-4" aria-hidden="true" />
                     </div>
                   )}
                 </div>
                 <div className="flex flex-1 flex-col p-4">
-                  <p className="font-semibold text-foreground">{c.title}</p>
+                  <p className="text-foreground font-semibold">{c.title}</p>
                   {c.description && (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                       {c.description}
                     </p>
                   )}
-                  <p className="mt-auto pt-2 text-sm font-bold text-foreground">
-                    {c.tuitionFee != null
-                      ? `₱${c.tuitionFee.toLocaleString("en-PH")}`
-                      : "Contact us for pricing"}
+                  <p className="text-foreground mt-auto pt-2 text-sm font-bold">
+                    {c.tuitionFee != null ? (
+                      <>
+                        ₱{c.tuitionFee.toLocaleString("en-PH")}
+                        {c.paymentFrequency && (
+                          <span className="text-muted-foreground ml-1 font-normal">
+                            {priceSuffix(c.paymentFrequency)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      "Contact us for pricing"
+                    )}
                   </p>
                 </div>
               </button>
