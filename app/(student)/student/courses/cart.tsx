@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { BookOpen, Check } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PurchasableCourse } from "@/lib/purchases/queries";
+import { groupCourses } from "@/lib/courses/grouping";
 import { priceSuffix } from "@/lib/courses/format";
 
 type TypeFilter = "ALL" | "ON_SITE" | "ONLINE";
@@ -20,12 +21,22 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleExpanded(slug: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
       return next;
     });
   }
@@ -40,6 +51,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
     typeFilter === "ALL"
       ? courses
       : courses.filter((c) => c.courseType === typeFilter);
+  const entries = groupCourses(filtered);
 
   return (
     <div className="space-y-6">
@@ -78,13 +90,119 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {entries.length === 0 ? (
         <p className="text-muted-foreground text-sm">
           No courses available to purchase right now.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((c) => {
+          {entries.map((entry) => {
+            if (entry.kind === "group") {
+              const { groupName, slug, levels } = entry;
+              const isOpen = expanded.has(slug);
+              const selectedCount = levels.filter((l) =>
+                selected.has(l.id),
+              ).length;
+              return (
+                <div
+                  key={slug}
+                  className={[
+                    "flex flex-col overflow-hidden rounded-xl border-2 transition-colors",
+                    selectedCount > 0
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card",
+                  ].join(" ")}
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(slug)}
+                    aria-expanded={isOpen}
+                    className="flex items-center gap-3 p-4 text-left"
+                  >
+                    <span className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+                      <Layers className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-foreground block truncate font-semibold">
+                        {groupName}
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        {levels.length} levels
+                        {selectedCount > 0 && ` • ${selectedCount} selected`}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={[
+                        "text-muted-foreground h-5 w-5 shrink-0 transition-transform",
+                        isOpen ? "rotate-180" : "",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-border space-y-2 border-t p-3">
+                      {levels.map((c) => {
+                        const isSel = selected.has(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggle(c.id)}
+                            aria-pressed={isSel}
+                            className={[
+                              "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
+                              isSel
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/40",
+                            ].join(" ")}
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="text-foreground block truncate text-sm font-medium">
+                                {c.level != null && (
+                                  <span className="text-muted-foreground">
+                                    Level {c.level} •{" "}
+                                  </span>
+                                )}
+                                {c.title}
+                              </span>
+                              <span className="text-foreground block text-sm font-bold">
+                                {c.tuitionFee != null ? (
+                                  <>
+                                    ₱{c.tuitionFee.toLocaleString("en-PH")}
+                                    {c.paymentFrequency && (
+                                      <span className="text-muted-foreground ml-1 font-normal">
+                                        {priceSuffix(c.paymentFrequency)}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  "Contact us for pricing"
+                                )}
+                              </span>
+                            </span>
+                            <span
+                              className={[
+                                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                                isSel
+                                  ? "bg-primary text-primary-foreground"
+                                  : "border-border border",
+                              ].join(" ")}
+                            >
+                              {isSel && (
+                                <Check className="h-4 w-4" aria-hidden="true" />
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const c = entry.course;
             const isSel = selected.has(c.id);
             return (
               <button

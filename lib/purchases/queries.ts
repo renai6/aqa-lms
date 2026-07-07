@@ -14,6 +14,8 @@ export type PurchasableCourse = {
   tuitionFee: number | null;
   courseType: CourseType;
   paymentFrequency: PaymentFrequency | null;
+  groupName: string | null;
+  level: number | null;
 };
 
 // Published courses the student is not already enrolled in and has no PENDING/APPROVED purchase for.
@@ -32,6 +34,8 @@ export async function getPurchasableCourses(
         tuitionFee: true,
         courseType: true,
         paymentFrequency: true,
+        groupName: true,
+        level: true,
       },
     }),
     db.enrollment.findMany({ where: { userId }, select: { courseId: true } }),
@@ -49,7 +53,6 @@ export async function getPurchasableCourses(
     .map((c) => ({
       ...c,
       tuitionFee: c.tuitionFee?.toNumber() ?? null,
-      courseType: c.courseType,
     }));
 }
 
