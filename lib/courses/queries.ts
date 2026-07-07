@@ -261,6 +261,16 @@ export type TeacherOption = {
   email: string;
 };
 
+export type CourseOption = { id: string; title: string };
+
+// Minimal course list for pickers (e.g. copy-subject target selector).
+export async function getCourseOptions(): Promise<CourseOption[]> {
+  return db.course.findMany({
+    orderBy: { title: "asc" },
+    select: { id: true, title: true },
+  });
+}
+
 export async function getCourses(): Promise<CourseRow[]> {
   return db.course.findMany({
     orderBy: { createdAt: "desc" },
