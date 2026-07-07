@@ -174,6 +174,79 @@ export async function deleteSubjectAction(
   redirect('/admin/courses/' + courseId + '/subjects')
 }
 
+export async function copySubjectToCourseAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+  if (session.role !== 'ADMIN' && session.role !== 'SUPER_ADMIN') return { error: 'Forbidden' }
+
+  const subjectId = formData.get('subjectId')
+  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
+
+  const targetCourseId = formData.get('targetCourseId')
+  if (typeof targetCourseId !== 'string' || !targetCourseId) {
+    return { error: 'Please select a target course.' }
+  }
+
+  // Copy the subject metadata plus its lessons and schedules (not assessments,
+  // teacher assignments, or any student data).
+  const source = await db.subject.findUnique({
+    where: { id: subjectId },
+    select: {
+      title: true,
+      description: true,
+      units: true,
+      gender: true,
+      courseId: true,
+      lessons: { select: { title: true, description: true, order: true } },
+      schedules: { select: { day: true, startTime: true, endTime: true } },
+    },
+  })
+  if (!source) return { error: 'Subject not found.' }
+
+  if (targetCourseId === source.courseId) {
+    return { error: 'Choose a course other than the one this subject is already in.' }
+  }
+
+  const targetCourse = await db.course.findUnique({
+    where: { id: targetCourseId },
+    select: { id: true },
+  })
+  if (!targetCourse) return { error: 'Target course not found.' }
+
+  try {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Append after the target course's existing subjects.
+      const max = await tx.subject.aggregate({
+        where: { courseId: targetCourseId },
+        _max: { order: true },
+      })
+      const order = (max._max.order ?? 0) + 1
+
+      await tx.subject.create({
+        data: {
+          courseId: targetCourseId,
+          title: source.title,
+          description: source.description,
+          units: source.units,
+          gender: source.gender,
+          order,
+          lessons: { create: source.lessons },
+          schedules: { create: source.schedules },
+        },
+      })
+    })
+  } catch (err) {
+    console.error('[copySubjectToCourse]', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
+
+  revalidatePath('/admin/courses/' + targetCourseId + '/subjects')
+  redirect('/admin/courses/' + targetCourseId + '/subjects')
+}
+
 export async function assignTeacherAction(
   _prev: ActionState,
   formData: FormData,

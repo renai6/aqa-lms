@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getSubjectById, getTeachers } from '@/lib/courses/queries'
+import { getSubjectById, getTeachers, getCourseOptions } from '@/lib/courses/queries'
 import { getSubjectAssessments } from '@/lib/assessments/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
@@ -11,6 +11,7 @@ import { EditSubjectForm } from './edit-subject-form'
 import { DeleteSubjectButton } from './delete-subject-button'
 import { TeacherAssignmentPanel } from './teacher-assignment-panel'
 import { SchedulePanel } from './schedule-panel'
+import { CopySubjectDialog } from './copy-subject-dialog'
 import { DeleteLessonButton } from './delete-lesson-button'
 
 type Props = { params: Promise<{ id: string; sid: string }> }
@@ -26,13 +27,16 @@ export default async function SubjectDetailPage({ params }: Props) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [subject, allTeachers, assessments] = await Promise.all([
+  const [subject, allTeachers, assessments, allCourses] = await Promise.all([
     getSubjectById(sid),
     getTeachers(),
     getSubjectAssessments(sid),
+    getCourseOptions(),
   ])
   if (!subject) notFound()
   if (subject.courseId !== id) notFound()
+
+  const copyTargets = allCourses.filter((c) => c.id !== id)
 
   return (
     <div className="p-6 space-y-6">
@@ -61,6 +65,11 @@ export default async function SubjectDetailPage({ params }: Props) {
             subjectId={sid}
             courseId={id}
             schedules={subject.schedules}
+          />
+          <CopySubjectDialog
+            subjectId={sid}
+            subjectTitle={subject.title}
+            courses={copyTargets}
           />
           <DeleteSubjectButton subjectId={sid} courseId={id} subjectTitle={subject.title} />
         </div>
