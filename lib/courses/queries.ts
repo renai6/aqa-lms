@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { groupCourses } from "@/lib/courses/grouping";
 import type {
   CourseType,
   CourseDuration,
@@ -18,6 +19,8 @@ export type PublishedCourseRow = {
   courseDuration: CourseDuration | null;
   paymentFrequency: PaymentFrequency | null;
   miscFeeNote: string | null;
+  groupName: string | null;
+  level: number | null;
 };
 
 export async function getPublishedCourses(
@@ -37,12 +40,33 @@ export async function getPublishedCourses(
       courseDuration: true,
       paymentFrequency: true,
       miscFeeNote: true,
+      groupName: true,
+      level: true,
     },
   });
   return rows.map((r) => ({
     ...r,
     tuitionFee: r.tuitionFee?.toNumber() ?? null,
   }));
+}
+
+export type PublicCourseGroup = {
+  groupName: string;
+  slug: string;
+  levels: PublishedCourseRow[];
+};
+
+// Resolves a group-page slug to its group of published courses (levels ordered).
+export async function getPublicCourseGroup(
+  slug: string,
+): Promise<PublicCourseGroup | null> {
+  const courses = await getPublishedCourses();
+  const grouped = groupCourses(courses);
+  const match = grouped.find(
+    (entry) => entry.kind === "group" && entry.slug === slug,
+  );
+  if (!match || match.kind !== "group") return null;
+  return { groupName: match.groupName, slug: match.slug, levels: match.levels };
 }
 
 export type PublicSubjectRow = {
@@ -76,6 +100,8 @@ export async function getPublicCourseDetail(
       courseDuration: true,
       paymentFrequency: true,
       miscFeeNote: true,
+      groupName: true,
+      level: true,
       subjects: {
         orderBy: { order: "asc" },
         select: {
@@ -112,6 +138,8 @@ export async function getPublishedCourseById(
       courseDuration: true,
       paymentFrequency: true,
       miscFeeNote: true,
+      groupName: true,
+      level: true,
     },
   });
   if (!course?.isPublished) return null;
@@ -126,6 +154,8 @@ export async function getPublishedCourseById(
     courseDuration: course.courseDuration,
     paymentFrequency: course.paymentFrequency,
     miscFeeNote: course.miscFeeNote,
+    groupName: course.groupName,
+    level: course.level,
   };
 }
 
@@ -166,6 +196,8 @@ export type CourseDetail = {
   courseDuration: CourseDuration | null;
   paymentFrequency: PaymentFrequency | null;
   miscFeeNote: string | null;
+  groupName: string | null;
+  level: number | null;
   createdAt: Date;
   updatedAt: Date;
   subjects: SubjectRow[];
@@ -266,6 +298,8 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       courseDuration: true,
       paymentFrequency: true,
       miscFeeNote: true,
+      groupName: true,
+      level: true,
       createdAt: true,
       updatedAt: true,
       subjects: {

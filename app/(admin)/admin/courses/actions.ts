@@ -63,6 +63,18 @@ const courseSchema = z.object({
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
     z.string().max(300, "Note is too long.").optional(),
   ),
+  groupName: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.string().max(100, "Group name is too long.").optional(),
+  ),
+  level: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce
+      .number()
+      .int("Level must be a whole number.")
+      .min(1, "Level must be at least 1.")
+      .optional(),
+  ),
 });
 
 export async function createCourseAction(
@@ -84,6 +96,8 @@ export async function createCourseAction(
     courseDuration: formData.get("courseDuration"),
     paymentFrequency: formData.get("paymentFrequency"),
     miscFeeNote: formData.get("miscFeeNote"),
+    groupName: formData.get("groupName"),
+    level: formData.get("level"),
   };
 
   const result = courseSchema.safeParse(raw);
@@ -101,6 +115,8 @@ export async function createCourseAction(
     courseDuration,
     paymentFrequency,
     miscFeeNote,
+    groupName,
+    level,
   } = result.data;
 
   let newCourse: { id: string };
@@ -116,6 +132,8 @@ export async function createCourseAction(
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
         paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
         miscFeeNote: miscFeeNote || null,
+        groupName: groupName || null,
+        level: level ?? null,
       },
       select: { id: true },
     });
@@ -150,6 +168,8 @@ export async function updateCourseAction(
     courseDuration: formData.get("courseDuration"),
     paymentFrequency: formData.get("paymentFrequency"),
     miscFeeNote: formData.get("miscFeeNote"),
+    groupName: formData.get("groupName"),
+    level: formData.get("level"),
   };
 
   const result = courseSchema.safeParse(raw);
@@ -167,6 +187,8 @@ export async function updateCourseAction(
     courseDuration,
     paymentFrequency,
     miscFeeNote,
+    groupName,
+    level,
   } = result.data;
 
   try {
@@ -182,6 +204,8 @@ export async function updateCourseAction(
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
         paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
         miscFeeNote: miscFeeNote || null,
+        groupName: groupName || null,
+        level: level ?? null,
       },
     });
   } catch (err) {

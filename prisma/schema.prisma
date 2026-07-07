@@ -158,6 +158,11 @@ model Course {
   description String?
   imageUrl    String?
 
+  // Optional grouping: courses sharing a groupName collapse into one listing
+  // (e.g. "Marhala 1/2/3" -> "Marhala"); level orders them within the group.
+  groupName String?
+  level     Int?
+
   courseType   CourseType @default(ON_SITE)
   isPublished  Boolean    @default(false)
   passingGrade Float      @default(75.0)

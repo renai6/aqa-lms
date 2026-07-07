@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { getPublishedCourses } from "@/lib/courses/queries";
+import { groupCourses } from "@/lib/courses/grouping";
 import { priceSuffix } from "@/lib/courses/format";
 import type { CourseType } from "@prisma/client";
 import Eyebrow from "@/components/homepage/Eyebrow";
@@ -24,6 +25,7 @@ export default async function CoursesPage({
   const activeType =
     type === "ON_SITE" || type === "ONLINE" ? (type as CourseType) : undefined;
   const courses = await getPublishedCourses(activeType);
+  const entries = groupCourses(courses);
 
   return (
     <>
@@ -107,99 +109,190 @@ export default async function CoursesPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course, i) => (
-                <Reveal key={course.id} delay={(i % 3) * 80}>
-                  <div className="group ring-primary/10 flex h-full flex-col overflow-hidden bg-white shadow-md ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                    {/* Top — image */}
-                    <div className="relative h-72 shrink-0">
-                      {course.imageUrl &&
-                      /^https?:\/\//.test(course.imageUrl) ? (
-                        <img
-                          src={course.imageUrl}
-                          alt={course.title}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="bg-primary absolute inset-0 flex items-center justify-center">
-                          <span className="text-gold text-5xl font-semibold">
-                            {course.title.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                      {/* Type badge on image */}
-                      <span
-                        className={[
-                          "absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase",
-                          course.courseType === "ONLINE"
-                            ? "bg-primary text-white"
-                            : "bg-gold text-primary",
-                        ].join(" ")}
-                      >
-                        {course.courseType === "ONLINE" ? "Online" : "On-Site"}
-                      </span>
-                      {/* Duration badge */}
-                      {course.courseDuration && (
-                        <span className="absolute top-3 left-[4.75rem] bg-black/60 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white uppercase backdrop-blur-sm">
-                          {course.courseDuration === "SHORT" ? "Short" : "Long"}
-                        </span>
-                      )}
-                      {/* Gold underline reveal */}
-                      <span className="bg-gold absolute inset-x-0 bottom-0 z-10 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
-                    </div>
+              {entries.map((entry, i) => {
+                const delay = (i % 3) * 80;
 
-                    {/* Bottom — content */}
-                    <div className="flex flex-1 flex-col justify-between p-6">
-                      <div>
-                        <h3 className="text-primary text-base font-semibold">
-                          {course.title}
-                        </h3>
-                        {course.description && (
-                          <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed font-light">
-                            {course.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="mt-6">
-                        {course.tuitionFee != null ? (
-                          <div>
-                            <span className="text-primary text-xl font-bold">
-                              ₱{course.tuitionFee.toLocaleString("en-PH")}
-                            </span>
-                            {course.paymentFrequency && (
-                              <span className="text-muted-foreground ml-1 text-sm">
-                                {priceSuffix(course.paymentFrequency)}
+                if (entry.kind === "group") {
+                  const { groupName, slug, levels } = entry;
+                  const cover = levels.find(
+                    (l) => l.imageUrl && /^https?:\/\//.test(l.imageUrl),
+                  );
+                  const prices = levels
+                    .map((l) => l.tuitionFee)
+                    .filter((f): f is number => f != null);
+                  const minPrice = prices.length ? Math.min(...prices) : null;
+                  return (
+                    <Reveal key={slug} delay={delay}>
+                      <div className="group ring-primary/10 flex h-full flex-col overflow-hidden bg-white shadow-md ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                        {/* Top — image */}
+                        <div className="relative h-72 shrink-0">
+                          {cover ? (
+                            <img
+                              src={cover.imageUrl!}
+                              alt={groupName}
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="bg-primary absolute inset-0 flex items-center justify-center">
+                              <span className="text-gold text-5xl font-semibold">
+                                {groupName.charAt(0)}
                               </span>
-                            )}
-                            <p className="text-muted-foreground mt-0.5 text-xs">
-                              {course.miscFeeNote ??
-                                "Flexible installments available"}
+                            </div>
+                          )}
+                          {/* Multiple levels badge */}
+                          <span className="bg-gold text-primary absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase">
+                            Multiple Levels
+                          </span>
+                          {/* Gold underline reveal */}
+                          <span className="bg-gold absolute inset-x-0 bottom-0 z-10 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+                        </div>
+
+                        {/* Bottom — content */}
+                        <div className="flex flex-1 flex-col justify-between p-6">
+                          <div>
+                            <h3 className="text-primary text-base font-semibold">
+                              {groupName}
+                            </h3>
+                            <p className="text-muted-foreground mt-2 text-sm leading-relaxed font-light">
+                              {levels.length} levels available
                             </p>
                           </div>
+
+                          <div className="mt-6">
+                            {minPrice != null ? (
+                              <div>
+                                <span className="text-muted-foreground text-sm">
+                                  From{" "}
+                                </span>
+                                <span className="text-primary text-xl font-bold">
+                                  ₱{minPrice.toLocaleString("en-PH")}
+                                </span>
+                              </div>
+                            ) : (
+                              <p className="text-muted-foreground text-sm">
+                                Contact us for pricing
+                              </p>
+                            )}
+                            <div className="mt-5 flex flex-col gap-2.5">
+                              <Link
+                                href={`/courses/group/${slug}`}
+                                className="border-primary/30 text-primary hover:border-primary hover:bg-primary inline-flex w-full items-center justify-center border px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors hover:text-white"
+                              >
+                                View Levels
+                              </Link>
+                              <Link
+                                href="/register"
+                                className="bg-gold text-primary hover:bg-gold-soft inline-flex w-full items-center justify-center px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors"
+                              >
+                                Register to Enroll
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Reveal>
+                  );
+                }
+
+                const course = entry.course;
+                return (
+                  <Reveal key={course.id} delay={delay}>
+                    <div className="group ring-primary/10 flex h-full flex-col overflow-hidden bg-white shadow-md ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                      {/* Top — image */}
+                      <div className="relative h-72 shrink-0">
+                        {course.imageUrl &&
+                        /^https?:\/\//.test(course.imageUrl) ? (
+                          <img
+                            src={course.imageUrl}
+                            alt={course.title}
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
                         ) : (
-                          <p className="text-muted-foreground text-sm">
-                            Contact us for pricing
-                          </p>
+                          <div className="bg-primary absolute inset-0 flex items-center justify-center">
+                            <span className="text-gold text-5xl font-semibold">
+                              {course.title.charAt(0)}
+                            </span>
+                          </div>
                         )}
-                        <div className="mt-5 flex flex-col gap-2.5">
-                          <Link
-                            href={`/courses/${course.id}`}
-                            className="border-primary/30 text-primary hover:border-primary hover:bg-primary inline-flex w-full items-center justify-center border px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors hover:text-white"
-                          >
-                            Learn More
-                          </Link>
-                          <Link
-                            href="/register"
-                            className="bg-gold text-primary hover:bg-gold-soft inline-flex w-full items-center justify-center px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors"
-                          >
-                            Register to Enroll
-                          </Link>
+                        {/* Type badge on image */}
+                        <span
+                          className={[
+                            "absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase",
+                            course.courseType === "ONLINE"
+                              ? "bg-primary text-white"
+                              : "bg-gold text-primary",
+                          ].join(" ")}
+                        >
+                          {course.courseType === "ONLINE"
+                            ? "Online"
+                            : "On-Site"}
+                        </span>
+                        {/* Duration badge */}
+                        {course.courseDuration && (
+                          <span className="absolute top-3 left-[4.75rem] bg-black/60 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white uppercase backdrop-blur-sm">
+                            {course.courseDuration === "SHORT"
+                              ? "Short"
+                              : "Long"}
+                          </span>
+                        )}
+                        {/* Gold underline reveal */}
+                        <span className="bg-gold absolute inset-x-0 bottom-0 z-10 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+                      </div>
+
+                      {/* Bottom — content */}
+                      <div className="flex flex-1 flex-col justify-between p-6">
+                        <div>
+                          <h3 className="text-primary text-base font-semibold">
+                            {course.title}
+                          </h3>
+                          {course.description && (
+                            <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed font-light">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-6">
+                          {course.tuitionFee != null ? (
+                            <div>
+                              <span className="text-primary text-xl font-bold">
+                                ₱{course.tuitionFee.toLocaleString("en-PH")}
+                              </span>
+                              {course.paymentFrequency && (
+                                <span className="text-muted-foreground ml-1 text-sm">
+                                  {priceSuffix(course.paymentFrequency)}
+                                </span>
+                              )}
+                              <p className="text-muted-foreground mt-0.5 text-xs">
+                                {course.miscFeeNote ??
+                                  "Flexible installments available"}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground text-sm">
+                              Contact us for pricing
+                            </p>
+                          )}
+                          <div className="mt-5 flex flex-col gap-2.5">
+                            <Link
+                              href={`/courses/${course.id}`}
+                              className="border-primary/30 text-primary hover:border-primary hover:bg-primary inline-flex w-full items-center justify-center border px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors hover:text-white"
+                            >
+                              Learn More
+                            </Link>
+                            <Link
+                              href="/register"
+                              className="bg-gold text-primary hover:bg-gold-soft inline-flex w-full items-center justify-center px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors"
+                            >
+                              Register to Enroll
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Reveal>
-              ))}
+                  </Reveal>
+                );
+              })}
             </div>
           )}
         </div>

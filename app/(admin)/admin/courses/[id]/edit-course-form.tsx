@@ -114,6 +114,34 @@ export function EditCourseForm({ course }: Props) {
               </label>
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="edit-groupName">Group Name</Label>
+              <Input
+                id="edit-groupName"
+                name="groupName"
+                placeholder="e.g. Marhala"
+                defaultValue={course.groupName ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-level">Level</Label>
+              <Input
+                id="edit-level"
+                name="level"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="e.g. 1"
+                defaultValue={course.level != null ? String(course.level) : ""}
+              />
+            </div>
+            <p className="text-muted-foreground text-xs sm:col-span-3">
+              Courses sharing a group name are collapsed into one listing (e.g.
+              &ldquo;Marhala 1/2/3&rdquo; shown as &ldquo;Marhala&rdquo;). Level
+              orders them. Leave blank for a standalone course.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="edit-passingGrade">Passing Grade (%)</Label>
             <Input
