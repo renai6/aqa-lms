@@ -103,6 +103,11 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
               const selectedCount = levels.filter((l) =>
                 selected.has(l.id),
               ).length;
+              const cover = levels[0];
+              const coverImage =
+                cover?.imageUrl && /^https?:\/\//.test(cover.imageUrl)
+                  ? cover.imageUrl
+                  : null;
               return (
                 <div
                   key={slug}
@@ -119,8 +124,18 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                     aria-expanded={isOpen}
                     className="flex items-center gap-3 p-4 text-left"
                   >
-                    <span className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
-                      <Layers className="h-5 w-5" aria-hidden="true" />
+                    <span className="bg-primary/10 text-primary relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                      {coverImage ? (
+                        <Image
+                          src={coverImage}
+                          alt={groupName}
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Layers className="h-5 w-5" aria-hidden="true" />
+                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="text-foreground block truncate font-semibold">
