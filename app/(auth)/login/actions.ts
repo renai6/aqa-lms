@@ -11,6 +11,7 @@ type LoginState = { error: string | null }
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = formData.get('email')
   const password = formData.get('password')
+  const courseId = String(formData.get('courseId') ?? '').trim()
   if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
     return { error: 'Invalid email or password.' }
   }
@@ -29,6 +30,9 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
   if (user.mustChangePassword) {
     redirect('/change-password')
+  }
+  if (user.role === 'STUDENT' && courseId) {
+    redirect(`/student/checkout?ids=${courseId}`)
   }
   redirect(ROLE_DASHBOARDS[user.role])
 }

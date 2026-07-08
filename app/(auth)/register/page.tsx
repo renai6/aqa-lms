@@ -3,7 +3,10 @@ import Eyebrow from "@/components/homepage/Eyebrow";
 
 export const metadata = { title: "Create an account — Al-Qur'an Academy" };
 
-export default function RegisterPage() {
+type Props = { searchParams: Promise<{ courseId?: string }> };
+
+export default async function RegisterPage({ searchParams }: Props) {
+  const { courseId } = await searchParams;
   return (
     <div className="animate-in fade-in slide-in-from-bottom-3 w-full max-w-[420px] duration-500">
       <div className="mb-8">
@@ -15,7 +18,7 @@ export default function RegisterPage() {
           Register to browse and purchase courses.
         </p>
       </div>
-      <RegisterForm />
+      <RegisterForm courseId={courseId} />
     </div>
   );
 }

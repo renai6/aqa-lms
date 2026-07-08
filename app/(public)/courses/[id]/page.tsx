@@ -168,13 +168,13 @@ export default async function PublicCourseDetailPage({ params }: Props) {
                 </p>
               )}
               <Link
-                href="/register"
+                href={`/register?courseId=${course.id}`}
                 className="bg-gold text-primary hover:bg-gold-soft block w-full px-6 py-3 text-center text-[11px] font-bold tracking-[0.18em] uppercase transition-colors"
               >
                 Enroll Now
               </Link>
               <Link
-                href="/login"
+                href={`/login?courseId=${course.id}`}
                 className="block w-full border border-white/20 px-6 py-3 text-center text-[11px] font-semibold tracking-[0.15em] text-white/80 uppercase transition-colors hover:border-white/50 hover:text-white"
               >
                 Already enrolled? Log in
@@ -329,7 +329,7 @@ export default async function PublicCourseDetailPage({ params }: Props) {
             amount upfront and complete your tuition over time.
           </p>
           <Link
-            href="/register"
+            href={`/register?courseId=${course.id}`}
             className="bg-gold text-primary hover:bg-gold-soft inline-flex items-center px-8 py-3.5 text-[11px] font-bold tracking-[0.2em] uppercase transition-all hover:-translate-y-0.5"
           >
             Register to Enroll
