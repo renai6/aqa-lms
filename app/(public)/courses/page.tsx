@@ -281,7 +281,7 @@ export default async function CoursesPage({
                               Learn More
                             </Link>
                             <Link
-                              href="/register"
+                              href={`/register?courseId=${course.id}`}
                               className="bg-gold text-primary hover:bg-gold-soft inline-flex w-full items-center justify-center px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors"
                             >
                               Register to Enroll

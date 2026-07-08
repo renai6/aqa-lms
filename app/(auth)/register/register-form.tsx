@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 
-export function RegisterForm() {
+export function RegisterForm({ courseId }: { courseId?: string }) {
   const [state, formAction, isPending] = useActionState(registerAction, {
     error: null,
   });
@@ -18,6 +18,7 @@ export function RegisterForm() {
 
   return (
     <form action={formAction} className="space-y-5">
+      {courseId && <input type="hidden" name="courseId" value={courseId} />}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>

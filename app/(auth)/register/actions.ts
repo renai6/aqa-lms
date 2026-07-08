@@ -53,6 +53,8 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
     studentType: String(raw.studentType ?? ''),
   }
 
+  const courseId = String(formData.get('courseId') ?? '').trim()
+
   const result = registerSchema.safeParse(raw)
   if (!result.success) {
     return { error: result.error.issues[0]?.message ?? 'Validation failed.', values }
@@ -94,5 +96,5 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
   }
 
   await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: false })
-  redirect('/student/courses')
+  redirect(courseId ? `/student/checkout?ids=${courseId}` : '/student/courses')
 }
