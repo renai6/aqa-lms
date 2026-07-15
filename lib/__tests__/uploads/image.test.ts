@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateImageUpload } from '@/lib/uploads/image'
+import { MAX_SIZE, validateImageUpload } from '@/lib/uploads/image'
 
 function fileFrom(bytes: number[], type: string, name = 'proof') {
   return new File([new Uint8Array(bytes)], name, { type })
@@ -36,9 +36,16 @@ describe('validateImageUpload', () => {
     expect(res.ok).toBe(false)
   })
 
-  it('rejects files larger than 5MB', async () => {
-    const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'big', { type: 'image/png' })
+  it('rejects files larger than MAX_SIZE', async () => {
+    const big = new File([new Uint8Array(MAX_SIZE + 1)], 'big', { type: 'image/png' })
     const res = await validateImageUpload(big)
     expect(res.ok).toBe(false)
+  })
+
+  it('accepts an image at exactly MAX_SIZE', async () => {
+    const bytes = new Uint8Array(MAX_SIZE)
+    bytes.set(PNG)
+    const res = await validateImageUpload(new File([bytes], 'max', { type: 'image/png' }))
+    expect(res.ok).toBe(true)
   })
 })

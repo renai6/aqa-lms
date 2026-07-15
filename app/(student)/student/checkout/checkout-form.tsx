@@ -116,7 +116,7 @@ export function CheckoutForm({ courses }: Props) {
           required
         />
         <p className="text-muted-foreground text-xs">
-          JPG, PNG, or WEBP. Max 5MB.
+          JPG, PNG, or WEBP. Max 10MB.
         </p>
       </div>
 

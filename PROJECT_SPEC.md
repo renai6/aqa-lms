@@ -57,7 +57,7 @@ Payments are handled **manually** (GCash / bank transfer) — there is **no paym
 1. Student submits enrollment form (public site)
 2. System creates an Enrollment Request (status: PENDING)
 3. System shows / emails payment instructions (GCash / bank)
-4. Student uploads proof of payment (image, max 5MB → Supabase Storage, private)
+4. Student uploads proof of payment (image, max 10MB → Supabase Storage, private)
 5. Admin reviews proof and approves (or rejects) enrollment
       ├─ approve ─> status: APPROVED, trigger account creation
       └─ reject  ─> status: REJECTED, notify student
@@ -66,7 +66,7 @@ Payments are handled **manually** (GCash / bank transfer) — there is **no paym
 9. Student logs in → forced redirect to change-password page
 ```
 
-**Proof-of-payment storage:** Supabase Storage, private bucket. Only admins can access files via signed URLs. Accepted types: JPG, PNG, WEBP. Max size: 5MB.
+**Proof-of-payment storage:** Supabase Storage, private bucket. Only admins can access files via signed URLs. Accepted types: JPG, PNG, WEBP. Max size: 10MB.
 
 **Status machine (suggested):**
 `PENDING_PAYMENT → PAYMENT_SUBMITTED → PAYMENT_VERIFIED → APPROVED → ACTIVE`
@@ -225,7 +225,7 @@ Transactional emails fire on key events:
 - **Credentials over email + forced reset:** admin approval creates account with `mustChangePassword = true`. Student receives credentials by email and is force-redirected to change-password on first login. Uses `VerificationToken` with type `PASSWORD_RESET`.
 - **Grading is weight-based percentages:** `Assessment.weight`, `Subject.units`, and `Course.passingGrade` are the only configurable knobs. No rule engine — formula is fixed in `lib/grading/`.
 - **Timed exams — server enforces, auto-accept:** `AssessmentAttempt.startedAt` is server-set. On submission, server checks elapsed time. If over limit, submission is **auto-accepted** with whatever answers exist — never rejected. Client timer is display-only.
-- **Proof-of-payment uploads:** go to Supabase Storage (private bucket, images only, 5MB max). Access via signed URLs from admin-only API routes.
+- **Proof-of-payment uploads:** go to Supabase Storage (private bucket, images only, 10MB max). Access via signed URLs from admin-only API routes.
 - **Certificates** are generated PDFs from per-course templates — plan a templating + PDF rendering approach early.
 
 ---

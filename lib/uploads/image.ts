@@ -4,7 +4,7 @@ const EXT: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
 }
-const MAX_SIZE = 5 * 1024 * 1024
+export const MAX_SIZE = 10 * 1024 * 1024
 
 export type ImageValidationResult =
   | { ok: true; buffer: Buffer; ext: string; contentType: string }
@@ -18,7 +18,7 @@ export async function validateImageUpload(file: unknown): Promise<ImageValidatio
     return { ok: false, error: 'Only JPG, PNG, and WEBP images are accepted.' }
   }
   if (file.size > MAX_SIZE) {
-    return { ok: false, error: 'File size must be 5MB or less.' }
+    return { ok: false, error: 'File size must be 10MB or less.' }
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())
