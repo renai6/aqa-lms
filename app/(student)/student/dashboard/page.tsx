@@ -3,10 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { getSession } from "@/lib/auth/session";
 import { getStudentDashboard, getStudentRecentResults } from "@/lib/student/queries";
-import { getStudentCertificates } from "@/lib/certificates/queries";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, Award, Lock } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
 
 function formatTime(t: string): string {
   const [hStr, mStr] = t.split(":");
@@ -41,7 +40,6 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     { enrollments, schedules, announcements, pendingPurchases },
     recentResults,
     user,
-    certificates,
   ] = await Promise.all([
     getStudentDashboard(session.userId),
     getStudentRecentResults(session.userId),
@@ -49,7 +47,6 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       where: { id: session.userId },
       select: { firstName: true },
     }),
-    getStudentCertificates(session.userId),
   ]);
 
   const partialEnrollments = enrollments.filter(
@@ -238,61 +235,6 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           </div>
         )}
       </section>
-
-      {/* Certificates */}
-      {certificates.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
-            Certificates
-          </h2>
-          <div className="space-y-2">
-            {certificates.map((c) => {
-              const reason = !c.allGraded
-                ? `Available once all ${c.totalSubjects} subjects are graded (${c.gradedCount}/${c.totalSubjects} done)`
-                : (c.courseGrade ?? 0) < c.passingGrade
-                  ? `Your average (${Math.round(c.courseGrade ?? 0)}%) is below the ${c.passingGrade}% required to pass`
-                  : `Complete your full payment to unlock your certificate`;
-              return (
-                <div
-                  key={c.courseId}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm text-zinc-900 truncate">
-                      {c.courseTitle}
-                    </p>
-                    {c.eligible ? (
-                      <p className="text-xs text-emerald-600 mt-0.5">
-                        Passed with a {Math.round(c.courseGrade ?? 0)}% average
-                      </p>
-                    ) : (
-                      <p className="text-xs text-zinc-400 mt-0.5">{reason}</p>
-                    )}
-                  </div>
-                  {c.eligible ? (
-                    <Button asChild size="sm" className="shrink-0">
-                      <Link href={`/student/certificate/${c.courseId}`}>
-                        <Award className="h-4 w-4" />
-                        Download Certificate
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled
-                      className="shrink-0"
-                    >
-                      <Lock className="h-4 w-4" />
-                      Locked
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* Recent Results */}
       {recentResults.length > 0 && (
