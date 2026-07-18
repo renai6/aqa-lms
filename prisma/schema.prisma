@@ -493,6 +493,8 @@ model Certificate {
   pdfUrl        String?
 
   issuedAt DateTime @default(now())
+
+  @@unique([userId, courseId])
 }
 
 //
