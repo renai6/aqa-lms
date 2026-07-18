@@ -42,9 +42,10 @@ export async function changePasswordAction(
 
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { email: true },
+    select: { email: true, isActive: true },
   })
   if (!user) return { error: 'User not found.' }
+  if (!user.isActive) return { error: 'Your account is inactive.' }
 
   await db.user.update({
     where: { id: session.userId },
