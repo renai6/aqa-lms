@@ -48,9 +48,19 @@ Several courses carry an `obs` suffix, and at least one of them has a real enrol
 An archived course is hidden from students completely.
 Lessons, grades, progress, and certificates all disappear from the student's view.
 
-Admin purchase history is the deliberate exception.
+Staff surfaces are the deliberate exception.
+The blackout applies to students, not to staff.
+
 `getAdminPurchasesByStatus` and `getAdminPurchaseById` continue to show archived course titles.
 Blanking those out would render past purchases as empty rows in the admin's own financial records.
+
+The same reasoning extends to the admin student export and to teacher-facing queries in `lib/teacher/queries.ts` and `lib/students/queries.ts`.
+These stay unfiltered.
+Teachers are staff, so an archived course appearing in a roster is consistent rather than a leak.
+
+Server-side write guards are not optional and are not covered by hiding alone.
+Any action that creates or mutates student progress must reject archived courses, because a stale open page can still POST after the course is archived.
+This covers assessment attempts, lesson completion, and enrollment created by purchase approval.
 
 ## Schema
 
