@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     db.purchase.count({ where: { status: "PENDING" } }),
     db.user.count({ where: { role: "STUDENT", isActive: true } }),
-    db.course.count({ where: { isPublished: true } }),
+    db.course.count({ where: { isPublished: true, archivedAt: null } }),
     db.enrollment.count(),
     db.purchase.findMany({
       where: { status: "PENDING" },

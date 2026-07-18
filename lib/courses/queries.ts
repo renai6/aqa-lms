@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { groupCourses } from "@/lib/courses/grouping";
+import { ACTIVE_COURSE } from "@/lib/courses/archive";
 import type {
   CourseType,
   CourseDuration,
@@ -27,7 +28,7 @@ export async function getPublishedCourses(
   type?: CourseType,
 ): Promise<PublishedCourseRow[]> {
   const rows = await db.course.findMany({
-    where: { isPublished: true, ...(type ? { courseType: type } : {}) },
+    where: { isPublished: true, ...ACTIVE_COURSE, ...(type ? { courseType: type } : {}) },
     orderBy: { title: "asc" },
     select: {
       id: true,
@@ -88,7 +89,7 @@ export async function getPublicCourseDetail(
   id: string,
 ): Promise<PublicCourseDetail | null> {
   const raw = await db.course.findUnique({
-    where: { id, isPublished: true },
+    where: { id, isPublished: true, ...ACTIVE_COURSE },
     select: {
       id: true,
       title: true,
@@ -125,7 +126,7 @@ export async function getPublishedCourseById(
   id: string,
 ): Promise<PublishedCourseRow | null> {
   const course = await db.course.findUnique({
-    where: { id },
+    where: { id, ...ACTIVE_COURSE },
     select: {
       id: true,
       title: true,
@@ -170,6 +171,7 @@ export type CourseRow = {
   meetLink: string | null;
   courseDuration: CourseDuration | null;
   createdAt: Date;
+  archivedAt: Date | null;
   _count: { subjects: number };
 };
 
@@ -266,13 +268,15 @@ export type CourseOption = { id: string; title: string };
 // Minimal course list for pickers (e.g. copy-subject target selector).
 export async function getCourseOptions(): Promise<CourseOption[]> {
   return db.course.findMany({
+    where: { ...ACTIVE_COURSE },
     orderBy: { title: "asc" },
     select: { id: true, title: true },
   });
 }
 
-export async function getCourses(): Promise<CourseRow[]> {
+export async function getCourses(includeArchived = false): Promise<CourseRow[]> {
   return db.course.findMany({
+    where: includeArchived ? { archivedAt: { not: null } } : { ...ACTIVE_COURSE },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -285,6 +289,7 @@ export async function getCourses(): Promise<CourseRow[]> {
       meetLink: true,
       courseDuration: true,
       createdAt: true,
+      archivedAt: true,
       _count: {
         select: { subjects: true },
       },
@@ -294,7 +299,7 @@ export async function getCourses(): Promise<CourseRow[]> {
 
 export async function getCourseById(id: string): Promise<CourseDetail | null> {
   const raw = await db.course.findUnique({
-    where: { id },
+    where: { id, ...ACTIVE_COURSE },
     select: {
       id: true,
       title: true,
@@ -339,7 +344,7 @@ export async function getSubjectById(
   sid: string,
 ): Promise<SubjectDetail | null> {
   return db.subject.findUnique({
-    where: { id: sid },
+    where: { id: sid, course: { ...ACTIVE_COURSE } },
     select: {
       id: true,
       courseId: true,
@@ -390,7 +395,7 @@ export async function getSubjectById(
 
 export async function getLessonById(lid: string): Promise<LessonDetail | null> {
   return db.lesson.findUnique({
-    where: { id: lid },
+    where: { id: lid, subject: { course: { ...ACTIVE_COURSE } } },
     select: {
       id: true,
       subjectId: true,
