@@ -51,6 +51,9 @@ export function DeactivateStudentButton({ studentId, isActive, studentName }: Pr
 
   return (
     <>
+      {/* AlertDialogContent wraps itself in AlertDialogPortal and renders into document.body,
+          outside this form, so the confirm button below cannot be a descendant of it - the
+          form={formId} attribute on that button is what associates them, and must not be removed. */}
       <form action={formAction} id={formId}>
         <input type="hidden" name="userId" value={studentId} />
       </form>
