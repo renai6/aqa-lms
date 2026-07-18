@@ -18,3 +18,19 @@ export function weightedSubjectGrade(
   }
   return weightSum > 0 ? weightedTotal / weightSum : null
 }
+
+export type WeightedCourseItem = { units: number; finalGrade: number }
+
+// Weighted average of subject final grades by Subject.units.
+// Returns null when there are no items or the total units is 0.
+export function weightedCourseGrade(
+  items: WeightedCourseItem[],
+): number | null {
+  let unitSum = 0
+  let weightedTotal = 0
+  for (const { units, finalGrade } of items) {
+    unitSum += units
+    weightedTotal += units * finalGrade
+  }
+  return unitSum > 0 ? weightedTotal / unitSum : null
+}
