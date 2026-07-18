@@ -93,11 +93,13 @@ export default async function CoursesPage({
                     </td>
                   )}
                   <td className="px-4 py-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={'/admin/courses/' + course.id}>
-                        View <ChevronRight className="w-3 h-3 ml-1" aria-hidden="true" />
-                      </Link>
-                    </Button>
+                    {!showArchived && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={'/admin/courses/' + course.id}>
+                          View <ChevronRight className="w-3 h-3 ml-1" aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
