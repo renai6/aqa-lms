@@ -155,16 +155,20 @@ The "Print / Save as PDF" button is a tiny client component calling `window.prin
 
 ---
 
-## Dashboard Entry Point
+## Course Page Entry Point
 
-A new **Certificates** section on the student dashboard (`app/(student)/student/dashboard/page.tsx`), using the existing section styling: the `text-[10px] uppercase tracking-[0.2em]` header and white rounded cards.
+A **Certificate** section on the student course page (`app/(student)/student/courses/[id]/page.tsx`), directly below Overall Progress, so the certificate sits next to the grades and progress it depends on.
 
-One row per enrolled course:
+The section shows a **mini preview** of the certificate beside its status:
 
-- **Eligible** — an active **Download Certificate** button linking to `/student/certificate/[courseId]`.
-- **Not eligible** — a disabled button plus a short reason that uses the course's actual `passingGrade`, for example "Available once all subjects are graded and your average is ≥ 75%" (the threshold is interpolated from `passingGrade`, not hardcoded).
+- **Eligible** — a crisp preview plus an active **Download Certificate** button linking to `/student/certificate/[courseId]`.
+- **Not eligible** — the preview blurred behind a lock badge, plus the specific blocking reason: subjects still ungraded, average below the course's actual `passingGrade`, or payment incomplete. The threshold is interpolated from `passingGrade`, never hardcoded.
 
-Eligibility for the section is computed in the dashboard's data layer (`lib/student/queries.ts`) so the page stays a server component and does no client-side eligibility logic.
+The section is omitted entirely for a course with no certifiable (visible) subjects.
+
+The preview and the full-size certificate render the same `CertificateCard` component (`components/certificate/certificate-card.tsx`), which is sized entirely in container-query width units (`cqw`). It therefore scales to whatever width its container has - a mini preview on the course page, a full sheet on the certificate page - keeping one source of truth for the design.
+
+Eligibility is computed server-side via `getCertificateEligibility`, so the page stays a server component and does no client-side eligibility logic.
 
 ---
 
