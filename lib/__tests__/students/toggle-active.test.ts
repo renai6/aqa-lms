@@ -19,6 +19,7 @@ vi.mock('next/cache', () => ({
 
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import { revalidatePath } from 'next/cache'
 import { toggleStudentActiveAction } from '@/app/(admin)/admin/students/actions'
 
 function form(userId: string): FormData {
@@ -37,6 +38,7 @@ describe('toggleStudentActiveAction', () => {
     const result = await toggleStudentActiveAction(initial, form('s1'))
     expect(result.error).toBe('Unauthorized')
     expect(db.user.update).not.toHaveBeenCalled()
+    expect(vi.mocked(revalidatePath)).not.toHaveBeenCalled()
   })
 
   it('rejects a TEACHER caller', async () => {
@@ -57,6 +59,7 @@ describe('toggleStudentActiveAction', () => {
     vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' })
     const result = await toggleStudentActiveAction(initial, new FormData())
     expect(result.error).toBe('Invalid student ID.')
+    expect(db.user.update).not.toHaveBeenCalled()
   })
 
   it('returns not found for an unknown id', async () => {
@@ -90,6 +93,8 @@ describe('toggleStudentActiveAction', () => {
       where: { id: 's1' },
       data: { isActive: false },
     })
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith('/admin/students')
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith('/admin/students/s1')
   })
 
   it('reactivates a deactivated student', async () => {
@@ -104,5 +109,7 @@ describe('toggleStudentActiveAction', () => {
       where: { id: 's1' },
       data: { isActive: true },
     })
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith('/admin/students')
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith('/admin/students/s1')
   })
 })
