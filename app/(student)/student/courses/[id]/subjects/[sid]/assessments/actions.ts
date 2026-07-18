@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth/session'
 import { scoreAttempt, type SubmittedAnswer } from '@/lib/assessments/scoring'
 import { canSeeSubject } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
+import { ACTIVE_COURSE } from '@/lib/courses/archive'
 
 type ActionState = { error: string | null }
 
@@ -41,7 +42,12 @@ export async function startAttemptAction(
   if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject.' }
 
   const assessment = await db.assessment.findFirst({
-    where: { id: aid, isPublished: true, subjectId, subject: { courseId } },
+    where: {
+      id: aid,
+      isPublished: true,
+      subjectId,
+      subject: { courseId, course: { ...ACTIVE_COURSE } },
+    },
     select: { id: true, subject: { select: { gender: true } } },
   })
   if (!assessment) return { error: 'Assessment is not available.' }
@@ -91,7 +97,11 @@ export async function submitAttemptAction(
   if (typeof attemptId !== 'string' || !attemptId) return { error: 'Invalid attempt.' }
 
   const attempt = await db.assessmentAttempt.findFirst({
-    where: { id: attemptId, userId: session.userId },
+    where: {
+      id: attemptId,
+      userId: session.userId,
+      assessment: { subject: { course: { ...ACTIVE_COURSE } } },
+    },
     select: {
       id: true,
       status: true,
