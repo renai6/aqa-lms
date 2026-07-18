@@ -17,6 +17,15 @@ import {
 
 type ActionState = { error: string | null; success?: boolean };
 
+// Thrown inside the approval transaction when a purchase item's course was
+// archived while the purchase sat pending, so the whole approval rolls back
+// instead of enrolling the student into a course they can never see.
+class ArchivedCourseError extends Error {
+  constructor(public courseTitle: string) {
+    super("ARCHIVED_COURSE");
+  }
+}
+
 async function requireAdmin() {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "Unauthorized" };
@@ -42,7 +51,10 @@ export async function approvePurchaseAction(
       paymentType: true,
       user: { select: { id: true, email: true, firstName: true } },
       items: {
-        select: { courseId: true, course: { select: { title: true } } },
+        select: {
+          courseId: true,
+          course: { select: { title: true, archivedAt: true } },
+        },
       },
     },
   });
@@ -63,6 +75,8 @@ export async function approvePurchaseAction(
       if (updated.count === 0) throw new Error("ALREADY_PROCESSED");
 
       for (const item of purchase.items) {
+        if (item.course.archivedAt) throw new ArchivedCourseError(item.course.title);
+
         const exists = await tx.enrollment.findUnique({
           where: {
             userId_courseId: {
@@ -89,6 +103,11 @@ export async function approvePurchaseAction(
       }
     });
   } catch (err) {
+    if (err instanceof ArchivedCourseError) {
+      return {
+        error: `Cannot approve: "${err.courseTitle}" has been archived. Reject this purchase or contact the student instead.`,
+      };
+    }
     const msg = err instanceof Error ? err.message : "";
     if (msg === "ALREADY_PROCESSED")
       return { error: "This purchase has already been processed." };

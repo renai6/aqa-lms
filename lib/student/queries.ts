@@ -5,6 +5,7 @@ import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
+import { ACTIVE_COURSE } from '@/lib/courses/archive'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
   const userGender = await getUserGender(userId)
   const [enrollmentsRaw, announcements, pendingPurchasesRaw] = await Promise.all([
     db.enrollment.findMany({
-      where: { userId },
+      where: { userId, course: { ...ACTIVE_COURSE } },
       orderBy: { enrolledAt: 'desc' },
       select: {
         id: true,
@@ -91,7 +92,13 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
       select: {
         id: true,
         createdAt: true,
-        items: { select: { course: { select: { title: true } } } },
+        items: {
+          // If the course is archived it drops out here and the purchase row
+          // survives with an empty courseTitles list; the dashboard renders
+          // that case as "Enrollment" (see student/dashboard/page.tsx).
+          where: { course: { ...ACTIVE_COURSE } },
+          select: { course: { select: { title: true } } },
+        },
       },
     }),
   ])
@@ -195,7 +202,7 @@ export async function getStudentCourse(
       select: { id: true },
     }),
     db.course.findUnique({
-      where: { id: courseId, isPublished: true },
+      where: { id: courseId, isPublished: true, ...ACTIVE_COURSE },
       select: {
         id: true,
         title: true,
@@ -326,7 +333,7 @@ export async function getStudentSubject(
   subjectId: string,
 ): Promise<StudentSubject | null> {
   const subject = await db.subject.findUnique({
-    where: { id: subjectId },
+    where: { id: subjectId, course: { ...ACTIVE_COURSE } },
     select: {
       id: true,
       courseId: true,
@@ -446,7 +453,7 @@ export async function getStudentAssessmentLaunch(
   aid: string,
 ): Promise<AssessmentLaunch | null> {
   const assessment = await db.assessment.findFirst({
-    where: { id: aid, isPublished: true },
+    where: { id: aid, isPublished: true, subject: { course: { ...ACTIVE_COURSE } } },
     select: {
       id: true,
       title: true,
@@ -538,7 +545,11 @@ export async function getStudentAttempt(
   attemptId: string,
 ): Promise<StudentAttempt | null> {
   const attempt = await db.assessmentAttempt.findFirst({
-    where: { id: attemptId, userId, assessment: { isPublished: true } },
+    where: {
+      id: attemptId,
+      userId,
+      assessment: { isPublished: true, subject: { course: { ...ACTIVE_COURSE } } },
+    },
     select: {
       id: true,
       status: true,
@@ -644,7 +655,10 @@ export async function getStudentRecentResults(
     where: {
       userId,
       status: { in: ['SUBMITTED', 'GRADED'] },
-      assessment: { isPublished: true, subject: subjectGenderFilter(userGender) },
+      assessment: {
+        isPublished: true,
+        subject: { ...subjectGenderFilter(userGender), course: { ...ACTIVE_COURSE } },
+      },
     },
     orderBy: { submittedAt: 'desc' },
     take: limit,

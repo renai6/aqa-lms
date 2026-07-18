@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { ACTIVE_COURSE } from "@/lib/courses/archive";
 import type {
   CourseType,
   EnrollmentStatus,
@@ -24,7 +25,7 @@ export async function getPurchasableCourses(
 ): Promise<PurchasableCourse[]> {
   const [courses, enrollments, pendingItems] = await Promise.all([
     db.course.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, ...ACTIVE_COURSE },
       orderBy: { title: "asc" },
       select: {
         id: true,

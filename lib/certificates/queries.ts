@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { getUserGender } from '@/lib/subjects/access'
 import { subjectGenderFilter } from '@/lib/subjects/visibility'
+import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import {
   certificateEligibility,
   type CertificateEligibility,
@@ -17,7 +18,7 @@ export async function getCertificateEligibility(
   const userGender = await getUserGender(userId)
   const [course, enrollment] = await Promise.all([
     db.course.findUnique({
-      where: { id: courseId },
+      where: { id: courseId, ...ACTIVE_COURSE },
       select: {
         title: true,
         passingGrade: true,

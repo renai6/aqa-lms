@@ -4,6 +4,7 @@
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import { ACTIVE_COURSE } from '@/lib/courses/archive'
 
 type ActionState = { error: string | null }
 
@@ -22,7 +23,10 @@ export async function markLessonDoneAction(
   if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject.' }
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.userId, courseId } },
+    where: {
+      userId_courseId: { userId: session.userId, courseId },
+      course: { ...ACTIVE_COURSE },
+    },
     select: { id: true },
   })
   if (!enrollment) return { error: 'Not enrolled in this course.' }
@@ -60,7 +64,10 @@ export async function unmarkLessonDoneAction(
   if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject.' }
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.userId, courseId } },
+    where: {
+      userId_courseId: { userId: session.userId, courseId },
+      course: { ...ACTIVE_COURSE },
+    },
     select: { id: true },
   })
   if (!enrollment) return { error: 'Not enrolled in this course.' }

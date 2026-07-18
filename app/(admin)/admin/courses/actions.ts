@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -218,7 +217,7 @@ export async function updateCourseAction(
   return { error: null, success: true };
 }
 
-export async function deleteCourseAction(
+export async function archiveCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -231,23 +230,42 @@ export async function deleteCourseAction(
   if (typeof id !== "string" || !id) return { error: "Invalid course ID." };
 
   try {
-    await db.$transaction(async (tx: Prisma.TransactionClient) => {
-      const subjects = await tx.subject.findMany({
-        where: { courseId: id },
-        select: { id: true },
-      });
-      const subjectIds = subjects.map((s) => s.id);
-      await tx.lesson.deleteMany({ where: { subjectId: { in: subjectIds } } });
-      await tx.subject.deleteMany({ where: { courseId: id } });
-      await tx.course.delete({ where: { id } });
+    // Archiving never touches Enrollment, PurchaseItem, or Certificate, so it
+    // cannot hit the FK restriction that made the old hard delete fail.
+    await db.course.update({
+      where: { id },
+      data: { archivedAt: new Date() },
     });
   } catch (err) {
-    console.error("[deleteCourse]", err);
+    console.error("[archiveCourse]", err);
     return { error: "A database error occurred. Please try again." };
   }
 
   revalidatePath("/admin/courses");
   redirect("/admin/courses");
+}
+
+export async function restoreCourseAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")
+    return { error: "Forbidden" };
+
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid course ID." };
+
+  try {
+    await db.course.update({ where: { id }, data: { archivedAt: null } });
+  } catch (err) {
+    console.error("[restoreCourse]", err);
+    return { error: "A database error occurred. Please try again." };
+  }
+
+  revalidatePath("/admin/courses");
+  return { error: null, success: true };
 }
 
 export async function togglePublishedAction(
