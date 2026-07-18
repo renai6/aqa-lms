@@ -186,3 +186,24 @@
   padding: 0 0.12em;
   animation: shimmer-crimson 4s ease-in-out infinite;
 }
+
+/* Certificate print: isolate the certificate so page chrome (nav, buttons)
+   is hidden and the certificate fills an A4 landscape sheet. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #certificate,
+  #certificate * {
+    visibility: visible;
+  }
+  #certificate {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+}

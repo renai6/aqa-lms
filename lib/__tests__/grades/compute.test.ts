@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { weightedSubjectGrade } from '@/lib/grades/compute'
+import { weightedSubjectGrade, weightedCourseGrade } from '@/lib/grades/compute'
 
 describe('weightedSubjectGrade', () => {
   it('returns null when no assessment has a score', () => {
@@ -46,5 +46,34 @@ describe('weightedSubjectGrade', () => {
       { weight: 3, score: null },
     ])
     expect(result).toBe(70)
+  })
+})
+
+describe('weightedCourseGrade', () => {
+  it('returns null for no subjects', () => {
+    expect(weightedCourseGrade([])).toBeNull()
+  })
+
+  it('returns null when total units is zero', () => {
+    expect(weightedCourseGrade([{ units: 0, finalGrade: 90 }])).toBeNull()
+  })
+
+  it('averages equally when units are equal', () => {
+    expect(
+      weightedCourseGrade([
+        { units: 1, finalGrade: 80 },
+        { units: 1, finalGrade: 100 },
+      ]),
+    ).toBe(90)
+  })
+
+  it('weights subjects by their units', () => {
+    // 80 at 1 unit, 100 at 3 units -> (80 + 300) / 4 = 95
+    expect(
+      weightedCourseGrade([
+        { units: 1, finalGrade: 80 },
+        { units: 3, finalGrade: 100 },
+      ]),
+    ).toBe(95)
   })
 })

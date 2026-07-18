@@ -2,9 +2,13 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Video } from "lucide-react";
+import { ArrowLeft, Award, Lock, Video } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { getStudentCourse } from "@/lib/student/queries";
+import { getCertificateEligibility } from "@/lib/certificates/queries";
+import { db } from "@/lib/db";
+import { Button } from "@/components/ui/button";
+import { CertificateCard } from "@/components/certificate/certificate-card";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -41,13 +45,37 @@ export default async function StudentCoursePage({ params }: Props) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const course = await getStudentCourse(session.userId, id);
+  const [course, cert, user] = await Promise.all([
+    getStudentCourse(session.userId, id),
+    getCertificateEligibility(session.userId, id),
+    db.user.findUnique({
+      where: { id: session.userId },
+      select: { firstName: true, lastName: true, displayName: true },
+    }),
+  ]);
   if (!course) notFound();
 
   const pct =
     course.totalLessons > 0
       ? Math.round((course.completedLessons / course.totalLessons) * 100)
       : 0;
+
+  const studentName =
+    (user && `${user.firstName} ${user.lastName}`.trim()) ||
+    user?.displayName ||
+    "Student";
+
+  // Certificate is offered only for a course that has certifiable subjects.
+  const eligibility =
+    cert && cert.eligibility.totalSubjects > 0 ? cert.eligibility : null;
+  const certAverage = Math.round(eligibility?.courseGrade ?? 0);
+  const certReason = eligibility
+    ? !eligibility.allGraded
+      ? `Available once all ${eligibility.totalSubjects} subjects are graded (${eligibility.gradedCount}/${eligibility.totalSubjects} done)`
+      : (eligibility.courseGrade ?? 0) < eligibility.passingGrade
+        ? `Your average (${certAverage}%) is below the ${eligibility.passingGrade}% required to pass`
+        : "Complete your full payment to unlock your certificate"
+    : "";
 
   return (
     <div className="px-6 md:px-10 py-8 space-y-8">
@@ -102,6 +130,65 @@ export default async function StudentCoursePage({ params }: Props) {
           {course.completedLessons} of {course.totalLessons} lessons completed
         </p>
       </div>
+
+      {/* Certificate */}
+      {eligibility && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Certificate
+          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5 border rounded-lg p-5">
+            {/* Mini preview */}
+            <div className="relative w-full max-w-[380px] shrink-0 overflow-hidden rounded-lg border border-zinc-200 shadow-sm">
+              <div
+                className={
+                  eligibility.eligible
+                    ? ""
+                    : "blur-[3px] opacity-50 select-none pointer-events-none"
+                }
+              >
+                <CertificateCard
+                  studentName={studentName}
+                  courseTitle={course.title}
+                  average={certAverage}
+                />
+              </div>
+              {!eligibility.eligible && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/30">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/70 text-white">
+                    <Lock className="w-4 h-4" aria-hidden="true" />
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Status + action */}
+            <div className="flex-1 space-y-2">
+              {eligibility.eligible ? (
+                <>
+                  <p className="text-sm font-semibold text-emerald-700">
+                    You passed with a {certAverage}% average.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your certificate of completion is ready to download.
+                  </p>
+                  <Button asChild size="sm" className="mt-1">
+                    <Link href={"/student/certificate/" + id}>
+                      <Award className="w-4 h-4" aria-hidden="true" />
+                      Download Certificate
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium">Certificate locked</p>
+                  <p className="text-xs text-muted-foreground">{certReason}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Subjects */}
       <section className="space-y-3">
