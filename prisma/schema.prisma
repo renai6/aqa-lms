@@ -175,11 +175,17 @@ model Course {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Set when an admin archives the course. Archived courses are hidden from
+  // every catalog, admin, and student surface but are never destroyed.
+  archivedAt DateTime?
+
   subjects      Subject[]
   enrollments   Enrollment[]
   certificates  Certificate[]
   purchaseItems PurchaseItem[]
   batches       Batch[]
+
+  @@index([archivedAt])
 }
 
 model Subject {
