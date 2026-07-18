@@ -43,8 +43,8 @@ describe("approvePurchaseAction blocks enrolling into an archived course", () =>
 
     // Run the transaction callback against a tx mock mirroring db, so the
     // guard logic inside the transaction actually executes.
-    vi.mocked(db.$transaction).mockImplementation(async (cb: never) =>
-      (cb as (tx: typeof db) => unknown)(db),
+    vi.mocked(db.$transaction).mockImplementation(
+      ((cb: (tx: typeof db) => unknown) => cb(db)) as unknown as typeof db.$transaction,
     );
     vi.mocked(db.purchase.updateMany).mockResolvedValue({ count: 1 } as never);
   });

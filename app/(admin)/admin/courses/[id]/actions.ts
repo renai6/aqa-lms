@@ -7,6 +7,7 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { DayOfWeek } from '@prisma/client'
+import { ACTIVE_COURSE } from '@/lib/courses/archive'
 
 type ActionState = { error: string | null; success?: boolean; warning?: string }
 
@@ -211,7 +212,7 @@ export async function copySubjectToCourseAction(
   }
 
   const targetCourse = await db.course.findUnique({
-    where: { id: targetCourseId },
+    where: { id: targetCourseId, ...ACTIVE_COURSE },
     select: { id: true },
   })
   if (!targetCourse) return { error: 'Target course not found.' }

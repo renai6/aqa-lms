@@ -122,44 +122,6 @@ export async function getPublicCourseDetail(
   return { ...raw, tuitionFee: raw.tuitionFee?.toNumber() ?? null };
 }
 
-export async function getPublishedCourseById(
-  id: string,
-): Promise<PublishedCourseRow | null> {
-  const course = await db.course.findUnique({
-    where: { id, ...ACTIVE_COURSE },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      imageUrl: true,
-      isPublished: true,
-      tuitionFee: true,
-      courseType: true,
-      meetLink: true,
-      courseDuration: true,
-      paymentFrequency: true,
-      miscFeeNote: true,
-      groupName: true,
-      level: true,
-    },
-  });
-  if (!course?.isPublished) return null;
-  return {
-    id: course.id,
-    title: course.title,
-    description: course.description,
-    imageUrl: course.imageUrl,
-    tuitionFee: course.tuitionFee?.toNumber() ?? null,
-    courseType: course.courseType,
-    meetLink: course.meetLink,
-    courseDuration: course.courseDuration,
-    paymentFrequency: course.paymentFrequency,
-    miscFeeNote: course.miscFeeNote,
-    groupName: course.groupName,
-    level: course.level,
-  };
-}
-
 export type CourseRow = {
   id: string;
   title: string;
@@ -274,9 +236,9 @@ export async function getCourseOptions(): Promise<CourseOption[]> {
   });
 }
 
-export async function getCourses(includeArchived = false): Promise<CourseRow[]> {
+export async function getCourses(archivedOnly = false): Promise<CourseRow[]> {
   return db.course.findMany({
-    where: includeArchived ? { archivedAt: { not: null } } : { ...ACTIVE_COURSE },
+    where: archivedOnly ? { archivedAt: { not: null } } : { ...ACTIVE_COURSE },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
