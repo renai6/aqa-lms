@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_REDIRECT");
   }),
 }));
+vi.mock("@/lib/supabase/admin", () => ({ supabaseAdmin: {} }));
 
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
