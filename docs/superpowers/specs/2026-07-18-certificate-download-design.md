@@ -33,8 +33,9 @@ If any subject is not yet graded, the certificate stays locked (the course is st
 
 ## Data Model
 
-No schema changes.
-The existing `Certificate` model is used as-is:
+One additive constraint.
+The existing `Certificate` model gains `@@unique([userId, courseId])` so auto-issue can be a single idempotent `upsert` (one certificate per student per course, safe under concurrent requests).
+No columns change:
 
 ```prisma
 model Certificate {
@@ -46,14 +47,17 @@ model Certificate {
   certificateNo String   @unique
   pdfUrl        String?
   issuedAt      DateTime @default(now())
+
+  @@unique([userId, courseId])
 }
 ```
 
 `pdfUrl` stays null for the temporary version.
 
-**Certificate number format:** `AQA-<YYYY>-<6 uppercase chars derived from the row id>`.
-Uniqueness is guaranteed by the row id, so there is no fragile sequential counter that could collide under serverless concurrency.
-The number is derived from the created row and written back, so it stays stable for the life of the certificate.
+**Certificate number format:** `AQA-<YYYY>-<6 uppercase hex chars>` (for example `AQA-2026-3F9A1C`).
+The 6 hex chars come from 3 random bytes.
+Uniqueness of the number is backed by the `certificateNo @unique` column; there is no fragile sequential counter that could collide under serverless concurrency.
+Because issuance upserts on `[userId, courseId]`, the number is created once and stays stable for the life of the certificate.
 
 ---
 
@@ -72,9 +76,15 @@ export function weightedCourseGrade(items: WeightedCourseItem[]): number | null
 Mirrors the existing `weightedSubjectGrade`.
 Covered by unit tests alongside the existing `compute.test.ts`.
 
-### `lib/certificates/eligibility.ts` — new
+### `lib/certificates/` — new modules
+
+Split into pure (unit-tested) and db-aware pieces, matching the existing `subjects/visibility.ts` (pure) vs `subjects/access.ts` (db) pattern.
+
+**`eligibility.ts` (pure):**
 
 ```ts
+export type SubjectGradeInput = { units: number; finalGrade: number | null }
+
 export type CertificateEligibility = {
   eligible: boolean
   allGraded: boolean
@@ -84,17 +94,25 @@ export type CertificateEligibility = {
   totalSubjects: number
 }
 
-export async function getCertificateEligibility(
-  userId: string,
-  courseId: string,
-): Promise<CertificateEligibility>
+export function certificateEligibility(
+  subjects: SubjectGradeInput[],
+  passingGrade: number,
+): CertificateEligibility
 ```
 
-Loads the course's subjects (with `units` and `passingGrade`) and the student's `Grade.finalGrade` per subject.
-`allGraded = gradedCount === totalSubjects && totalSubjects > 0`.
+`allGraded = totalSubjects > 0 && gradedCount === totalSubjects`.
+`courseGrade = weightedCourseGrade(...)` over the graded subjects.
 `eligible = allGraded && courseGrade !== null && courseGrade >= passingGrade`.
 
-The returned shape gives the dashboard everything it needs to render a precise locked reason without a second query.
+**`number.ts` (pure):** `generateCertificateNo()` returns `AQA-<YYYY>-<6 hex>`.
+
+**`queries.ts` (db):** `getCertificateEligibility(userId, courseId)` and `getStudentCertificates(userId)`.
+Both load the course's subjects using the same `subjectGenderFilter(userGender)` used elsewhere, so a subject restricted to the other gender is never counted (otherwise it could never be graded and would permanently lock the certificate).
+They map subjects + the student's `Grade.finalGrade` into `SubjectGradeInput[]` and delegate to `certificateEligibility`.
+
+**`issue.ts` (db):** `issueCertificate(userId, courseId)` upserts on `[userId, courseId]` and returns `{ certificateNo, issuedAt }`.
+
+The returned eligibility shape gives the dashboard everything it needs to render a precise locked reason without a second query.
 
 ---
 
