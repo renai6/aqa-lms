@@ -9,6 +9,7 @@ import {
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
+import { ACTIVE_COURSE } from "@/lib/courses/archive";
 
 export const metadata = { title: "Dashboard — AQA Admin" };
 
@@ -28,7 +29,7 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     db.purchase.count({ where: { status: "PENDING" } }),
     db.user.count({ where: { role: "STUDENT", isActive: true } }),
-    db.course.count({ where: { isPublished: true } }),
+    db.course.count({ where: { isPublished: true, ...ACTIVE_COURSE } }),
     db.enrollment.count(),
     db.purchase.findMany({
       where: { status: "PENDING" },

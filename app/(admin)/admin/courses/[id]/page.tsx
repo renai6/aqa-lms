@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ChevronRight } from 'lucide-react'
 import { EditCourseForm } from './edit-course-form'
 import { TogglePublishedButton } from './toggle-published-button'
-import { DeleteCourseButton } from './delete-course-button'
+import { ArchiveCourseButton } from './archive-course-button'
 import { CourseImageCard } from './course-image-card'
 import { StartBatchButton } from './start-batch-button'
 
@@ -90,7 +90,7 @@ export default async function CourseDetailPage({ params }: Props) {
               <CardTitle className="text-destructive text-sm">Danger Zone</CardTitle>
             </CardHeader>
             <CardContent>
-              <DeleteCourseButton courseId={course.id} courseTitle={course.title} />
+              <ArchiveCourseButton courseId={course.id} courseTitle={course.title} />
             </CardContent>
           </Card>
         </div>

@@ -1,8 +1,8 @@
 // app/(admin)/admin/students/page.tsx
 import { Suspense } from "react";
 import { type Gender } from "@prisma/client";
-import { db } from "@/lib/db";
 import { getStudents } from "@/lib/students/queries";
+import { getCourseOptions } from "@/lib/courses/queries";
 import { PageHeader } from "@/components/admin/page-header";
 import { FilterBar } from "./filter-bar";
 import { StudentTable } from "./student-table";
@@ -21,10 +21,7 @@ export default async function StudentsPage({ searchParams }: Props) {
 
   const [students, courses] = await Promise.all([
     getStudents({ courseId: course, gender: validGender }),
-    db.course.findMany({
-      select: { id: true, title: true },
-      orderBy: { title: "asc" },
-    }),
+    getCourseOptions(),
   ]);
 
   const exportParams = new URLSearchParams();

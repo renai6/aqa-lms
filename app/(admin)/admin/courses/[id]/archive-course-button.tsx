@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { deleteCourseAction } from '../actions'
+import { archiveCourseAction } from '../actions'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -17,22 +17,22 @@ import {
 
 type Props = { courseId: string; courseTitle: string }
 
-export function DeleteCourseButton({ courseId, courseTitle }: Props) {
-  const [state, formAction, isPending] = useActionState(deleteCourseAction, { error: null })
+export function ArchiveCourseButton({ courseId, courseTitle }: Props) {
+  const [state, formAction, isPending] = useActionState(archiveCourseAction, { error: null })
   return (
     <div className="space-y-1">
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" className="w-full" disabled={isPending}>
-            {isPending ? 'Deleting...' : 'Delete Course'}
+            {isPending ? 'Archiving...' : 'Archive Course'}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &quot;{courseTitle}&quot;?</AlertDialogTitle>
+            <AlertDialogTitle>Archive &quot;{courseTitle}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the course, all its subjects, and all lessons. This
-              cannot be undone.
+              The course will be hidden from students, the catalog, and this list. Nothing is
+              deleted, and you can restore it from the Archived tab at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -43,7 +43,7 @@ export function DeleteCourseButton({ courseId, courseTitle }: Props) {
                 type="submit"
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Delete
+                Archive
               </AlertDialogAction>
             </form>
           </AlertDialogFooter>
