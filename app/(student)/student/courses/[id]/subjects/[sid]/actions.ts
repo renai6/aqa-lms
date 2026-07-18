@@ -4,6 +4,7 @@
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import { isActiveStudent } from '@/lib/auth/capabilities'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 
 type ActionState = { error: string | null }
@@ -14,6 +15,7 @@ export async function markLessonDoneAction(
 ): Promise<ActionState> {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
+  if (!(await isActiveStudent(session))) return { error: 'Your account is inactive.' }
 
   const lessonId = formData.get('lessonId')
   const courseId = formData.get('courseId')
@@ -55,6 +57,7 @@ export async function unmarkLessonDoneAction(
 ): Promise<ActionState> {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
+  if (!(await isActiveStudent(session))) return { error: 'Your account is inactive.' }
 
   const lessonId = formData.get('lessonId')
   const courseId = formData.get('courseId')

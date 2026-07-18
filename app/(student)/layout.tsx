@@ -7,10 +7,14 @@ export default async function StudentLayout({ children }: { children: React.Reac
   const session = await getSession()
   if (!session || session.role !== 'STUDENT') redirect('/login')
 
+  // isActive is re-checked on every student page load: sessions are stateless
+  // 7-day JWTs, so an admin deactivating a student mid-session would otherwise
+  // not take effect until the token expired.
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { firstName: true },
+    select: { firstName: true, isActive: true },
   })
+  if (!user?.isActive) redirect('/login')
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

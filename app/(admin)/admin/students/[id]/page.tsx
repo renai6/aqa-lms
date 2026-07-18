@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation'
 import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
+import { DeactivateStudentButton } from '../deactivate-student-button'
 import { cn } from '@/lib/utils'
 
 type Props = { params: Promise<{ id: string }> }
@@ -94,7 +95,7 @@ export default async function StudentDetailPage({ params }: Props) {
             </div>
             <div>
               <dt className="text-muted-foreground">Status</dt>
-              <dd className="mt-0.5">
+              <dd className="mt-0.5 space-y-2">
                 <span className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
                   student.isActive
@@ -103,6 +104,11 @@ export default async function StudentDetailPage({ params }: Props) {
                 )}>
                   {student.isActive ? 'Active' : 'Inactive'}
                 </span>
+                <DeactivateStudentButton
+                  studentId={student.id}
+                  isActive={student.isActive}
+                  studentName={`${student.firstName} ${student.lastName}`}
+                />
               </dd>
             </div>
             <div>

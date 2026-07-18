@@ -17,9 +17,10 @@ export async function createPurchaseAction(_prev: ActionState, formData: FormDat
 
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { email: true, firstName: true, studentType: true },
+    select: { email: true, firstName: true, studentType: true, isActive: true },
   })
   if (!user) return { error: 'Account not found.' }
+  if (!user.isActive) return { error: 'Your account is inactive.' }
 
   const raw = {
     courseIds: formData.getAll('courseIds').map(String),

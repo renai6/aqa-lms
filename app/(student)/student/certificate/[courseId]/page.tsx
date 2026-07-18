@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
+import { isActiveStudent } from "@/lib/auth/capabilities";
 import { db } from "@/lib/db";
 import { getCertificateEligibility } from "@/lib/certificates/queries";
 import { issueCertificate } from "@/lib/certificates/issue";
@@ -13,6 +14,7 @@ type Props = { params: Promise<{ courseId: string }> };
 export default async function CertificatePage({ params }: Props) {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (!(await isActiveStudent(session))) redirect("/login");
 
   const { courseId } = await params;
 

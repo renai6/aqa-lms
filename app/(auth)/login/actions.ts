@@ -23,7 +23,10 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   }
 
   if (!user.isActive) {
-    return { error: 'Account not verified. Check your email for a verification link.' }
+    return {
+      error:
+        "This account isn't active. If you just registered, check your email for a verification link; otherwise contact your administrator.",
+    }
   }
 
   await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: user.mustChangePassword })

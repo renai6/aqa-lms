@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import { isActiveStudent } from '@/lib/auth/capabilities'
 import { scoreAttempt, type SubmittedAnswer } from '@/lib/assessments/scoring'
 import { canSeeSubject } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
@@ -33,6 +34,7 @@ export async function startAttemptAction(
 ): Promise<ActionState> {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
+  if (!(await isActiveStudent(session))) return { error: 'Your account is inactive.' }
 
   const aid = formData.get('assessmentId')
   const courseId = formData.get('courseId')
@@ -92,6 +94,7 @@ export async function submitAttemptAction(
 ): Promise<ActionState> {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
+  if (!(await isActiveStudent(session))) return { error: 'Your account is inactive.' }
 
   const attemptId = formData.get('attemptId')
   if (typeof attemptId !== 'string' || !attemptId) return { error: 'Invalid attempt.' }

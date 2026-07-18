@@ -32,3 +32,17 @@ export async function assertCanManageSubject(
     throw new Error('Forbidden')
   }
 }
+
+// Is this session a student who is still allowed in?
+// Deactivation flips User.isActive, but sessions are stateless 7-day JWTs, so
+// every student entry point has to re-check the flag rather than trust the token.
+export async function isActiveStudent(session: SessionLike | null): Promise<boolean> {
+  if (!session) return false
+
+  const user = await db.user.findUnique({
+    where: { id: session.userId },
+    select: { isActive: true },
+  })
+
+  return user?.isActive === true
+}
