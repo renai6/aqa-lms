@@ -93,6 +93,9 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         id: true,
         createdAt: true,
         items: {
+          // If the course is archived it drops out here and the purchase row
+          // survives with an empty courseTitles list; the dashboard renders
+          // that case as "Enrollment" (see student/dashboard/page.tsx).
           where: { course: { ...ACTIVE_COURSE } },
           select: { course: { select: { title: true } } },
         },
