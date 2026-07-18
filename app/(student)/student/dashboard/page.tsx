@@ -249,7 +249,9 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
             {certificates.map((c) => {
               const reason = !c.allGraded
                 ? `Available once all ${c.totalSubjects} subjects are graded (${c.gradedCount}/${c.totalSubjects} done)`
-                : `Your average (${Math.round(c.courseGrade ?? 0)}%) is below the ${c.passingGrade}% required to pass`;
+                : (c.courseGrade ?? 0) < c.passingGrade
+                  ? `Your average (${Math.round(c.courseGrade ?? 0)}%) is below the ${c.passingGrade}% required to pass`
+                  : `Complete your full payment to unlock your certificate`;
               return (
                 <div
                   key={c.courseId}

@@ -19,10 +19,11 @@ The eligibility engine and route are designed so a real server-generated PDF can
 
 ## Eligibility Rule
 
-A student is eligible to download a course certificate when **both** conditions hold:
+A student is eligible to download a course certificate when **all** of these conditions hold:
 
-1. **All subjects graded** — every subject in the course has a `Grade` row (teacher-assigned `finalGrade`) for this student.
-2. **Passing average** — the weighted course grade is `>= course.passingGrade` (default 75).
+1. **Fully paid** — the student's `Enrollment.paymentStatus` for the course is `FULLY_PAID`.
+2. **All subjects graded** — every subject in the course has a `Grade` row (teacher-assigned `finalGrade`) for this student.
+3. **Passing average** — the weighted course grade is `>= course.passingGrade` (default 75).
 
 Weighted course grade is `Σ(subjectFinalGrade × subject.units) / Σ(subject.units)`.
 

@@ -3,7 +3,7 @@ import { certificateEligibility } from '@/lib/certificates/eligibility'
 
 describe('certificateEligibility', () => {
   it('is not eligible when there are no subjects', () => {
-    const r = certificateEligibility([], 75)
+    const r = certificateEligibility([], 75, true)
     expect(r.eligible).toBe(false)
     expect(r.allGraded).toBe(false)
     expect(r.courseGrade).toBeNull()
@@ -17,6 +17,7 @@ describe('certificateEligibility', () => {
         { units: 1, finalGrade: null },
       ],
       75,
+      true,
     )
     expect(r.allGraded).toBe(false)
     expect(r.gradedCount).toBe(1)
@@ -31,13 +32,30 @@ describe('certificateEligibility', () => {
         { units: 1, finalGrade: 70 },
       ],
       75,
+      true,
     )
     expect(r.allGraded).toBe(true)
     expect(r.courseGrade).toBe(65)
     expect(r.eligible).toBe(false)
   })
 
-  it('is eligible when all graded and the weighted average meets passing', () => {
+  it('is not eligible when graded and passing but not fully paid', () => {
+    // 70 at 1 unit, 90 at 3 units -> 85 >= 75, but payment is incomplete
+    const r = certificateEligibility(
+      [
+        { units: 1, finalGrade: 70 },
+        { units: 3, finalGrade: 90 },
+      ],
+      75,
+      false,
+    )
+    expect(r.allGraded).toBe(true)
+    expect(r.courseGrade).toBe(85)
+    expect(r.fullyPaid).toBe(false)
+    expect(r.eligible).toBe(false)
+  })
+
+  it('is eligible when fully paid, all graded, and the weighted average meets passing', () => {
     // 70 at 1 unit, 90 at 3 units -> 85 >= 75
     const r = certificateEligibility(
       [
@@ -45,14 +63,16 @@ describe('certificateEligibility', () => {
         { units: 3, finalGrade: 90 },
       ],
       75,
+      true,
     )
     expect(r.allGraded).toBe(true)
     expect(r.courseGrade).toBe(85)
+    expect(r.fullyPaid).toBe(true)
     expect(r.eligible).toBe(true)
   })
 
   it('respects a custom passing grade', () => {
-    const r = certificateEligibility([{ units: 1, finalGrade: 80 }], 90)
+    const r = certificateEligibility([{ units: 1, finalGrade: 80 }], 90, true)
     expect(r.passingGrade).toBe(90)
     expect(r.eligible).toBe(false)
   })

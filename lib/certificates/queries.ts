@@ -15,18 +15,26 @@ export async function getCertificateEligibility(
   courseId: string,
 ): Promise<{ courseTitle: string; eligibility: CertificateEligibility } | null> {
   const userGender = await getUserGender(userId)
-  const course = await db.course.findUnique({
-    where: { id: courseId },
-    select: {
-      title: true,
-      passingGrade: true,
-      subjects: {
-        where: subjectGenderFilter(userGender),
-        select: { id: true, units: true },
+  const [course, enrollment] = await Promise.all([
+    db.course.findUnique({
+      where: { id: courseId },
+      select: {
+        title: true,
+        passingGrade: true,
+        subjects: {
+          where: subjectGenderFilter(userGender),
+          select: { id: true, units: true },
+        },
       },
-    },
-  })
+    }),
+    db.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { paymentStatus: true },
+    }),
+  ])
   if (!course) return null
+
+  const fullyPaid = enrollment?.paymentStatus === 'FULLY_PAID'
 
   const subjectIds = course.subjects.map((s) => s.id)
   const grades =
@@ -45,7 +53,7 @@ export async function getCertificateEligibility(
 
   return {
     courseTitle: course.title,
-    eligibility: certificateEligibility(inputs, course.passingGrade),
+    eligibility: certificateEligibility(inputs, course.passingGrade, fullyPaid),
   }
 }
 
@@ -65,6 +73,7 @@ export async function getStudentCertificates(
     orderBy: { enrolledAt: 'desc' },
     select: {
       courseId: true,
+      paymentStatus: true,
       course: {
         select: {
           title: true,
@@ -98,7 +107,11 @@ export async function getStudentCertificates(
       return {
         courseId: e.courseId,
         courseTitle: e.course.title,
-        ...certificateEligibility(inputs, e.course.passingGrade),
+        ...certificateEligibility(
+          inputs,
+          e.course.passingGrade,
+          e.paymentStatus === 'FULLY_PAID',
+        ),
       }
     })
 }
