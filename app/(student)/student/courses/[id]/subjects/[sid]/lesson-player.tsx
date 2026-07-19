@@ -72,7 +72,7 @@ export function LessonPlayer({
     setActiveVideo({ lessonId: lesson.id, kind, title: lesson.title, previewUrl });
   }
 
-  function videoEntry(lesson: StudentLesson, kind: VideoKind, previewUrl: string, label: string) {
+  function videoEntry(lesson: StudentLesson, kind: VideoKind, label: string) {
     const isActive = activeVideo?.lessonId === lesson.id && activeVideo.kind === kind;
     return (
       <button
@@ -207,10 +207,11 @@ export function LessonPlayer({
                           )}
 
                           {videoPreviewUrl &&
-                            videoEntry(lesson, "video", videoPreviewUrl, "Watch Lesson Video")}
+                            videoEntry(lesson, "video", "Watch Lesson Video")}
 
                           {recordingPreviewUrl &&
-                            videoEntry(lesson, "recording", recordingPreviewUrl, "Watch Recording")}
+                            videoEntry(lesson, "recording", "Watch Recording")}
+
                           {!lesson.isCompleted && (
                             <div>
                               <LessonDoneButton
@@ -292,6 +293,9 @@ export function LessonPlayer({
         {activeVideo ? (
           <>
             <div className="shrink-0 px-4 py-1 bg-zinc-900 border-b border-zinc-800">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                {activeVideo.kind === "video" ? "Lesson Video" : "Recording"}
+              </p>
               <p className="text-sm font-medium text-white truncate">
                 {activeVideo.title}
               </p>

@@ -56,9 +56,6 @@ export function BatchLessonForm({
             placeholder="Google Drive link…"
             className="text-sm h-8"
           />
-          <p className="text-[11px] leading-tight text-muted-foreground">
-            Set Drive sharing to Viewer, and turn off download/print/copy.
-          </p>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Recording URL</Label>
@@ -80,6 +77,9 @@ export function BatchLessonForm({
             <span className="text-xs text-destructive">{state.error}</span>
           )}
         </div>
+        <p className="sm:col-span-4 text-[11px] leading-tight text-muted-foreground">
+          Lesson video: Set Drive sharing to Viewer, and turn off download/print/copy.
+        </p>
       </form>
     </div>
   )

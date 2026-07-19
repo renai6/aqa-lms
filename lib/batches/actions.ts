@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { getMaxBatchNumber, nextBatchNumber } from './queries'
+import { toPreviewUrl } from './drive'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -74,6 +75,13 @@ export async function upsertBatchLessonContentAction(
     videoUrl: formData.get('videoUrl'),
   })
   if (!result.success) return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
+
+  if (result.data.videoUrl && !toPreviewUrl(result.data.videoUrl)) {
+    return { error: 'Lesson Video URL must be a Google Drive file link.' }
+  }
+  if (result.data.recordingUrl && !toPreviewUrl(result.data.recordingUrl)) {
+    return { error: 'Recording URL must be a Google Drive file link.' }
+  }
 
   try {
     await db.batchLessonContent.upsert({
