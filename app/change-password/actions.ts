@@ -47,12 +47,15 @@ export async function changePasswordAction(
   if (!user) return { error: 'User not found.' }
   if (!user.isActive) return { error: 'Your account is inactive.' }
 
-  await db.user.update({
+  // Bumping tokenVersion strands every other session issued for this user;
+  // the createSession below re-issues one for the browser doing the change.
+  const updated = await db.user.update({
     where: { id: session.userId },
-    data: { passwordHash, mustChangePassword: false },
+    data: { passwordHash, mustChangePassword: false, tokenVersion: { increment: 1 } },
+    select: { tokenVersion: true },
   })
 
-  await createSession({ id: session.userId, role: session.role as UserRole, email: user.email, mustChangePassword: false })
+  await createSession({ id: session.userId, role: session.role as UserRole, email: user.email, mustChangePassword: false, tokenVersion: updated.tokenVersion })
 
   redirect(ROLE_DASHBOARDS[session.role as UserRole] ?? '/login')
 }

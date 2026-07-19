@@ -29,7 +29,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     }
   }
 
-  await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: user.mustChangePassword })
+  await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: user.mustChangePassword, tokenVersion: user.tokenVersion })
 
   if (user.mustChangePassword) {
     redirect('/change-password')

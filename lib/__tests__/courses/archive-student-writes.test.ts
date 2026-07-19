@@ -47,6 +47,9 @@ describe("student write actions block archived courses", () => {
       userId: "student1",
       role: "STUDENT",
     } as never);
+    // These actions gate on isActiveStudent() before the archive check, so the
+    // student has to look active for the archive behaviour to be reachable.
+    vi.mocked(db.user.findUnique).mockResolvedValue({ isActive: true } as never);
   });
 
   it("startAttemptAction filters the assessment lookup by an active course and fails closed", async () => {

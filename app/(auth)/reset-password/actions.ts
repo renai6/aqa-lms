@@ -22,9 +22,11 @@ export async function resetPasswordAction(_prev: ResetState, formData: FormData)
   const userId = await verifyAndConsumeToken(token, TokenType.PASSWORD_RESET)
   if (!userId) return { error: 'This link is invalid or has expired.' }
 
+  // Bumping tokenVersion invalidates every session issued before the reset -
+  // the reason someone resets a password is often that a session is compromised.
   await db.user.update({
     where: { id: userId },
-    data: { passwordHash: await hashPassword(password) },
+    data: { passwordHash: await hashPassword(password), tokenVersion: { increment: 1 } },
   })
 
   redirect('/login')

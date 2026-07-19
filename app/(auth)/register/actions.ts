@@ -65,7 +65,7 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } })
   if (existing) return { error: 'An account with this email already exists.', values }
 
-  let user: { id: string; role: 'STUDENT'; email: string }
+  let user: { id: string; role: 'STUDENT'; email: string; tokenVersion: number }
   try {
     const created = await db.user.create({
       data: {
@@ -83,7 +83,7 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
         facebookLink: d.facebookLink,
         studentType: d.studentType,
       },
-      select: { id: true, role: true, email: true },
+      select: { id: true, role: true, email: true, tokenVersion: true },
     })
     user = created as typeof user
   } catch (err) {
@@ -95,6 +95,6 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
     return { error: 'A database error occurred. Please try again.', values }
   }
 
-  await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: false })
+  await createSession({ id: user.id, role: user.role, email: user.email, mustChangePassword: false, tokenVersion: user.tokenVersion })
   redirect(courseId ? `/student/checkout?ids=${courseId}` : '/student/courses')
 }

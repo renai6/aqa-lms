@@ -23,10 +23,16 @@ const AUTHENTICATED_PATHS = ["/change-password"];
 // Forward the authenticated identity to server components via request headers,
 // which getSession() reads. Must be set on the downstream request (not the
 // response), otherwise the headers never reach the page.
-function forwardIdentity(request: NextRequest, sub: string, role: UserRole) {
+function forwardIdentity(
+  request: NextRequest,
+  sub: string,
+  role: UserRole,
+  tokenVersion: number,
+) {
   const headers = new Headers(request.headers);
   headers.set("x-user-id", sub);
   headers.set("x-user-role", role);
+  headers.set("x-user-token-version", String(tokenVersion));
   return NextResponse.next({ request: { headers } });
 }
 
@@ -60,7 +66,7 @@ export async function proxy(request: NextRequest) {
         new URL(ROLE_DASHBOARDS[payload.role], request.url),
       );
     }
-    return forwardIdentity(request, payload.sub, payload.role);
+    return forwardIdentity(request, payload.sub, payload.role, payload.tokenVersion);
   }
 
   const match = PROTECTED.find((p) => pathname.startsWith(p.prefix));
@@ -82,7 +88,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/change-password", request.url));
   }
 
-  return forwardIdentity(request, payload.sub, payload.role);
+  return forwardIdentity(request, payload.sub, payload.role, payload.tokenVersion);
 }
 
 export const config = {
