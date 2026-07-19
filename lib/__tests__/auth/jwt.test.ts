@@ -7,7 +7,7 @@ beforeAll(() => {
 
 describe('signToken + verifySessionToken', () => {
   it('produces a token that verifies successfully', async () => {
-    const payload = { sub: 'user-1', role: 'STUDENT' as const, email: 'student@test.com', mustChangePassword: false }
+    const payload = { sub: 'user-1', role: 'STUDENT' as const, email: 'student@test.com', mustChangePassword: false , tokenVersion: 0 }
     const token = await signToken(payload)
     const result = await verifySessionToken(token)
     expect(result?.sub).toBe('user-1')

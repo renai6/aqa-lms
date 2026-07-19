@@ -112,6 +112,9 @@ model User {
 
   role               UserRole @default(STUDENT)
   isActive           Boolean  @default(true)
+  // Bumped whenever the password changes, which invalidates every previously
+  // issued session JWT (they carry the version they were signed with).
+  tokenVersion       Int      @default(0)
   gender             Gender?
   mustChangePassword Boolean  @default(false)
   address            String?

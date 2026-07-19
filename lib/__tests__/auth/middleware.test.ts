@@ -32,7 +32,7 @@ describe("middleware", () => {
       sub: "u1",
       role: "STUDENT",
       email: "x@x.com",
-      mustChangePassword: false,
+      mustChangePassword: false, tokenVersion: 0
     });
     const res = await proxy(makeRequest("/admin/dashboard", "some-token"));
     expect(res.status).toBe(307);
@@ -44,7 +44,7 @@ describe("middleware", () => {
       sub: "u2",
       role: "ADMIN",
       email: "admin@x.com",
-      mustChangePassword: false,
+      mustChangePassword: false, tokenVersion: 0
     });
     const res = await proxy(makeRequest("/admin/dashboard", "valid-token"));
     // NextResponse.next({ request: { headers } }) forwards headers onto the
@@ -58,7 +58,7 @@ describe("middleware", () => {
       sub: "u3",
       role: "TEACHER",
       email: "t@x.com",
-      mustChangePassword: false,
+      mustChangePassword: false, tokenVersion: 0
     });
     const res = await proxy(makeRequest("/login", "valid-token"));
     expect(res.status).toBe(307);
@@ -70,7 +70,7 @@ describe("middleware", () => {
       sub: "u1",
       role: "STUDENT",
       email: "x@x.com",
-      mustChangePassword: false,
+      mustChangePassword: false, tokenVersion: 0
     });
     const res = await proxy(makeRequest("/register", "some-token"));
     expect(res.status).toBe(307);
