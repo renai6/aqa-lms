@@ -34,7 +34,7 @@ export type BatchLesson = {
   id: string
   title: string
   order: number
-  batchContent: Array<{ materialUrl: string | null; recordingUrl: string | null }>
+  batchContent: Array<{ materialUrl: string | null; recordingUrl: string | null; videoUrl: string | null }>
 }
 
 export type BatchSubject = {
@@ -78,7 +78,7 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
                   order: true,
                   batchContent: {
                     where: { batchId },
-                    select: { materialUrl: true, recordingUrl: true },
+                    select: { materialUrl: true, recordingUrl: true, videoUrl: true },
                   },
                 },
               },

@@ -66,10 +66,12 @@ export async function upsertBatchLessonContentAction(
   const schema = z.object({
     materialUrl: z.string().optional(),
     recordingUrl: z.string().optional(),
+    videoUrl: z.string().optional(),
   })
   const result = schema.safeParse({
     materialUrl: formData.get('materialUrl'),
     recordingUrl: formData.get('recordingUrl'),
+    videoUrl: formData.get('videoUrl'),
   })
   if (!result.success) return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
 
@@ -81,10 +83,12 @@ export async function upsertBatchLessonContentAction(
         lessonId,
         materialUrl: result.data.materialUrl || null,
         recordingUrl: result.data.recordingUrl || null,
+        videoUrl: result.data.videoUrl || null,
       },
       update: {
         materialUrl: result.data.materialUrl || null,
         recordingUrl: result.data.recordingUrl || null,
+        videoUrl: result.data.videoUrl || null,
       },
     })
   } catch (err) {
