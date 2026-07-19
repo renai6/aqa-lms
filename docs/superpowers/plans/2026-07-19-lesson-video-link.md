@@ -186,8 +186,14 @@ Expected: "Generated Prisma Client".
 
 - [ ] **Step 5: Prove the column reached the client**
 
-Run: `grep -c "videoUrl" node_modules/.prisma/client/index.d.ts`
-Expected: a non-zero count.
+Under pnpm the generated client lives in the store, not at `node_modules/.prisma`. Locate it, then compare the new field against an existing one as a control:
+
+```bash
+C=$(dirname "$(grep -rl recordingUrl node_modules/.pnpm/*/node_modules/.prisma/client/index.d.ts | head -1)")
+grep -c videoUrl "$C/index.d.ts"; grep -c recordingUrl "$C/index.d.ts"
+```
+
+Expected: two equal non-zero counts. A zero for `recordingUrl` means the path is wrong, not that the migration failed.
 
 Do **not** grep `app/generated/prisma/` - it is a stale, unused leftover and will mislead you.
 
