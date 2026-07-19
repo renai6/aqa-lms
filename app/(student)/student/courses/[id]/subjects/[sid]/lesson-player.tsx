@@ -293,7 +293,7 @@ export function LessonPlayer({
         {activeVideo ? (
           <>
             <div className="shrink-0 px-4 py-1 bg-zinc-900 border-b border-zinc-800">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
                 {activeVideo.kind === "video" ? "Lesson Video" : "Recording"}
               </p>
               <p className="text-sm font-medium text-white truncate">

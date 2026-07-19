@@ -49,7 +49,22 @@ describe('upsertBatchLessonContentAction', () => {
       form({ videoUrl: validDriveUrl, recordingUrl: validDriveUrl }),
     )
     expect(result.error).toBeNull()
-    expect(db.batchLessonContent.upsert).toHaveBeenCalled()
+    expect(db.batchLessonContent.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ videoUrl: validDriveUrl }),
+        update: expect.objectContaining({ videoUrl: validDriveUrl }),
+      }),
+    )
+  })
+
+  it('persists a cleared videoUrl as null in both upsert branches', async () => {
+    await upsertBatchLessonContentAction(initial, form({ videoUrl: '' }))
+    expect(db.batchLessonContent.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ videoUrl: null }),
+        update: expect.objectContaining({ videoUrl: null }),
+      }),
+    )
   })
 
   it('rejects a non-empty malformed videoUrl and does not call the db', async () => {
