@@ -42,8 +42,11 @@ function assessmentStatus(a: StudentAssessment): {
   };
 }
 
+type VideoKind = "video" | "recording";
+
 type ActiveVideo = {
   lessonId: string;
+  kind: VideoKind;
   title: string;
   previewUrl: string;
 };
@@ -61,11 +64,33 @@ export function LessonPlayer({
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function playRecording(lesson: StudentLesson) {
-    if (!lesson.recordingUrl) return;
-    const previewUrl = toPreviewUrl(lesson.recordingUrl);
+  function playVideo(lesson: StudentLesson, kind: VideoKind) {
+    const url = kind === "video" ? lesson.videoUrl : lesson.recordingUrl;
+    if (!url) return;
+    const previewUrl = toPreviewUrl(url);
     if (!previewUrl) return;
-    setActiveVideo({ lessonId: lesson.id, title: lesson.title, previewUrl });
+    setActiveVideo({ lessonId: lesson.id, kind, title: lesson.title, previewUrl });
+  }
+
+  function videoEntry(lesson: StudentLesson, kind: VideoKind, previewUrl: string, label: string) {
+    const isActive = activeVideo?.lessonId === lesson.id && activeVideo.kind === kind;
+    return (
+      <button
+        onClick={() => playVideo(lesson, kind)}
+        className={
+          "flex w-full items-center gap-2.5 px-3 py-5 text-xs font-medium text-left transition-colors hover:bg-muted/60 " +
+          (isActive ? "text-primary" : "text-foreground")
+        }
+      >
+        <PlayCircle className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
+        <span className="flex-1">{isActive ? "Now Playing" : label}</span>
+        {isActive && (
+          <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
+            Live
+          </span>
+        )}
+      </button>
+    );
   }
 
   return (
@@ -81,7 +106,10 @@ export function LessonPlayer({
             <ul className="divide-y divide-border">
               {lessons.map((lesson, index) => {
                 const isOpen = expandedId === lesson.id;
-                const previewUrl = lesson.recordingUrl
+                const videoPreviewUrl = lesson.videoUrl
+                  ? toPreviewUrl(lesson.videoUrl)
+                  : null;
+                const recordingPreviewUrl = lesson.recordingUrl
                   ? toPreviewUrl(lesson.recordingUrl)
                   : null;
                 const isPlaying = activeVideo?.lessonId === lesson.id;
@@ -178,28 +206,11 @@ export function LessonPlayer({
                             </a>
                           )}
 
-                          {previewUrl && (
-                            <button
-                              onClick={() => playRecording(lesson)}
-                              className={
-                                "flex w-full items-center gap-2.5 px-3 py-5 text-xs font-medium text-left transition-colors hover:bg-muted/60 " +
-                                (isPlaying ? "text-primary" : "text-foreground")
-                              }
-                            >
-                              <PlayCircle
-                                className="flex-none w-4 h-4 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="flex-1">
-                                {isPlaying ? "Now Playing" : "Watch Recording"}
-                              </span>
-                              {isPlaying && (
-                                <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
-                                  Live
-                                </span>
-                              )}
-                            </button>
-                          )}
+                          {videoPreviewUrl &&
+                            videoEntry(lesson, "video", videoPreviewUrl, "Watch Lesson Video")}
+
+                          {recordingPreviewUrl &&
+                            videoEntry(lesson, "recording", recordingPreviewUrl, "Watch Recording")}
                           {!lesson.isCompleted && (
                             <div>
                               <LessonDoneButton
@@ -211,11 +222,13 @@ export function LessonPlayer({
                             </div>
                           )}
 
-                          {!lesson.materialUrl && !previewUrl && (
-                            <p className="px-3 py-2 text-xs text-muted-foreground">
-                              No materials available.
-                            </p>
-                          )}
+                          {!lesson.materialUrl &&
+                            !videoPreviewUrl &&
+                            !recordingPreviewUrl && (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">
+                                No materials available.
+                              </p>
+                            )}
                         </div>
                       </div>
                     )}
