@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LessonDoneButton } from "./lesson-done-button";
 import type { StudentLesson, StudentAssessment } from "@/lib/student/queries";
+import { toPreviewUrl } from "@/lib/batches/drive";
 
 type Props = {
   lessons: StudentLesson[];
@@ -46,12 +47,6 @@ type ActiveVideo = {
   title: string;
   previewUrl: string;
 };
-
-function toPreviewUrl(url: string): string | null {
-  const match = url.match(/\/file\/d\/([^/]+)/);
-  if (!match) return null;
-  return `https://drive.google.com/file/d/${match[1]}/preview`;
-}
 
 export function LessonPlayer({
   lessons,
