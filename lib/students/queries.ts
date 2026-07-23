@@ -10,6 +10,9 @@ export type StudentRow = {
   gender: Gender | null
   isActive: boolean
   createdAt: Date
+  contactNumber: string | null
+  facebookName: string | null
+  facebookLink: string | null
   enrollments: {
     courseId: string
     courseTitle: string
@@ -56,6 +59,9 @@ export async function getStudents({
       gender: true,
       isActive: true,
       createdAt: true,
+      contactNumber: true,
+      facebookName: true,
+      facebookLink: true,
       enrollments: {
         select: {
           courseId: true,

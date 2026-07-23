@@ -4,8 +4,11 @@ import { type Gender } from '@prisma/client'
 import { verifySessionToken } from '@/lib/auth/jwt'
 import { getStudents } from '@/lib/students/queries'
 
-function csvSafe(value: string): string {
-  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
+// Quotes a value for CSV, escaping embedded quotes and neutralising anything a
+// spreadsheet would treat as a formula.
+function csvField(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
+  return `"${safe.replace(/"/g, '""')}"`
 }
 
 export async function GET(request: NextRequest) {
@@ -30,17 +33,31 @@ export async function GET(request: NextRequest) {
 
   const students = await getStudents({ courseId: course, gender })
 
-  const header = 'Name,Email,Gender,Course,Enrolled Date,Status\r\n'
+  const header =
+    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Enrolled Date,Status\r\n'
   const rows = students.map((s) => {
-    const name = `"${csvSafe(`${s.firstName} ${s.lastName}`)}"`
-    const email = `"${csvSafe(s.email)}"`
+    const name = csvField(`${s.firstName} ${s.lastName}`)
+    const email = csvField(s.email)
+    const mobileNumber = csvField(s.contactNumber ?? '')
+    const facebookName = csvField(s.facebookName ?? '')
+    const facebookLink = csvField(s.facebookLink ?? '')
     const genderLabel = s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : ''
-    const courses = `"${csvSafe(s.enrollments.map((e) => e.courseTitle).join('; '))}"`
+    const courses = csvField(s.enrollments.map((e) => e.courseTitle).join('; '))
     const enrolledDate = s.enrollments[0]
       ? s.enrollments[0].enrolledAt.toISOString().slice(0, 10)
       : ''
     const status = s.isActive ? 'Active' : 'Inactive'
-    return [name, email, genderLabel, courses, enrolledDate, status].join(',')
+    return [
+      name,
+      email,
+      mobileNumber,
+      facebookName,
+      facebookLink,
+      genderLabel,
+      courses,
+      enrolledDate,
+      status,
+    ].join(',')
   })
 
   const csv = header + rows.join('\r\n')
