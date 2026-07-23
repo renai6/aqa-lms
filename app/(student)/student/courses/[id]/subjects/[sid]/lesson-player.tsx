@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LessonDoneButton } from "./lesson-done-button";
 import type { StudentLesson, StudentAssessment } from "@/lib/student/queries";
+import { toPreviewUrl } from "@/lib/batches/drive";
 
 type Props = {
   lessons: StudentLesson[];
@@ -41,17 +42,14 @@ function assessmentStatus(a: StudentAssessment): {
   };
 }
 
+type VideoKind = "video" | "recording";
+
 type ActiveVideo = {
   lessonId: string;
+  kind: VideoKind;
   title: string;
   previewUrl: string;
 };
-
-function toPreviewUrl(url: string): string | null {
-  const match = url.match(/\/file\/d\/([^/]+)/);
-  if (!match) return null;
-  return `https://drive.google.com/file/d/${match[1]}/preview`;
-}
 
 export function LessonPlayer({
   lessons,
@@ -66,11 +64,33 @@ export function LessonPlayer({
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function playRecording(lesson: StudentLesson) {
-    if (!lesson.recordingUrl) return;
-    const previewUrl = toPreviewUrl(lesson.recordingUrl);
+  function playVideo(lesson: StudentLesson, kind: VideoKind) {
+    const url = kind === "video" ? lesson.videoUrl : lesson.recordingUrl;
+    if (!url) return;
+    const previewUrl = toPreviewUrl(url);
     if (!previewUrl) return;
-    setActiveVideo({ lessonId: lesson.id, title: lesson.title, previewUrl });
+    setActiveVideo({ lessonId: lesson.id, kind, title: lesson.title, previewUrl });
+  }
+
+  function videoEntry(lesson: StudentLesson, kind: VideoKind, label: string) {
+    const isActive = activeVideo?.lessonId === lesson.id && activeVideo.kind === kind;
+    return (
+      <button
+        onClick={() => playVideo(lesson, kind)}
+        className={
+          "flex w-full items-center gap-2.5 px-3 py-5 text-xs font-medium text-left transition-colors hover:bg-muted/60 " +
+          (isActive ? "text-primary" : "text-foreground")
+        }
+      >
+        <PlayCircle className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
+        <span className="flex-1">{isActive ? "Now Playing" : label}</span>
+        {isActive && (
+          <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
+            Live
+          </span>
+        )}
+      </button>
+    );
   }
 
   return (
@@ -86,7 +106,10 @@ export function LessonPlayer({
             <ul className="divide-y divide-border">
               {lessons.map((lesson, index) => {
                 const isOpen = expandedId === lesson.id;
-                const previewUrl = lesson.recordingUrl
+                const videoPreviewUrl = lesson.videoUrl
+                  ? toPreviewUrl(lesson.videoUrl)
+                  : null;
+                const recordingPreviewUrl = lesson.recordingUrl
                   ? toPreviewUrl(lesson.recordingUrl)
                   : null;
                 const isPlaying = activeVideo?.lessonId === lesson.id;
@@ -183,28 +206,12 @@ export function LessonPlayer({
                             </a>
                           )}
 
-                          {previewUrl && (
-                            <button
-                              onClick={() => playRecording(lesson)}
-                              className={
-                                "flex w-full items-center gap-2.5 px-3 py-5 text-xs font-medium text-left transition-colors hover:bg-muted/60 " +
-                                (isPlaying ? "text-primary" : "text-foreground")
-                              }
-                            >
-                              <PlayCircle
-                                className="flex-none w-4 h-4 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="flex-1">
-                                {isPlaying ? "Now Playing" : "Watch Recording"}
-                              </span>
-                              {isPlaying && (
-                                <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
-                                  Live
-                                </span>
-                              )}
-                            </button>
-                          )}
+                          {videoPreviewUrl &&
+                            videoEntry(lesson, "video", "Watch Lesson Video")}
+
+                          {recordingPreviewUrl &&
+                            videoEntry(lesson, "recording", "Watch Recording")}
+
                           {!lesson.isCompleted && (
                             <div>
                               <LessonDoneButton
@@ -216,11 +223,13 @@ export function LessonPlayer({
                             </div>
                           )}
 
-                          {!lesson.materialUrl && !previewUrl && (
-                            <p className="px-3 py-2 text-xs text-muted-foreground">
-                              No materials available.
-                            </p>
-                          )}
+                          {!lesson.materialUrl &&
+                            !videoPreviewUrl &&
+                            !recordingPreviewUrl && (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">
+                                No materials available.
+                              </p>
+                            )}
                         </div>
                       </div>
                     )}
@@ -284,6 +293,9 @@ export function LessonPlayer({
         {activeVideo ? (
           <>
             <div className="shrink-0 px-4 py-1 bg-zinc-900 border-b border-zinc-800">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                {activeVideo.kind === "video" ? "Lesson Video" : "Recording"}
+              </p>
               <p className="text-sm font-medium text-white truncate">
                 {activeVideo.title}
               </p>

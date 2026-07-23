@@ -71,6 +71,7 @@ export default async function BatchDetailPage({ params }: Props) {
                         lessonTitle={lesson.title}
                         lessonOrder={lesson.order}
                         materialUrl={content?.materialUrl ?? null}
+                        videoUrl={content?.videoUrl ?? null}
                         recordingUrl={content?.recordingUrl ?? null}
                       />
                     )

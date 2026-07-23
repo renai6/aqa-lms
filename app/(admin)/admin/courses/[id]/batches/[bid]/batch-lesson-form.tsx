@@ -13,6 +13,7 @@ type Props = {
   lessonTitle: string
   lessonOrder: number
   materialUrl: string | null
+  videoUrl: string | null
   recordingUrl: string | null
 }
 
@@ -23,6 +24,7 @@ export function BatchLessonForm({
   lessonTitle,
   lessonOrder,
   materialUrl,
+  videoUrl,
   recordingUrl,
 }: Props) {
   const [state, action, isPending] = useActionState(upsertBatchLessonContentAction, { error: null })
@@ -33,7 +35,7 @@ export function BatchLessonForm({
         <span className="text-muted-foreground mr-2">{lessonOrder}.</span>
         {lessonTitle}
       </p>
-      <form action={action} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+      <form action={action} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
         <input type="hidden" name="batchId" value={batchId} />
         <input type="hidden" name="lessonId" value={lessonId} />
         <input type="hidden" name="courseId" value={courseId} />
@@ -42,6 +44,15 @@ export function BatchLessonForm({
           <Input
             name="materialUrl"
             defaultValue={materialUrl ?? ''}
+            placeholder="Google Drive link…"
+            className="text-sm h-8"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Lesson Video URL</Label>
+          <Input
+            name="videoUrl"
+            defaultValue={videoUrl ?? ''}
             placeholder="Google Drive link…"
             className="text-sm h-8"
           />
@@ -66,6 +77,9 @@ export function BatchLessonForm({
             <span className="text-xs text-destructive">{state.error}</span>
           )}
         </div>
+        <p className="sm:col-span-4 text-[11px] leading-tight text-muted-foreground">
+          Lesson video: Set Drive sharing to Viewer, and turn off download/print/copy.
+        </p>
       </form>
     </div>
   )

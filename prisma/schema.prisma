@@ -264,6 +264,7 @@ model BatchLessonContent {
 
   materialUrl  String?
   recordingUrl String?
+  videoUrl     String?
 
   @@unique([batchId, lessonId])
 }

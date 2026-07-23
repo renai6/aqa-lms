@@ -297,6 +297,7 @@ export type StudentLesson = {
   order: number
   materialUrl: string | null
   recordingUrl: string | null
+  videoUrl: string | null
   isCompleted: boolean
 }
 
@@ -390,7 +391,7 @@ export async function getStudentSubject(
     enrollment.batchId && lessonIds.length > 0
       ? db.batchLessonContent.findMany({
           where: { batchId: enrollment.batchId, lessonId: { in: lessonIds } },
-          select: { lessonId: true, materialUrl: true, recordingUrl: true },
+          select: { lessonId: true, materialUrl: true, recordingUrl: true, videoUrl: true },
         })
       : Promise.resolve([]),
   ])
@@ -411,6 +412,7 @@ export async function getStudentSubject(
         ...l,
         materialUrl: content?.materialUrl ?? null,
         recordingUrl: content?.recordingUrl ?? null,
+        videoUrl: content?.videoUrl ?? null,
         isCompleted: completedSet.has(l.id),
       }
     }),
