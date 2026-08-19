@@ -1,5 +1,6 @@
 import SiteHeader from "@/components/homepage/SiteHeader";
 import HeroSection from "@/components/homepage/HeroSection";
+import HeroVideo from "@/components/homepage/HeroVideo";
 import AffiliationsBanner from "@/components/homepage/AffiliationsBanner";
 import VisionSection from "@/components/homepage/VisionSection";
 import ProgramsSection from "@/components/homepage/ProgramsSection";
@@ -14,6 +15,7 @@ export default function Home() {
       <SiteHeader />
       <main>
         <HeroSection />
+        <HeroVideo />
         <AffiliationsBanner />
         <VisionSection />
         <ProgramsSection />
