@@ -100,7 +100,7 @@ export default async function StudentDetailPage({ params }: Props) {
                   'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
                   student.isActive
                     ? 'bg-green-100 text-green-800'
-                    : 'bg-zinc-100 text-zinc-600',
+                    : 'bg-muted text-muted-foreground',
                 )}>
                   {student.isActive ? 'Active' : 'Inactive'}
                 </span>

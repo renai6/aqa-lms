@@ -24,19 +24,19 @@ export default async function CourseGroupPage({ params }: Props) {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[52vh] items-center overflow-hidden bg-black pt-28 pb-20">
-        <div className="absolute inset-0 bg-[linear-gradient(140deg,#0b0b0f_0%,#070709_45%,#000000_100%)]" />
-        <div className="absolute -top-40 -right-24 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.12),transparent_65%)]" />
+      <section className="bg-brand-maroon-deep relative flex min-h-[52vh] items-center overflow-hidden pt-28 pb-20">
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,#8a1933_0%,#7d102a_45%,#59081b_100%)]" />
+        <div className="absolute -top-40 -right-24 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(255,186,112,0.18),transparent_65%)]" />
         <div
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,186,112,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,186,112,0.07) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
         <GeoMotif className="-top-20 -right-20" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_20%_50%,transparent_40%,rgba(0,0,0,0.6)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_20%_50%,transparent_40%,rgba(89,8,27,0.55)_100%)]" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-6 sm:px-10 lg:px-16">
           <div className="animate-[fadeUp_0.9s_0.1s_both]">
@@ -54,7 +54,7 @@ export default async function CourseGroupPage({ params }: Props) {
       </section>
 
       {/* ── Levels ── */}
-      <section className="bg-[#f4f7fa]">
+      <section className="bg-muted">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mb-12">
             <Eyebrow className="mb-3">The Levels</Eyebrow>

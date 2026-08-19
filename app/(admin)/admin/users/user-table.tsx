@@ -35,7 +35,7 @@ export function UserTable({ users, role }: Props) {
                     'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
                     u.isActive
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-zinc-100 text-zinc-600',
+                      : 'bg-muted text-muted-foreground',
                   )}
                 >
                   {u.isActive ? 'Active' : 'Inactive'}

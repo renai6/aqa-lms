@@ -1,23 +1,27 @@
-import Navbar from "@/components/homepage/Navbar";
+import SiteHeader from "@/components/homepage/SiteHeader";
 import HeroSection from "@/components/homepage/HeroSection";
-import Ticker from "@/components/homepage/Ticker";
 import AffiliationsBanner from "@/components/homepage/AffiliationsBanner";
-import FeaturedCourses from "@/components/homepage/FeaturedCourses";
-import Footer from "@/components/homepage/Footer";
+import VisionSection from "@/components/homepage/VisionSection";
+import ProgramsSection from "@/components/homepage/ProgramsSection";
+import EducationalCore from "@/components/homepage/EducationalCore";
+import CertificatesSection from "@/components/homepage/CertificatesSection";
 import BeforeFooter from "@/components/homepage/BeforeFooter";
+import SiteFooter from "@/components/homepage/SiteFooter";
 
 export default function Home() {
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main>
         <HeroSection />
-        <Ticker />
         <AffiliationsBanner />
-        <FeaturedCourses />
+        <VisionSection />
+        <ProgramsSection />
+        <EducationalCore />
+        <CertificatesSection />
         <BeforeFooter />
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }

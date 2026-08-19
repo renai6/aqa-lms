@@ -49,7 +49,7 @@ export default async function CertificatePage({ params }: Props) {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-6 bg-zinc-100 px-4 py-10">
+    <div className="bg-muted flex min-h-screen flex-col items-center gap-6 px-4 py-10">
       {/* Certificate sheet */}
       <div
         id="certificate"

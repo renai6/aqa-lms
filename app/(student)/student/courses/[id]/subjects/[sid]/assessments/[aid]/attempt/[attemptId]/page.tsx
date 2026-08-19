@@ -79,12 +79,12 @@ export default async function AttemptPage({ params }: Props) {
       </Link>
 
       {/* Score header */}
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 space-y-2">
-        <p className="text-xs uppercase tracking-wide text-zinc-400">{attempt.assessmentTitle}</p>
+      <div className="rounded-xl border border-border bg-white p-6 space-y-2">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{attempt.assessmentTitle}</p>
         {awaiting ? (
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-amber-500" aria-hidden="true" />
-            <span className="text-lg font-semibold text-zinc-700">Awaiting grading</span>
+            <span className="text-lg font-semibold text-foreground">Awaiting grading</span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -98,10 +98,10 @@ export default async function AttemptPage({ params }: Props) {
           </div>
         )}
         {attempt.passingScore != null && !awaiting && (
-          <p className="text-xs text-zinc-500">Passing score: {attempt.passingScore}%</p>
+          <p className="text-xs text-muted-foreground">Passing score: {attempt.passingScore}%</p>
         )}
         {awaiting && (
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             This assessment contains essay questions. Your final score will appear once a teacher
             has graded them.
           </p>
@@ -114,12 +114,12 @@ export default async function AttemptPage({ params }: Props) {
           const correctOption = q.options.find(o => o.isCorrect)
           const isEssay = q.type === 'ESSAY'
           return (
-            <div key={q.id} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <div key={q.id} className="rounded-xl border border-border bg-white p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-sm font-medium">
-                  <span className="text-zinc-400">{i + 1}.</span> {q.questionText}
+                  <span className="text-muted-foreground">{i + 1}.</span> {q.questionText}
                 </p>
-                <span className="shrink-0 text-xs text-zinc-400">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {isEssay || q.pointsEarned == null
                     ? '— / ' + q.points
                     : q.pointsEarned + ' / ' + q.points}
@@ -128,11 +128,11 @@ export default async function AttemptPage({ params }: Props) {
 
               {isEssay ? (
                 <div className="space-y-2">
-                  <div className="rounded-md bg-zinc-50 border border-zinc-200 p-3 text-sm text-zinc-700 whitespace-pre-wrap">
+                  <div className="rounded-md bg-muted/60 border border-border p-3 text-sm text-foreground whitespace-pre-wrap">
                     {q.answer && q.answer.length > 0 ? (
                       q.answer
                     ) : (
-                      <span className="text-zinc-400">No answer submitted.</span>
+                      <span className="text-muted-foreground">No answer submitted.</span>
                     )}
                   </div>
                   <p className="text-xs text-amber-600">Awaiting grading</p>
@@ -151,7 +151,7 @@ export default async function AttemptPage({ params }: Props) {
                             ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                             : isChosen
                               ? 'border-red-300 bg-red-50 text-red-800'
-                              : 'border-zinc-200 text-zinc-600')
+                              : 'border-border text-muted-foreground')
                         }
                       >
                         {isRight ? (
@@ -171,10 +171,10 @@ export default async function AttemptPage({ params }: Props) {
                     )
                   })}
                   {q.answer == null && (
-                    <li className="text-xs text-zinc-400 px-1">No answer submitted.</li>
+                    <li className="text-xs text-muted-foreground px-1">No answer submitted.</li>
                   )}
                   {correctOption == null && (
-                    <li className="text-xs text-zinc-400 px-1">No correct answer configured.</li>
+                    <li className="text-xs text-muted-foreground px-1">No correct answer configured.</li>
                   )}
                 </ul>
               )}

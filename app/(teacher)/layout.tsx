@@ -41,7 +41,7 @@ export default async function TeacherLayout({
             <p className="text-sidebar-foreground text-[11px] font-semibold tracking-wide">
               AL-QUR&apos;AN ACADEMY
             </p>
-            <p className="text-sidebar-foreground/50 mt-0.5 text-[9px] tracking-widest">
+            <p className="text-sidebar-foreground/70 mt-0.5 text-[9px] tracking-widest">
               INTERNATIONAL
             </p>
           </div>
@@ -75,7 +75,7 @@ export default async function TeacherLayout({
               <p className="text-sidebar-foreground truncate text-xs font-medium">
                 {name}
               </p>
-              <p className="text-sidebar-foreground/50 mt-0.5 truncate text-[10px]">
+              <p className="text-sidebar-foreground/70 mt-0.5 truncate text-[10px]">
                 Teacher
               </p>
             </div>

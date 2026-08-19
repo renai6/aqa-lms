@@ -24,13 +24,12 @@ export default function AffiliationsBanner() {
   }, []);
 
   return (
-    <section className="border-gold/10 border-y bg-[#521021] py-12">
+    <section className="bg-white py-16">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-6">
-        <p className="text-[9px] font-bold tracking-[0.32em] text-white/35 uppercase">
-          In affiliation with esteemed institutions &amp; partners in Islamic
-          education
+        <p className="text-center text-base text-[#5c5c5c]">
+          In affiliation with trusted partners for Islamic education
         </p>
-        <div ref={ref} className="flex flex-wrap justify-center gap-12">
+        <div ref={ref} className="flex flex-wrap justify-center gap-10">
           {PARTNERS.map((partner, i) => (
             <div
               key={partner.id}
@@ -45,7 +44,7 @@ export default function AffiliationsBanner() {
               <img
                 src={partner.image}
                 alt={partner.label}
-                className="ring-gold/25 hover:ring-gold/60 h-16 w-16 rounded-full opacity-70 ring-1 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
+                className="h-20 w-20 rounded-full bg-white object-contain p-2 shadow-[0_4px_20px_rgba(0,0,0,0.10)] transition-transform duration-300 hover:-translate-y-1"
               />
             </div>
           ))}

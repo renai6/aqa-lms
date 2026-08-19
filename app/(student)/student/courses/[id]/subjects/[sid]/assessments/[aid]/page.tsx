@@ -51,36 +51,36 @@ export default async function AssessmentLaunchPage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-1">
-          <ListChecks className="w-4 h-4 text-zinc-400" aria-hidden="true" />
+        <div className="rounded-xl border border-border bg-white p-4 space-y-1">
+          <ListChecks className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <p className="text-lg font-semibold">{assessment.questionCount}</p>
-          <p className="text-xs text-zinc-500">Questions</p>
+          <p className="text-xs text-muted-foreground">Questions</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-1">
-          <Clock className="w-4 h-4 text-zinc-400" aria-hidden="true" />
+        <div className="rounded-xl border border-border bg-white p-4 space-y-1">
+          <Clock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <p className="text-lg font-semibold">
             {assessment.durationMins != null ? assessment.durationMins + ' min' : 'Untimed'}
           </p>
-          <p className="text-xs text-zinc-500">Duration</p>
+          <p className="text-xs text-muted-foreground">Duration</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-1">
-          <Target className="w-4 h-4 text-zinc-400" aria-hidden="true" />
+        <div className="rounded-xl border border-border bg-white p-4 space-y-1">
+          <Target className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <p className="text-lg font-semibold">
             {assessment.passingScore != null ? assessment.passingScore + '%' : '—'}
           </p>
-          <p className="text-xs text-zinc-500">Passing score</p>
+          <p className="text-xs text-muted-foreground">Passing score</p>
         </div>
       </div>
 
       {isCompleted ? (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-muted/60 p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-zinc-700">Your result</p>
+            <p className="text-sm font-medium text-foreground">Your result</p>
             <span className="text-sm font-semibold">
               {attempt!.score != null ? Math.round(attempt!.score) + '%' : 'Awaiting grading'}
             </span>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             You have used your attempt for this assessment.
           </p>
           {attemptHref && (

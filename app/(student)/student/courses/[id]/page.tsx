@@ -139,7 +139,7 @@ export default async function StudentCoursePage({ params }: Props) {
           </h2>
           <div className="flex flex-col sm:flex-row sm:items-center gap-5 border rounded-lg p-5">
             {/* Mini preview */}
-            <div className="relative w-full max-w-[380px] shrink-0 overflow-hidden rounded-lg border border-zinc-200 shadow-sm">
+            <div className="relative w-full max-w-[380px] shrink-0 overflow-hidden rounded-lg border border-border shadow-sm">
               <div
                 className={
                   eligibility.eligible
@@ -155,7 +155,7 @@ export default async function StudentCoursePage({ params }: Props) {
               </div>
               {!eligibility.eligible && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/30">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/70 text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-maroon-deep/70 text-white">
                     <Lock className="w-4 h-4" aria-hidden="true" />
                   </span>
                 </div>
@@ -228,7 +228,7 @@ export default async function StudentCoursePage({ params }: Props) {
                         {subject.schedules.map((s, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center rounded-full bg-zinc-50 border border-zinc-200 px-2.5 py-0.5 text-[11px] font-medium text-zinc-600"
+                            className="inline-flex items-center rounded-full bg-muted/60 border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
                           >
                             {DAY_LABEL[s.day]} {formatTime(s.startTime)}–
                             {formatTime(s.endTime)}
@@ -238,7 +238,7 @@ export default async function StudentCoursePage({ params }: Props) {
                     )}
                     {subject.teachers.length > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium text-zinc-700">
+                        <span className="font-medium text-foreground">
                           Teacher:
                         </span>{" "}
                         {subject.teachers
