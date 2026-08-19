@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import HeroBackdrop from "./HeroBackdrop";
 
 const FACEBOOK_URL = "https://www.facebook.com/AlQuranAcademyInternational";
 
@@ -16,20 +17,8 @@ function Bubble({ src, alt }: { src: string; alt: string }) {
 export default function HeroSection() {
   return (
     <section className="relative flex min-h-screen items-center overflow-hidden bg-white">
-      {/* Campus photo, full bleed */}
-      <div className="absolute inset-0">
-        <Image
-          src="/aqa-bldg.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        {/* Darken for legibility, then fade out to the white page below */}
-        <div className="bg-brand-maroon-deep/55 absolute inset-0" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0.25)_45%,rgba(0,0,0,0.15)_74%,rgba(255,255,255,0.7)_94%,#ffffff_100%)]" />
-      </div>
+      {/* Campus film, full bleed */}
+      <HeroBackdrop />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pt-28 pb-32 text-center">
         <h1 className="font-display animate-[fadeUp_0.9s_0.1s_both] text-[1.9rem] leading-[1.2] tracking-tight text-white sm:text-5xl lg:text-[4.5rem]">
