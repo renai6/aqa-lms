@@ -289,11 +289,11 @@ export function LessonPlayer({
       </aside>
 
       {/* ── Video Player ── */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-zinc-950">
+      <main className="dark flex-1 flex flex-col overflow-hidden bg-background">
         {activeVideo ? (
           <>
-            <div className="shrink-0 px-4 py-1 bg-zinc-900 border-b border-zinc-800">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+            <div className="shrink-0 px-4 py-1 bg-card border-b border-border">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {activeVideo.kind === "video" ? "Lesson Video" : "Recording"}
               </p>
               <p className="text-sm font-medium text-white truncate">
@@ -310,7 +310,7 @@ export function LessonPlayer({
             />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-zinc-500">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
             <VideoOff className="w-10 h-10" aria-hidden="true" />
             <p className="text-sm">Select a lesson to watch</p>
           </div>

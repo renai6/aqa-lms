@@ -40,20 +40,20 @@ export function CertificateCard({
             Al-Qur&apos;an Academy
           </p>
 
-          <h1 className="font-heading mt-[2.5cqw] text-[3.6cqw] font-bold tracking-tight text-zinc-900">
+          <h1 className="font-heading text-foreground mt-[2.5cqw] text-[3.6cqw] font-bold tracking-tight">
             Certificate of Completion
           </h1>
 
-          <p className="mt-[2.5cqw] text-[1.5cqw] text-zinc-500">
+          <p className="text-muted-foreground mt-[2.5cqw] text-[1.5cqw]">
             This certifies that
           </p>
-          <p className="mt-[0.8cqw] text-[2.8cqw] font-semibold text-zinc-900">
+          <p className="text-foreground mt-[0.8cqw] text-[2.8cqw] font-semibold">
             {studentName}
           </p>
 
-          <p className="mt-[1.6cqw] max-w-[64cqw] text-[1.6cqw] leading-relaxed text-zinc-600">
+          <p className="text-muted-foreground mt-[1.6cqw] max-w-[64cqw] text-[1.6cqw] leading-relaxed">
             has successfully completed{" "}
-            <span className="font-semibold text-zinc-900">{courseTitle}</span>{" "}
+            <span className="text-foreground font-semibold">{courseTitle}</span>{" "}
             with a final average of{" "}
             <span className="text-primary font-semibold">{average}%</span>.
           </p>
@@ -61,18 +61,18 @@ export function CertificateCard({
           {certificateNo && issuedAt && (
             <div className="mt-[4cqw] flex w-[64cqw] items-end justify-between text-left">
               <div>
-                <p className="text-[1.1cqw] tracking-[0.2em] text-zinc-400 uppercase">
+                <p className="text-muted-foreground text-[1.1cqw] tracking-[0.2em] uppercase">
                   Certificate No.
                 </p>
-                <p className="text-[1.5cqw] font-medium text-zinc-700">
+                <p className="text-foreground text-[1.5cqw] font-medium">
                   {certificateNo}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[1.1cqw] tracking-[0.2em] text-zinc-400 uppercase">
+                <p className="text-muted-foreground text-[1.1cqw] tracking-[0.2em] uppercase">
                   Issued
                 </p>
-                <p className="text-[1.5cqw] font-medium text-zinc-700">
+                <p className="text-foreground text-[1.5cqw] font-medium">
                   {issuedAt}
                 </p>
               </div>

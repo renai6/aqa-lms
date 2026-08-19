@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Bowlby_One, Cal_Sans, Geist, Geist_Mono, Poppins } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,30 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
+});
+
+/* Display face for the public homepage headings. */
+const calSans = Cal_Sans({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-cal-sans",
+});
+
+/* Chunky face for the "KIDS" lettering on the program cards. */
+const bowlbyOne = Bowlby_One({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-bowlby",
+});
+
+/* Script face for the president's quote. Self-hosted because Gveret Levin
+   is not in next/font/google's manifest. */
+const gveretLevin = localFont({
+  src: "./fonts/GveretLevin-Regular.woff2",
+  weight: "400",
+  style: "normal",
+  display: "swap",
+  variable: "--font-gveret",
 });
 
 const geistSans = Geist({
@@ -40,6 +65,9 @@ export default function RootLayout({
         geistMono.variable,
         "font-sans",
         poppins.variable,
+        calSans.variable,
+        bowlbyOne.variable,
+        gveretLevin.variable,
       )}
     >
       <body className="min-h-full flex flex-col">{children}</body>

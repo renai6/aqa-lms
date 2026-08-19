@@ -52,7 +52,7 @@ export function StudentTable({ students }: Props) {
               <td className="px-4 py-3">
                 <span className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                  s.isActive ? 'bg-green-100 text-green-800' : 'bg-zinc-100 text-zinc-600',
+                  s.isActive ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground',
                 )}>
                   {s.isActive ? 'Active' : 'Inactive'}
                 </span>

@@ -11,18 +11,18 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen">
       {/* ─── LEFT BRAND PANEL ─── */}
-      <aside className="sticky top-0 hidden h-screen w-[460px] shrink-0 flex-col overflow-hidden bg-black lg:flex">
-        {/* Base wash + depth — maroon fading into black */}
-        <div className="absolute inset-0 bg-[linear-gradient(160deg,#3d0b17_0%,#1a0509_48%,#000000_100%)]" />
-        <div className="pointer-events-none absolute -bottom-24 -left-28 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(96,20,38,0.6),transparent_68%)]" />
-        <div className="pointer-events-none absolute -top-32 -right-24 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.14),transparent_65%)]" />
+      <aside className="bg-brand-maroon-deep sticky top-0 hidden h-screen w-[460px] shrink-0 flex-col overflow-hidden lg:flex">
+        {/* Base wash + depth — maroon deepening toward the footer maroon */}
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,#8a1933_0%,#59081b_48%,#3d0510_100%)]" />
+        <div className="pointer-events-none absolute -bottom-24 -left-28 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(201,24,66,0.45),transparent_68%)]" />
+        <div className="pointer-events-none absolute -top-32 -right-24 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(255,186,112,0.18),transparent_65%)]" />
 
         {/* Fine grid lines */}
         <div
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,186,112,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,186,112,0.07) 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
         />
@@ -64,7 +64,7 @@ export default function AuthLayout({
             <span className="text-gold font-normal">Illuminate.</span>
           </h1>
 
-          <p className="mt-6 max-w-[280px] text-[0.9375rem] leading-relaxed font-light text-white/60">
+          <p className="mt-6 max-w-[280px] text-[0.9375rem] leading-relaxed font-light text-white/75">
             Join thousands of students on a journey of knowledge and spiritual
             growth through our structured online curriculum.
           </p>
@@ -81,7 +81,7 @@ export default function AuthLayout({
         <div className="relative z-10 flex gap-7 px-10 pb-10">
           <Link
             href="/"
-            className="hover:text-gold flex items-center gap-1.5 text-sm text-white/60 transition-colors"
+            className="hover:text-gold flex items-center gap-1.5 text-sm text-white/75 transition-colors"
           >
             <svg
               width="14"
@@ -98,7 +98,7 @@ export default function AuthLayout({
           </Link>
           <Link
             href="/courses"
-            className="hover:text-gold flex items-center gap-1.5 text-sm text-white/60 transition-colors"
+            className="hover:text-gold flex items-center gap-1.5 text-sm text-white/75 transition-colors"
           >
             View Courses
             <svg

@@ -57,7 +57,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     <div className="px-6 md:px-10 py-10 space-y-12">
       {/* Page title */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Welcome{user?.firstName ? `, ${user.firstName}` : ""}!
         </h1>
         <Button asChild size="sm" className="shrink-0">
@@ -85,7 +85,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Pending enrollments awaiting admin review */}
       {pendingPurchases.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             Pending Enrollments
           </h2>
           <div className="space-y-2">
@@ -115,18 +115,18 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Schedules strip */}
       {schedules.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             Upcoming Schedule
           </h2>
           <div className="flex flex-wrap gap-2">
             {schedules.map((s, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1.5 rounded-full bg-zinc-50 border border-zinc-200 px-3.5 py-1.5 text-xs font-medium text-zinc-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 border border-border px-3.5 py-1.5 text-xs font-medium text-foreground"
               >
                 <span className="font-semibold">{s.subjectTitle}</span>
-                <span className="text-zinc-300">·</span>
-                <span className="text-zinc-500">
+                <span className="text-muted-foreground/60">·</span>
+                <span className="text-muted-foreground">
                   {DAY_LABEL[s.day]} {formatTime(s.startTime)}–
                   {formatTime(s.endTime)}
                 </span>
@@ -139,19 +139,19 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Announcements */}
       {announcements.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             Announcements
           </h2>
           <div className="space-y-2">
             {announcements.slice(0, 3).map((a) => (
               <div
                 key={a.id}
-                className="flex rounded-lg bg-white overflow-hidden border border-zinc-200 shadow-sm"
+                className="flex rounded-lg bg-white overflow-hidden border border-border shadow-sm"
               >
                 <div className="w-[3px] bg-primary shrink-0" />
                 <div className="px-4 py-3">
-                  <p className="font-medium text-sm text-zinc-900">{a.title}</p>
-                  <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">
+                  <p className="font-medium text-sm text-foreground">{a.title}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
                     {a.content}
                   </p>
                 </div>
@@ -163,11 +163,11 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
       {/* My Courses */}
       <section className="space-y-4">
-        <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+        <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
           My Courses
         </h2>
         {enrollments.length === 0 ? (
-          <p className="text-sm text-zinc-400">No active enrollments.</p>
+          <p className="text-sm text-muted-foreground">No active enrollments.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {enrollments.map((e) => {
@@ -183,7 +183,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                     className="absolute inset-0 z-0 rounded-xl"
                     aria-label={e.course.title}
                   />
-                  <div className="h-full rounded-xl bg-white border border-zinc-200 overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-zinc-300 transition-all duration-200">
+                  <div className="h-full rounded-xl bg-white border border-border overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-input transition-all duration-200">
                     {e.course.imageUrl ? (
                       <div className="relative h-72 w-full overflow-hidden">
                         <Image
@@ -195,11 +195,11 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       </div>
                     ) : (
-                      <div className="h-20 w-full bg-zinc-100" />
+                      <div className="h-20 w-full bg-muted" />
                     )}
                     <div className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-sm text-zinc-900 group-hover:text-primary transition-colors duration-150">
+                        <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors duration-150">
                           {e.course.title}
                         </p>
                         <span
@@ -216,13 +216,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <div className="h-1.5 w-full rounded-full bg-zinc-100 overflow-hidden">
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                           <div
                             className="h-full rounded-full bg-primary transition-all duration-300"
                             style={{ width: pct + "%" }}
                           />
                         </div>
-                        <p className="text-[11px] text-zinc-400">
+                        <p className="text-[11px] text-muted-foreground">
                           {e.completedLessons} of {e.totalLessons} lessons
                           completed
                         </p>
@@ -239,7 +239,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Recent Results */}
       {recentResults.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             Recent Results
           </h2>
           <div className="space-y-2">
@@ -253,13 +253,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                 <Link
                   key={r.attemptId}
                   href={`/student/courses/${r.courseId}/subjects/${r.subjectId}/assessments/${r.assessmentId}/attempt/${r.attemptId}`}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4 hover:border-zinc-300 hover:shadow-md transition-all"
+                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-border shadow-sm px-5 py-4 hover:border-input hover:shadow-md transition-all"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-zinc-900 truncate">
+                    <p className="font-semibold text-sm text-foreground truncate">
                       {r.assessmentTitle}
                     </p>
-                    <p className="text-xs text-zinc-400 mt-0.5 truncate">
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
                       {r.courseTitle} · {r.subjectTitle}
                     </p>
                   </div>
@@ -270,7 +270,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                       </span>
                     ) : (
                       <>
-                        <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                        <span className="text-sm font-bold text-foreground tabular-nums">
                           {Math.round(r.score as number)}%
                         </span>
                         {passed !== null && (
@@ -298,17 +298,17 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Payment summary */}
       {partialEnrollments.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em]">
+          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
             Payment
           </h2>
           <div className="space-y-2">
             {partialEnrollments.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center justify-between rounded-xl bg-white border border-zinc-200 shadow-sm px-5 py-4"
+                className="flex items-center justify-between rounded-xl bg-white border border-border shadow-sm px-5 py-4"
               >
                 <div>
-                  <p className="font-semibold text-sm text-zinc-900">
+                  <p className="font-semibold text-sm text-foreground">
                     {e.course.title}
                   </p>
                   <p className="text-xs text-amber-600 mt-0.5">

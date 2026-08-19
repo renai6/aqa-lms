@@ -47,17 +47,17 @@ export default async function PublicCourseDetailPage({ params }: Props) {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[70vh] items-center overflow-hidden bg-black pt-28 pb-0">
+      <section className="bg-brand-maroon-deep relative flex min-h-[70vh] items-center overflow-hidden pt-28 pb-0">
         {/* Base wash + depth */}
-        <div className="absolute inset-0 bg-[linear-gradient(140deg,#0b0b0f_0%,#070709_45%,#000000_100%)]" />
-        <div className="pointer-events-none absolute -top-40 -left-24 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.12),transparent_65%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,#8a1933_0%,#7d102a_45%,#59081b_100%)]" />
+        <div className="pointer-events-none absolute -top-40 -left-24 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(255,186,112,0.18),transparent_65%)]" />
 
         {/* Fine grid lines */}
         <div
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,186,112,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,186,112,0.07) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
@@ -190,7 +190,7 @@ export default async function PublicCourseDetailPage({ params }: Props) {
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(236,204,105,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.04) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,186,112,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,186,112,0.06) 1px, transparent 1px)",
             backgroundSize: "50px 50px",
           }}
         />
@@ -207,7 +207,7 @@ export default async function PublicCourseDetailPage({ params }: Props) {
 
       {/* ── Subjects ── */}
       {course.subjects.length > 0 && (
-        <section className="bg-[#f4f7fa] px-6 py-24">
+        <section className="bg-muted px-6 py-24">
           <div className="mx-auto max-w-5xl">
             <Reveal className="mb-16 text-center">
               <Eyebrow center className="mb-3">
@@ -237,11 +237,11 @@ export default async function PublicCourseDetailPage({ params }: Props) {
                             className="absolute inset-0 opacity-60"
                             style={{
                               backgroundImage:
-                                "linear-gradient(rgba(236,204,105,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(236,204,105,0.05) 1px, transparent 1px)",
+                                "linear-gradient(rgba(255,186,112,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,186,112,0.07) 1px, transparent 1px)",
                               backgroundSize: "40px 40px",
                             }}
                           />
-                          <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.15),transparent_65%)]" />
+                          <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(255,186,112,0.20),transparent_65%)]" />
                           <div className="relative z-10 px-6 text-center">
                             <span className="text-gold/25 block text-6xl leading-none font-bold select-none">
                               {String(index + 1).padStart(2, "0")}
@@ -318,9 +318,9 @@ export default async function PublicCourseDetailPage({ params }: Props) {
       )}
 
       {/* ── Bottom CTA ── */}
-      <section className="relative overflow-hidden bg-black px-6 py-20">
-        <div className="absolute inset-0 bg-[linear-gradient(140deg,#0b0b0f_0%,#070709_50%,#000000_100%)]" />
-        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(236,204,105,0.1),transparent_65%)]" />
+      <section className="bg-brand-maroon-deep relative overflow-hidden px-6 py-20">
+        <div className="absolute inset-0 bg-[linear-gradient(140deg,#8a1933_0%,#7d102a_50%,#59081b_100%)]" />
+        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,186,112,0.14),transparent_65%)]" />
         <GeoMotif className="-top-40 left-[-8rem]" />
         <Reveal className="relative mx-auto max-w-2xl space-y-7 text-center">
           <Eyebrow center>Begin Your Journey</Eyebrow>

@@ -6,7 +6,7 @@ type Props = { firstName: string }
 
 export function StudentNav({ firstName }: Props) {
   return (
-    <header className="sticky top-0 z-10 bg-zinc-900 border-b border-white/8">
+    <header className="sticky top-0 z-10 bg-sidebar border-b border-white/10">
       <div className="px-6 md:px-10 h-16 flex items-center justify-between">
         <Link href="/student/dashboard" className="flex items-center gap-3">
           <Image src="/aqa-logo.png" alt="Al-Qur'an Academy" width={44} height={44} className="h-10 w-10 rounded-full object-cover shrink-0" />

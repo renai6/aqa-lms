@@ -54,8 +54,8 @@ export function CheckoutForm({ courses }: Props) {
           </p>
         </div>
 
-        <div className="space-y-1 rounded-lg border border-[#b03a48]/25 bg-[#f7e6e8] p-3">
-          <p className="text-xs font-semibold tracking-wide text-[#8a2a36] uppercase">
+        <div className="border-primary/25 bg-secondary space-y-1 rounded-lg border p-3">
+          <p className="text-primary text-xs font-semibold tracking-wide uppercase">
             BPI
           </p>
           <div className="flex items-center justify-between gap-4 text-sm">

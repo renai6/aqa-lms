@@ -51,7 +51,7 @@ export default async function AdminLayout({
           />
           <div className="leading-none">
             <p className="text-sidebar-foreground text-[11px] font-semibold tracking-wide">AL-QUR&apos;AN ACADEMY</p>
-            <p className="text-sidebar-foreground/50 text-[9px] tracking-widest mt-0.5">INTERNATIONAL</p>
+            <p className="text-sidebar-foreground/70 text-[9px] tracking-widest mt-0.5">INTERNATIONAL</p>
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export default async function AdminLayout({
                 <p className="text-sidebar-foreground text-xs font-medium truncate">
                   {roleLabel(session.role)}
                 </p>
-                <p className="text-sidebar-foreground/50 text-[10px] mt-0.5 truncate">
+                <p className="text-sidebar-foreground/70 text-[10px] mt-0.5 truncate">
                   {session.userId.slice(0, 8)}…
                 </p>
               </div>
