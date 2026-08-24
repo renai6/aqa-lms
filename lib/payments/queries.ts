@@ -7,10 +7,11 @@ export type PaymentEnrollment = {
   id: string;
   paymentStatus: PaymentStatus;
   course: { title: string; archivedAt: Date | null };
-  // Only `status` is selected: the guard asks whether one is PENDING, and
-  // nothing on this page needs the rest. The dashboard's richer per-enrollment
-  // state comes from getEnrollmentPaymentStates below.
+  // The guard asks whether one is PENDING; balance is computed from the
+  // APPROVED subset. The dashboard's richer per-enrollment state comes from
+  // getEnrollmentPaymentStates below.
   payments: { status: EnrollmentStatus }[];
+  balance: Balance;
 };
 
 // Scoped by userId, so another student's enrollment simply comes back null and
@@ -19,15 +20,29 @@ export async function getEnrollmentForPayment(
   userId: string,
   enrollmentId: string,
 ): Promise<PaymentEnrollment | null> {
-  return db.enrollment.findFirst({
+  const r = await db.enrollment.findFirst({
     where: { id: enrollmentId, userId },
     select: {
       id: true,
       paymentStatus: true,
+      totalDue: true,
       course: { select: { title: true, archivedAt: true } },
-      payments: { select: { status: true } },
+      payments: { select: { status: true, amount: true } },
     },
   });
+  if (!r) return null;
+  return {
+    id: r.id,
+    paymentStatus: r.paymentStatus,
+    course: r.course,
+    payments: r.payments,
+    balance: computeBalance(
+      r.totalDue?.toNumber() ?? null,
+      r.payments
+        .filter((p) => p.status === "APPROVED")
+        .map((p) => p.amount.toNumber()),
+    ),
+  };
 }
 
 export type EnrollmentPaymentState =
@@ -59,6 +74,32 @@ export async function getEnrollmentPaymentStates(
     }
   }
   return states;
+}
+
+// One balance per enrollment for the dashboard's Payment section, keyed by
+// enrollment id. Mirrors getEnrollmentPaymentStates, which the same section
+// already calls.
+export async function getEnrollmentBalances(
+  userId: string,
+): Promise<Record<string, Balance>> {
+  const rows = await db.enrollment.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      totalDue: true,
+      payments: { where: { status: "APPROVED" }, select: { amount: true } },
+    },
+  });
+
+  return Object.fromEntries(
+    rows.map((r) => [
+      r.id,
+      computeBalance(
+        r.totalDue?.toNumber() ?? null,
+        r.payments.map((p) => p.amount.toNumber()),
+      ),
+    ]),
+  );
 }
 
 export type AdminPaymentRow = {
