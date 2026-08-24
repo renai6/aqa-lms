@@ -6,6 +6,7 @@ import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
+import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
   const userGender = await getUserGender(userId)
   const [enrollmentsRaw, announcements, pendingPurchasesRaw] = await Promise.all([
     db.enrollment.findMany({
-      where: { userId, course: { ...ACTIVE_COURSE } },
+      where: { userId, ...ACTIVE_ENROLLMENT, course: { ...ACTIVE_COURSE } },
       orderBy: { enrolledAt: 'desc' },
       select: {
         id: true,
@@ -198,7 +199,7 @@ export async function getStudentCourse(
   const userGender = await getUserGender(userId)
   const [enrollment, course] = await Promise.all([
     db.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
+      where: { userId_courseId: { userId, courseId }, ...ACTIVE_ENROLLMENT },
       select: { id: true },
     }),
     db.course.findUnique({
@@ -374,7 +375,10 @@ export async function getStudentSubject(
   if (!canSeeSubject(userGender, subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId, courseId: subject.courseId } },
+    where: {
+      userId_courseId: { userId, courseId: subject.courseId },
+      ...ACTIVE_ENROLLMENT,
+    },
     select: { id: true, batchId: true },
   })
   if (!enrollment) return null
@@ -478,7 +482,10 @@ export async function getStudentAssessmentLaunch(
   if (!canSeeSubject(userGender, assessment.subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId, courseId: assessment.subject.courseId } },
+    where: {
+      userId_courseId: { userId, courseId: assessment.subject.courseId },
+      ...ACTIVE_ENROLLMENT,
+    },
     select: { id: true },
   })
   if (!enrollment) return null
@@ -591,7 +598,10 @@ export async function getStudentAttempt(
   if (!canSeeSubject(userGender, attempt.assessment.subject.gender)) return null
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId, courseId: attempt.assessment.subject.courseId } },
+    where: {
+      userId_courseId: { userId, courseId: attempt.assessment.subject.courseId },
+      ...ACTIVE_ENROLLMENT,
+    },
     select: { id: true },
   })
   if (!enrollment) return null

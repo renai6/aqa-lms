@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { type Gender } from '@prisma/client'
 import { verifySessionToken } from '@/lib/auth/jwt'
 import { getStudents } from '@/lib/students/queries'
+import { formatEnrolledCourses } from '@/lib/students/format'
 
 // Quotes a value for CSV, escaping embedded quotes and neutralising anything a
 // spreadsheet would treat as a formula.
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     const facebookName = csvField(s.facebookName ?? '')
     const facebookLink = csvField(s.facebookLink ?? '')
     const genderLabel = s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : ''
-    const courses = csvField(s.enrollments.map((e) => e.courseTitle).join('; '))
+    const courses = csvField(formatEnrolledCourses(s.enrollments))
     const enrolledDate = s.enrollments[0]
       ? s.enrollments[0].enrolledAt.toISOString().slice(0, 10)
       : ''

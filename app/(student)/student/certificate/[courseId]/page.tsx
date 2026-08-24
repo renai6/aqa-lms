@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { isActiveStudent } from "@/lib/auth/capabilities";
 import { db } from "@/lib/db";
+import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 import { getCertificateEligibility } from "@/lib/certificates/queries";
 import { issueCertificate } from "@/lib/certificates/issue";
 import { CertificateCard } from "@/components/certificate/certificate-card";
@@ -20,7 +21,10 @@ export default async function CertificatePage({ params }: Props) {
 
   // Ownership: the student must be enrolled in this course.
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.userId, courseId } },
+    where: {
+      userId_courseId: { userId: session.userId, courseId },
+      ...ACTIVE_ENROLLMENT,
+    },
     select: { id: true },
   });
   if (!enrollment) redirect("/student/dashboard");

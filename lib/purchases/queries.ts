@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { ACTIVE_COURSE } from "@/lib/courses/archive";
+import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 import type {
   CourseType,
   EnrollmentStatus,
@@ -39,9 +40,15 @@ export async function getPurchasableCourses(
         level: true,
       },
     }),
-    db.enrollment.findMany({ where: { userId }, select: { courseId: true } }),
+    db.enrollment.findMany({
+      where: { userId, ...ACTIVE_ENROLLMENT },
+      select: { courseId: true },
+    }),
+    // Only an in-flight purchase reserves a course. An APPROVED one already
+    // produced the enrollment checked above, so counting it here too would keep
+    // the course marked taken even after the student was removed from it.
     db.purchaseItem.findMany({
-      where: { purchase: { userId, status: { in: ["PENDING", "APPROVED"] } } },
+      where: { purchase: { userId, status: "PENDING" } },
       select: { courseId: true },
     }),
   ]);

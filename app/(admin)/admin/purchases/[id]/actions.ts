@@ -129,24 +129,41 @@ export async function approvePurchaseAction(
               courseId: item.courseId,
             },
           },
-          select: { id: true },
+          select: { id: true, removedAt: true },
         });
-        if (exists) continue;
+        // An active enrollment already covers this course, so there is nothing
+        // to do. A removed one still owns the unique (userId, courseId) slot,
+        // so it is revived in place rather than duplicated. Its earlier
+        // payments stay attached and keep counting toward the balance.
+        if (exists && !exists.removedAt) continue;
+
         const activeBatch = await tx.batch.findFirst({
           where: { courseId: item.courseId, isActive: true },
           select: { id: true },
         });
         const entry = entries.find((e) => e.courseId === item.courseId)!;
-        const enrollment = await tx.enrollment.create({
-          data: {
-            userId: purchase.user.id,
-            courseId: item.courseId,
-            paymentStatus,
-            purchaseId: id,
-            batchId: activeBatch?.id ?? null,
-            totalDue: entry.totalDue,
-          },
-        });
+        const enrollment = exists
+          ? await tx.enrollment.update({
+              where: { id: exists.id },
+              data: {
+                removedAt: null,
+                removedReason: null,
+                paymentStatus,
+                purchaseId: id,
+                batchId: activeBatch?.id ?? null,
+                totalDue: entry.totalDue,
+              },
+            })
+          : await tx.enrollment.create({
+              data: {
+                userId: purchase.user.id,
+                courseId: item.courseId,
+                paymentStatus,
+                purchaseId: id,
+                batchId: activeBatch?.id ?? null,
+                totalDue: entry.totalDue,
+              },
+            });
 
         // The checkout payment enters the ledger here, so every peso received
         // for this enrollment lives in one table. The proof URL is reused

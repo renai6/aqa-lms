@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { DeactivateStudentButton } from '../deactivate-student-button'
+import { RemoveEnrollmentButton } from '@/components/admin/remove-enrollment-button'
 import { cn } from '@/lib/utils'
 
 type Props = { params: Promise<{ id: string }> }
@@ -45,25 +46,57 @@ export default async function StudentDetailPage({ params }: Props) {
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Enrolled</th>
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Progress</th>
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Payment</th>
+                    <th scope="col" className="px-4 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {student.enrollments.map((e) => (
-                    <tr key={e.courseId} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-3 font-medium">{e.courseTitle}</td>
+                    <tr
+                      key={e.courseId}
+                      className={cn(
+                        'hover:bg-muted/50 transition-colors',
+                        e.removedAt && 'text-muted-foreground bg-muted/30',
+                      )}
+                    >
+                      <td className="px-4 py-3 font-medium">
+                        {e.courseTitle}
+                        {e.removedAt && (
+                          <>
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+                              Removed
+                            </span>
+                            <p className="text-xs mt-0.5 font-normal">
+                              {dateFormatter.format(e.removedAt)}
+                              {e.removedReason && ` - ${e.removedReason}`}
+                            </p>
+                          </>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {dateFormatter.format(e.enrolledAt)}
                       </td>
                       <td className="px-4 py-3">{e.progress}%</td>
                       <td className="px-4 py-3">
                         <span className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                          e.paymentStatus === 'FULLY_PAID'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800',
+                          'inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-medium',
+                          e.removedAt
+                            ? 'bg-muted text-muted-foreground'
+                            : e.paymentStatus === 'FULLY_PAID'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800',
                         )}>
                           {e.paymentStatus === 'FULLY_PAID' ? 'Fully Paid' : 'Partially Paid'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <RemoveEnrollmentButton
+                          enrollmentId={e.id}
+                          studentName={`${student.firstName} ${student.lastName}`}
+                          courseTitle={e.courseTitle}
+                          isRemoved={e.removedAt !== null}
+                        />
                       </td>
                     </tr>
                   ))}

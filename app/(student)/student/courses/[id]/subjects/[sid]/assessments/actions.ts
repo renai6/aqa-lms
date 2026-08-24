@@ -9,6 +9,7 @@ import { scoreAttempt, type SubmittedAnswer } from '@/lib/assessments/scoring'
 import { canSeeSubject } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
+import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 
 type ActionState = { error: string | null }
 
@@ -62,7 +63,10 @@ export async function startAttemptAction(
   }
 
   const enrollment = await db.enrollment.findUnique({
-    where: { userId_courseId: { userId: session.userId, courseId } },
+    where: {
+      userId_courseId: { userId: session.userId, courseId },
+      ...ACTIVE_ENROLLMENT,
+    },
     select: { id: true },
   })
   if (!enrollment) return { error: 'Not enrolled in this course.' }

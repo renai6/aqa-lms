@@ -42,7 +42,7 @@ export default async function StudentsPage({ searchParams }: Props) {
           exportHref={exportHref}
         />
       </Suspense>
-      <StudentTable students={students} />
+      <StudentTable students={students} courseId={course} />
     </div>
   );
 }

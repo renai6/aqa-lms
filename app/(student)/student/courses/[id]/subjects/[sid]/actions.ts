@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { isActiveStudent } from '@/lib/auth/capabilities'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
+import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 
 type ActionState = { error: string | null }
 
@@ -27,6 +28,7 @@ export async function markLessonDoneAction(
   const enrollment = await db.enrollment.findUnique({
     where: {
       userId_courseId: { userId: session.userId, courseId },
+      ...ACTIVE_ENROLLMENT,
       course: { ...ACTIVE_COURSE },
     },
     select: { id: true },
@@ -69,6 +71,7 @@ export async function unmarkLessonDoneAction(
   const enrollment = await db.enrollment.findUnique({
     where: {
       userId_courseId: { userId: session.userId, courseId },
+      ...ACTIVE_ENROLLMENT,
       course: { ...ACTIVE_COURSE },
     },
     select: { id: true },

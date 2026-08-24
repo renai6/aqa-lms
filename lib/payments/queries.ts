@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
+import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 
 export type PaymentEnrollment = {
   id: string;
@@ -21,7 +22,7 @@ export async function getEnrollmentForPayment(
   enrollmentId: string,
 ): Promise<PaymentEnrollment | null> {
   const r = await db.enrollment.findFirst({
-    where: { id: enrollmentId, userId },
+    where: { id: enrollmentId, userId, ...ACTIVE_ENROLLMENT },
     select: {
       id: true,
       paymentStatus: true,
@@ -56,7 +57,7 @@ export async function getEnrollmentPaymentStates(
   userId: string,
 ): Promise<Record<string, EnrollmentPaymentState>> {
   const rows = await db.payment.findMany({
-    where: { enrollment: { userId } },
+    where: { enrollment: { userId, ...ACTIVE_ENROLLMENT } },
     orderBy: { createdAt: "desc" },
     select: { enrollmentId: true, status: true, adminRemarks: true },
   });
@@ -83,7 +84,7 @@ export async function getEnrollmentBalances(
   userId: string,
 ): Promise<Record<string, Balance>> {
   const rows = await db.enrollment.findMany({
-    where: { userId },
+    where: { userId, ...ACTIVE_ENROLLMENT },
     select: {
       id: true,
       totalDue: true,
