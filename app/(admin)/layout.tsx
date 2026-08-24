@@ -9,6 +9,7 @@ import {
   UserCog,
   ShieldCheck,
   GraduationCap,
+  Wallet,
 } from "lucide-react";
 import { NavLink } from "./nav-link";
 import { TopBar } from "@/components/admin/top-bar";
@@ -69,6 +70,11 @@ export default async function AdminLayout({
             href="/admin/purchases"
             icon={<Users className="w-4 h-4" aria-hidden="true" />}
             label="Enrollment Requests"
+          />
+          <NavLink
+            href="/admin/payments"
+            icon={<Wallet className="w-4 h-4" aria-hidden="true" />}
+            label="Payments"
           />
           <NavLink
             href="/admin/students"
