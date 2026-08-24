@@ -156,10 +156,15 @@ approved payments can serve as the single ledger of money received."
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `allocate(amountPaid: number, fees: (number | null)[]): number[]` - returns one share per fee, in the same order, always summing to exactly `amountPaid`.
+- Produces: `allocate(amountPaid: number, fees: (number | null)[]): number[]` - returns one share per fee, in the same order, reconciling to `amountPaid` at centavo precision.
 
-Why the shares must reconcile exactly: the result prefills a form whose submitted values are validated against `amountPaid` in Task 5.
+Why the shares must reconcile: the result prefills a form whose submitted values are validated against `amountPaid` in Task 5.
 A prefill that fails its own validation would block every multi-course approval.
+
+Centavo precision, not strict float equality, is the guarantee.
+The returned shares are `number`s, and any set of two-decimal floats can fail a strict `===` when re-added, so a stricter claim would be one the type cannot keep.
+Both consumers compare rounded totals, which is exactly what this delivers.
+Do the arithmetic in integer centavos: splitting in pesos and re-summing rounded shares reintroduces the float error the correction is meant to remove.
 
 - [ ] **Step 1: Write the failing test**
 
