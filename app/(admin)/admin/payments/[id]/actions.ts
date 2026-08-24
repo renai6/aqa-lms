@@ -29,8 +29,6 @@ export async function approvePaymentAction(
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Invalid payment ID." };
 
-  // There is no balance math anywhere in this feature: the resulting payment
-  // status is the admin's explicit choice, not something derived from sums.
   const statusResult = z
     .enum(["PARTIALLY_PAID", "FULLY_PAID"])
     .safeParse(formData.get("paymentStatus"));

@@ -138,6 +138,11 @@ export type AdminPaymentDetail = {
     contactNumber: string | null;
   };
   courseTitle: string;
+  // The enrollment's balance as it stands now. This payment is PENDING, so it
+  // is not in the approved sum and is not counted here.
+  balance: Balance;
+  // What that balance becomes if this payment is approved.
+  balanceIfApproved: Balance;
 };
 
 export async function getAdminPaymentById(
@@ -154,6 +159,11 @@ export async function getAdminPaymentById(
       enrollment: {
         select: {
           paymentStatus: true,
+          totalDue: true,
+          payments: {
+            where: { status: "APPROVED" },
+            select: { amount: true },
+          },
           user: {
             select: {
               firstName: true,
@@ -168,14 +178,19 @@ export async function getAdminPaymentById(
     },
   });
   if (!r) return null;
+  const totalDue = r.enrollment.totalDue?.toNumber() ?? null;
+  const approvedAmounts = r.enrollment.payments.map((p) => p.amount.toNumber());
+  const amount = r.amount.toNumber();
   return {
     id: r.id,
     status: r.status,
-    amount: r.amount.toNumber(),
+    amount,
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
     enrollmentPaymentStatus: r.enrollment.paymentStatus,
     student: r.enrollment.user,
     courseTitle: r.enrollment.course.title,
+    balance: computeBalance(totalDue, approvedAmounts),
+    balanceIfApproved: computeBalance(totalDue, [...approvedAmounts, amount]),
   };
 }

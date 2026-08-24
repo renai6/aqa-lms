@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label";
 
 export function ApproveForm({
   id,
-  currentStatus,
+  defaultStatus,
 }: {
   id: string;
-  currentStatus: "PARTIALLY_PAID" | "FULLY_PAID";
+  defaultStatus: "PARTIALLY_PAID" | "FULLY_PAID";
 }) {
   const [state, action, isPending] = useActionState(approvePaymentAction, {
     error: null,
@@ -33,7 +33,7 @@ export function ApproveForm({
             type="radio"
             name="paymentStatus"
             value="PARTIALLY_PAID"
-            defaultChecked={currentStatus === "PARTIALLY_PAID"}
+            defaultChecked={defaultStatus === "PARTIALLY_PAID"}
           />
           <span>Partially paid</span>
         </Label>
@@ -42,7 +42,7 @@ export function ApproveForm({
             type="radio"
             name="paymentStatus"
             value="FULLY_PAID"
-            defaultChecked={currentStatus === "FULLY_PAID"}
+            defaultChecked={defaultStatus === "FULLY_PAID"}
           />
           <span>Fully paid</span>
         </Label>
