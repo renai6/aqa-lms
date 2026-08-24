@@ -134,6 +134,7 @@ model User {
   gradedAttempts     AssessmentAttempt[] @relation("GradedBy")
   purchases          Purchase[]
   reviewedPurchases  Purchase[]          @relation("ReviewedPurchases")
+  reviewedPayments   Payment[]           @relation("ReviewedPayments")
   verificationTokens VerificationToken[]
   lessonCompletions  LessonCompletion[]
 }
@@ -313,6 +314,8 @@ model Enrollment {
   batchId String?
   batch   Batch?  @relation(fields: [batchId], references: [id])
 
+  payments Payment[]
+
   @@unique([userId, courseId])
 }
 
@@ -357,6 +360,28 @@ model PurchaseItem {
 
   @@unique([purchaseId, courseId])
   @@index([courseId])
+}
+
+// A student-submitted payment made after checkout, against one enrollment.
+// `status` reuses EnrollmentStatus (PENDING/APPROVED/REJECTED) exactly as
+// Purchase.status does. The resulting PARTIALLY_PAID/FULLY_PAID value is not
+// stored here - it lives on Enrollment, and the admin picks it on approval.
+model Payment {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment       @relation(fields: [enrollmentId], references: [id])
+  amount       Decimal
+  proofUrl     String
+  status       EnrollmentStatus @default(PENDING)
+  adminRemarks String?
+  reviewedById String?
+  reviewedBy   User?            @relation("ReviewedPayments", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([enrollmentId])
+  @@index([status])
 }
 
 //
