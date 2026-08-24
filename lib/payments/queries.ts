@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
+import { computeBalance, type Balance } from "@/lib/payments/balance";
 
 export type PaymentEnrollment = {
   id: string;
@@ -67,13 +68,14 @@ export type AdminPaymentRow = {
   studentName: string;
   studentEmail: string;
   courseTitle: string;
+  balance: Balance;
 };
 
 export async function getAdminPaymentsByStatus(
   status: EnrollmentStatus,
 ): Promise<AdminPaymentRow[]> {
   const rows = await db.payment.findMany({
-    where: { status },
+    where: { status, source: "SUBMITTED" },
     orderBy: { createdAt: "desc" },
     take: 100,
     select: {
@@ -83,6 +85,13 @@ export async function getAdminPaymentsByStatus(
       createdAt: true,
       enrollment: {
         select: {
+          totalDue: true,
+          // Approved rows only: pending and rejected payments are not money
+          // received and must not move the balance.
+          payments: {
+            where: { status: "APPROVED" },
+            select: { amount: true },
+          },
           user: { select: { firstName: true, lastName: true, email: true } },
           course: { select: { title: true } },
         },
@@ -97,6 +106,10 @@ export async function getAdminPaymentsByStatus(
     studentName: `${r.enrollment.user.firstName} ${r.enrollment.user.lastName}`,
     studentEmail: r.enrollment.user.email,
     courseTitle: r.enrollment.course.title,
+    balance: computeBalance(
+      r.enrollment.totalDue?.toNumber() ?? null,
+      r.enrollment.payments.map((p) => p.amount.toNumber()),
+    ),
   }));
 }
 
@@ -105,6 +118,7 @@ export async function getPaymentStatusCounts(): Promise<
 > {
   const grouped = await db.payment.groupBy({
     by: ["status"],
+    where: { source: "SUBMITTED" },
     _count: { _all: true },
   });
   return Object.fromEntries(grouped.map((g) => [g.status, g._count._all]));

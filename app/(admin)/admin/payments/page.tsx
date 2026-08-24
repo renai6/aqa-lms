@@ -9,6 +9,7 @@ import {
   getAdminPaymentsByStatus,
   getPaymentStatusCounts,
 } from "@/lib/payments/queries";
+import { describeBalance } from "@/lib/payments/balance";
 
 type Props = { searchParams: Promise<{ tab?: string }> };
 
@@ -123,6 +124,12 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
                   scope="col"
                   className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
+                  Balance
+                </th>
+                <th
+                  scope="col"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
+                >
                   Submitted
                 </th>
                 <th
@@ -146,6 +153,9 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
                   <td className="px-4 py-2">{r.courseTitle}</td>
                   <td className="px-4 py-2">
                     ₱{r.amount.toLocaleString("en-PH")}
+                  </td>
+                  <td className="text-muted-foreground px-4 py-2">
+                    {describeBalance(r.balance)}
                   </td>
                   <td className="text-muted-foreground px-4 py-2">
                     {dateFormatter.format(r.createdAt)}
