@@ -18,17 +18,27 @@ describe("allocate", () => {
     expect(allocate(1000, [0, 0])).toEqual([500, 500]);
   });
 
-  // The shares prefill a form that is validated to sum to amountPaid, so a
-  // split that loses a centavo to rounding would make the prefill unusable.
-  it("reconciles exactly when the division does not come out round", () => {
+  // The shares prefill a form whose submitted values are validated against
+  // amountPaid at centavo precision, so that is the guarantee that matters.
+  // Strict float equality on the raw sum is not achievable and not claimed.
+  it("reconciles to the amount paid at centavo precision", () => {
     const shares = allocate(1000, [10000, 20000, 30000]);
-    expect(shares.reduce((a, b) => a + b, 0)).toBe(1000);
+    const sum = shares.reduce((a, b) => a + b, 0);
+    expect(Math.round(sum * 100)).toBe(100000);
   });
 
   it("gives the rounding remainder to the highest-fee course", () => {
     expect(allocate(1000, [10000, 20000, 30000])).toEqual([
       166.67, 333.33, 500,
     ]);
+  });
+
+  // Three equal fees cannot divide 100 evenly, so this is the case where the
+  // drift correction fires. Without it the shares would total 99.99.
+  it("hands the leftover centavo to a share when the split does not divide evenly", () => {
+    const shares = allocate(100, [10000, 10000, 10000]);
+    expect(shares).toEqual([33.34, 33.33, 33.33]);
+    expect(Math.round(shares.reduce((a, b) => a + b, 0) * 100)).toBe(10000);
   });
 
   it("returns an empty array for no courses", () => {

@@ -5,36 +5,41 @@
 // the student meant the money for. The admin overrides it when a student
 // earmarks payment for one course.
 //
-// The shares always sum to exactly `amountPaid`: the approval action validates
-// that, so a split that lost a centavo to rounding would block the approval it
-// was meant to prefill.
-export function allocate(amountPaid: number, fees: (number | null)[]): number[] {
+// The shares reconcile to `amountPaid` at centavo precision: the approval
+// action validates at that precision, so a split that loses a centavo to
+// rounding would block the approval it was meant to prefill.
+export function allocate(
+  amountPaid: number,
+  fees: (number | null)[],
+): number[] {
   if (fees.length === 0) return [];
 
-  const total = fees.reduce<number>((sum, fee) => sum + (fee ?? 0), 0);
+  // All arithmetic runs in integer centavos. Splitting in pesos and re-summing
+  // the rounded shares reintroduces float error, which made the old "sums to
+  // exactly amountPaid" claim false for about a quarter of realistic inputs.
+  const target = Math.round(amountPaid * 100);
+  const weights = fees.map((fee) => Math.round((fee ?? 0) * 100));
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
   // Proportional needs every fee known and a non-zero total to divide by.
   // Otherwise there is no basis for weighting, so weight them equally.
-  const canWeight = fees.every((fee) => fee !== null) && total > 0;
+  const canWeight = fees.every((fee) => fee !== null) && totalWeight > 0;
 
-  const shares = fees.map((fee) =>
-    round2(canWeight ? (amountPaid * (fee as number)) / total : amountPaid / fees.length),
+  const shares = weights.map((w) =>
+    Math.round(canWeight ? (target * w) / totalWeight : target / fees.length),
   );
 
   // Rounding each share independently leaves a few centavos over or short.
   // Give the difference to the largest share, where it is proportionally
   // least visible, and the total reconciles exactly.
-  const drift = round2(amountPaid - shares.reduce((a, b) => a + b, 0));
+  const drift = target - shares.reduce((sum, s) => sum + s, 0);
   if (drift !== 0) {
     const largest = shares.reduce(
       (best, share, i) => (share > shares[best] ? i : best),
       0,
     );
-    shares[largest] = round2(shares[largest] + drift);
+    shares[largest] += drift;
   }
 
-  return shares;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return shares.map((s) => s / 100);
 }
