@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getSession } from "@/lib/auth/session";
 import { getStudentDashboard, getStudentRecentResults } from "@/lib/student/queries";
+import { getEnrollmentPaymentStates } from "@/lib/payments/queries";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
@@ -27,19 +28,21 @@ const DAY_LABEL: Record<string, string> = {
 
 export const metadata = { title: "Dashboard — AQA Student" };
 
-type Props = { searchParams: Promise<{ enrolled?: string }> };
+type Props = { searchParams: Promise<{ enrolled?: string; payment?: string }> };
 
 export default async function StudentDashboardPage({ searchParams }: Props) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const { enrolled } = await searchParams;
+  const { enrolled, payment } = await searchParams;
   const justEnrolled = enrolled === "1";
+  const justPaid = payment === "1";
 
   const [
     { enrollments, schedules, announcements, pendingPurchases },
     recentResults,
     user,
+    paymentStates,
   ] = await Promise.all([
     getStudentDashboard(session.userId),
     getStudentRecentResults(session.userId),
@@ -47,6 +50,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       where: { id: session.userId },
       select: { firstName: true },
     }),
+    getEnrollmentPaymentStates(session.userId),
   ]);
 
   const partialEnrollments = enrollments.filter(
@@ -77,6 +81,22 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
               Our admin team will review your enrollment and payment first.
               Once approved, the program will appear in your dashboard and
               you&apos;ll be able to access it.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Additional-payment success banner (shown right after submitting) */}
+      {justPaid && (
+        <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <div className="space-y-1">
+            <p className="font-semibold text-sm text-emerald-900">
+              Your payment has been submitted for review.
+            </p>
+            <p className="text-sm text-emerald-700">
+              Our admin team will verify your proof of payment. Your payment
+              status here updates once it is approved.
             </p>
           </div>
         </div>
@@ -302,21 +322,39 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
             Payment
           </h2>
           <div className="space-y-2">
-            {partialEnrollments.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-center justify-between rounded-xl bg-white border border-border shadow-sm px-5 py-4"
-              >
-                <div>
-                  <p className="font-semibold text-sm text-foreground">
-                    {e.course.title}
-                  </p>
-                  <p className="text-xs text-amber-600 mt-0.5">
-                    Partial payment — balance outstanding
-                  </p>
+            {partialEnrollments.map((e) => {
+              const state = paymentStates[e.id] ?? { kind: "idle" as const };
+              return (
+                <div
+                  key={e.id}
+                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-border shadow-sm px-5 py-4"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-foreground">
+                      {e.course.title}
+                    </p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Partial payment — balance outstanding
+                    </p>
+                    {state.kind === "rejected" && (
+                      <p className="text-xs text-destructive mt-1">
+                        Your last payment was rejected
+                        {state.reason ? `: ${state.reason}` : "."}
+                      </p>
+                    )}
+                  </div>
+                  {state.kind === "pending" ? (
+                    <span className="shrink-0 text-xs font-medium text-amber-600">
+                      Payment under review
+                    </span>
+                  ) : (
+                    <Button asChild size="sm" className="shrink-0">
+                      <Link href={"/student/payments/" + e.id}>Add payment</Link>
+                    </Button>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
