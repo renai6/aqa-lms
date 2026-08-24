@@ -90,9 +90,15 @@ export async function approvePurchaseAction(
   }
 
   const amountPaid = purchase.amountPaid.toNumber();
-  const appliedTotal =
-    Math.round(entries.reduce((sum, e) => sum + e.applied, 0) * 100) / 100;
-  if (appliedTotal !== amountPaid) {
+  // Compare in integer centavos, not raw floats: rounding only one side (or
+  // neither) leaves amounts that are equal to the peso but never satisfy
+  // `!==`, permanently blocking approval.
+  const amountPaidCentavos = Math.round(amountPaid * 100);
+  const appliedTotalCentavos = Math.round(
+    entries.reduce((sum, e) => sum + e.applied, 0) * 100,
+  );
+  if (appliedTotalCentavos !== amountPaidCentavos) {
+    const appliedTotal = appliedTotalCentavos / 100;
     return {
       error: `Applied amounts total ₱${appliedTotal.toLocaleString("en-PH")}, but the student paid ₱${amountPaid.toLocaleString("en-PH")}. Adjust them so they match.`,
     };

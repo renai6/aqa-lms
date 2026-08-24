@@ -186,8 +186,12 @@ export type AdminPaymentDetail = {
   // What that balance becomes if this payment is approved.
   balanceIfApproved: Balance;
   // Non-null only when the enrollment has no total yet, in which case the
-  // approve form offers to start tracking it.
-  catchUpPrefill: { totalDue: string; alreadyPaid: string } | null;
+  // approve form offers to start tracking it. `alreadyPaid` is itself
+  // nullable: null means "do not render this field", which is the case when
+  // an APPROVED CHECKOUT payment already exists for the enrollment - that
+  // money is already in the ledger, so prefilling and re-submitting it would
+  // double-count it.
+  catchUpPrefill: { totalDue: string; alreadyPaid: string | null } | null;
 };
 
 export async function getAdminPaymentById(
@@ -207,7 +211,7 @@ export async function getAdminPaymentById(
           totalDue: true,
           payments: {
             where: { status: "APPROVED" },
-            select: { amount: true },
+            select: { amount: true, source: true },
           },
           user: {
             select: {
@@ -241,6 +245,15 @@ export async function getAdminPaymentById(
   const totalDue = r.enrollment.totalDue?.toNumber() ?? null;
   const approvedAmounts = r.enrollment.payments.map((p) => p.amount.toNumber());
   const amount = r.amount.toNumber();
+  // An APPROVED CHECKOUT row means the enrollment's checkout money is
+  // already in the ledger, whether or not `totalDue` happens to be null
+  // (a MONTHLY/YEARLY course, or one an admin cleared, leaves the total
+  // blank while still writing that row at purchase approval). Offering the
+  // already-paid figure again in that case would write a second CHECKOUT
+  // row for money already recorded.
+  const hasCheckoutPayment = r.enrollment.payments.some(
+    (p) => p.source === "CHECKOUT",
+  );
   const catchUpPrefill =
     r.enrollment.totalDue === null
       ? {
@@ -250,20 +263,22 @@ export async function getAdminPaymentById(
             r.enrollment.course.paymentFrequency !== "YEARLY"
               ? String(r.enrollment.course.tuitionFee.toNumber())
               : "",
-          alreadyPaid: r.enrollment.purchase
-            ? String(
-                allocate(
-                  r.enrollment.purchase.amountPaid.toNumber(),
-                  r.enrollment.purchase.items.map(
-                    (i) => i.course.tuitionFee?.toNumber() ?? null,
-                  ),
-                )[
-                  r.enrollment.purchase.items.findIndex(
-                    (i) => i.course.id === r.enrollment.course.id,
-                  )
-                ] ?? 0,
-              )
-            : "",
+          alreadyPaid: hasCheckoutPayment
+            ? null
+            : r.enrollment.purchase
+              ? String(
+                  allocate(
+                    r.enrollment.purchase.amountPaid.toNumber(),
+                    r.enrollment.purchase.items.map(
+                      (i) => i.course.tuitionFee?.toNumber() ?? null,
+                    ),
+                  )[
+                    r.enrollment.purchase.items.findIndex(
+                      (i) => i.course.id === r.enrollment.course.id,
+                    )
+                  ] ?? 0,
+                )
+              : "",
         }
       : null;
   return {

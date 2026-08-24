@@ -11,9 +11,19 @@ export function computeBalance(
   approvedAmounts: number[],
 ): Balance {
   if (totalDue === null) return { kind: "untracked" };
-  const paid = approvedAmounts.reduce((sum, amount) => sum + amount, 0);
+  // Integer-centavo arithmetic, the same treatment `allocate` got in
+  // 0f631e2: summing floats and comparing to 0 leaves residuals like
+  // 3.64e-12 on splits that settle exactly, which renders as a permanent
+  // "remaining" balance instead of "fully paid".
+  const paidCentavos = approvedAmounts.reduce(
+    (sum, amount) => sum + Math.round(amount * 100),
+    0,
+  );
+  const totalDueCentavos = Math.round(totalDue * 100);
+  const paid = paidCentavos / 100;
   // Deliberately not clamped at zero: an overpayment needs to be visible.
-  return { kind: "tracked", totalDue, paid, remaining: totalDue - paid };
+  const remaining = (totalDueCentavos - paidCentavos) / 100;
+  return { kind: "tracked", totalDue, paid, remaining };
 }
 
 export function describeBalance(balance: Balance): string {

@@ -106,9 +106,10 @@ export default async function PaymentDetailPage({ params }: Props) {
             id={payment.id}
             catchUpPrefill={payment.catchUpPrefill}
             defaultStatus={
-              payment.balanceIfApproved.kind === "tracked" &&
-              payment.balanceIfApproved.remaining <= 0
-                ? "FULLY_PAID"
+              payment.balanceIfApproved.kind === "tracked"
+                ? payment.balanceIfApproved.remaining <= 0
+                  ? "FULLY_PAID"
+                  : "PARTIALLY_PAID"
                 : payment.enrollmentPaymentStatus
             }
           />

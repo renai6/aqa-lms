@@ -50,39 +50,54 @@ export async function approvePaymentAction(
           purchase: { select: { paymentProofUrl: true } },
           course: { select: { title: true } },
           user: { select: { email: true, firstName: true } },
+          // Only whether an APPROVED CHECKOUT row already exists matters
+          // here, so one row is enough to know.
+          payments: {
+            where: { status: "APPROVED", source: "CHECKOUT" },
+            select: { id: true },
+            take: 1,
+          },
         },
       },
     },
   });
   if (!payment) return { error: "Payment not found." };
 
-  // Only offered when the enrollment has no total yet. Every enrollment that
-  // predates balance tracking is in that state, and this is how it converts
-  // to the ledger model, one student at a time, with no bulk migration.
+  // Setting totalDue and writing a catch-up row are independent decisions.
+  // Setting totalDue is only offered when the enrollment has no total yet.
+  // Writing a catch-up CHECKOUT row is only correct when the enrollment's
+  // checkout money is not already in the ledger - which is NOT the same
+  // question as whether totalDue is null (a MONTHLY/YEARLY course, or one an
+  // admin cleared, can be untracked while its checkout row already exists).
+  // The form is advisory; this check is the guard, since the form's
+  // catchUpPrefill is only computed at render time.
   const isUntracked = payment.enrollment.totalDue === null;
+  const hasCheckoutPayment = payment.enrollment.payments.length > 0;
   const rawTotal = formData.get("totalDue");
   const rawAlreadyPaid = formData.get("alreadyPaid");
   const totalText = typeof rawTotal === "string" ? rawTotal.trim() : "";
   const alreadyPaidText =
     typeof rawAlreadyPaid === "string" ? rawAlreadyPaid.trim() : "";
 
-  const catchUp =
-    isUntracked && totalText !== ""
-      ? {
-          totalDue: Number(totalText),
-          alreadyPaid: alreadyPaidText === "" ? 0 : Number(alreadyPaidText),
-        }
+  const newTotalDue =
+    isUntracked && totalText !== "" ? Number(totalText) : null;
+  const catchUpAmount =
+    !hasCheckoutPayment && alreadyPaidText !== ""
+      ? Number(alreadyPaidText)
       : null;
 
   if (
-    catchUp &&
-    (!Number.isFinite(catchUp.totalDue) ||
-      catchUp.totalDue < 0 ||
-      !Number.isFinite(catchUp.alreadyPaid) ||
-      catchUp.alreadyPaid < 0)
+    (newTotalDue !== null &&
+      (!Number.isFinite(newTotalDue) || newTotalDue < 0)) ||
+    (catchUpAmount !== null &&
+      (!Number.isFinite(catchUpAmount) || catchUpAmount < 0))
   ) {
     return { error: "Amounts must be zero or a positive number." };
   }
+
+  // A blank (or zero) already-paid figure must not write a junk zero-amount
+  // ledger row. Setting totalDue still works on its own either way.
+  const writeCatchUp = catchUpAmount !== null && catchUpAmount > 0;
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -100,12 +115,13 @@ export async function approvePaymentAction(
 
       await tx.enrollment.update({
         where: { id: payment.enrollmentId },
-        data: catchUp
-          ? { paymentStatus, totalDue: catchUp.totalDue }
-          : { paymentStatus },
+        data:
+          newTotalDue !== null
+            ? { paymentStatus, totalDue: newTotalDue }
+            : { paymentStatus },
       });
 
-      if (catchUp) {
+      if (writeCatchUp) {
         // One row standing for everything received before this payment, so the
         // ledger is complete from here on. purchaseId and proofUrl come from
         // the originating purchase when there is one; source alone keeps the
@@ -114,7 +130,7 @@ export async function approvePaymentAction(
           data: {
             enrollmentId: payment.enrollmentId,
             purchaseId: payment.enrollment.purchaseId,
-            amount: catchUp.alreadyPaid,
+            amount: catchUpAmount,
             proofUrl: payment.enrollment.purchase?.paymentProofUrl ?? "",
             status: "APPROVED",
             source: "CHECKOUT",

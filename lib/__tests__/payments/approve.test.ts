@@ -41,6 +41,9 @@ const paymentRow = {
   enrollmentId: "e1",
   enrollment: {
     totalDue: "unused",
+    purchaseId: null,
+    purchase: null,
+    payments: [],
     course: { title: "Tajweed Basics" },
     user: { email: "s@example.com", firstName: "Sam" },
   },
@@ -254,6 +257,7 @@ describe("approvePaymentAction starting to track an untracked enrollment", () =>
         totalDue: null,
         purchaseId: "p1",
         purchase: { paymentProofUrl: "purchase/p1/proof.jpg" },
+        payments: [],
         course: { title: "Tajweed Basics" },
         user: { email: "s@example.com", firstName: "Sam" },
       },
@@ -303,5 +307,117 @@ describe("approvePaymentAction starting to track an untracked enrollment", () =>
       data: { paymentStatus: "PARTIALLY_PAID" },
     });
     expect(tx.payment.create).not.toHaveBeenCalled();
+  });
+
+  // Finding 7: a filled total with a blank already-paid must still set the
+  // total, but must not write a zero-amount junk row into the ledger.
+  it("sets the total but writes no catch-up row when already-paid is blank", async () => {
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID", totalDue: 20000 },
+    });
+    expect(tx.payment.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("approvePaymentAction guards against double-counting checkout money", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getSession).mockResolvedValue({
+      userId: "admin1",
+      role: "ADMIN",
+    } as never);
+    vi.mocked(sendPaymentApprovalEmail).mockResolvedValue(undefined);
+
+    tx = {
+      payment: { updateMany: vi.fn(), create: vi.fn() },
+      enrollment: { update: vi.fn() },
+    };
+    vi.mocked(db.$transaction).mockImplementation(((
+      cb: (tx: unknown) => unknown,
+    ) => cb(tx)) as unknown as typeof db.$transaction);
+  });
+
+  // Finding 1: an enrollment can be untracked (totalDue null - e.g. a
+  // MONTHLY/YEARLY course) while its checkout money is already an APPROVED
+  // CHECKOUT row. The form is only advisory; this is the server-side guard
+  // that must refuse to write a second CHECKOUT row for the same money even
+  // if a stale form somehow submits alreadyPaid.
+  it("sets the total but refuses to write a catch-up row when a CHECKOUT payment already exists", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      enrollmentId: "e1",
+      enrollment: {
+        totalDue: null,
+        purchaseId: "p1",
+        purchase: { paymentProofUrl: "purchase/p1/proof.jpg" },
+        payments: [{ id: "existing-checkout" }],
+        course: { title: "Tajweed Basics" },
+        user: { email: "s@example.com", firstName: "Sam" },
+      },
+    } as never);
+    tx.payment.updateMany.mockResolvedValue({ count: 1 });
+    tx.enrollment.update.mockResolvedValue({});
+
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "8000");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID", totalDue: 20000 },
+    });
+    expect(tx.payment.create).not.toHaveBeenCalled();
+  });
+
+  // A legacy enrollment may have APPROVED SUBMITTED payments (from the
+  // earlier additional-payments feature) with no CHECKOUT row at all - the
+  // catch-up path is still correct there.
+  it("still writes a catch-up row when existing approved payments are SUBMITTED, not CHECKOUT", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      enrollmentId: "e1",
+      enrollment: {
+        totalDue: null,
+        purchaseId: null,
+        purchase: null,
+        payments: [],
+        course: { title: "Tajweed Basics" },
+        user: { email: "s@example.com", firstName: "Sam" },
+      },
+    } as never);
+    tx.payment.updateMany.mockResolvedValue({ count: 1 });
+    tx.enrollment.update.mockResolvedValue({});
+
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "3000");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.payment.create).toHaveBeenCalledWith({
+      data: {
+        enrollmentId: "e1",
+        purchaseId: null,
+        amount: 3000,
+        proofUrl: "",
+        status: "APPROVED",
+        source: "CHECKOUT",
+        reviewedById: "admin1",
+        reviewedAt: expect.any(Date),
+      },
+    });
   });
 });

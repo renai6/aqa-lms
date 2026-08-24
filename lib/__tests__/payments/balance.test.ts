@@ -47,6 +47,20 @@ describe("computeBalance", () => {
       remaining: 20000,
     });
   });
+
+  // Verified failure before the fix: summing these three floats left
+  // remaining = 3.64e-12 instead of 0, because plain float addition does not
+  // settle exactly even though the centavos do.
+  it("settles exactly at centavo precision instead of leaving a float residual", () => {
+    const balance = computeBalance(19603, [4752.07, 13870.99, 979.94]);
+    expect(balance).toEqual({
+      kind: "tracked",
+      totalDue: 19603,
+      paid: 19603,
+      remaining: 0,
+    });
+    expect(describeBalance(balance)).toBe("Fully paid. ₱19,603 of ₱19,603.");
+  });
 });
 
 describe("describeBalance", () => {

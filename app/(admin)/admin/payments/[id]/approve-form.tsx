@@ -13,7 +13,7 @@ export function ApproveForm({
 }: {
   id: string;
   defaultStatus: "PARTIALLY_PAID" | "FULLY_PAID";
-  catchUpPrefill?: { totalDue: string; alreadyPaid: string } | null;
+  catchUpPrefill?: { totalDue: string; alreadyPaid: string | null } | null;
 }) {
   const [state, action, isPending] = useActionState(approvePaymentAction, {
     error: null,
@@ -28,12 +28,18 @@ export function ApproveForm({
           <div>
             <p className="text-sm font-semibold">Start tracking this balance</p>
             <p className="text-muted-foreground text-sm">
-              This enrollment has no agreed total yet. Set one to see the
-              remaining balance from now on, or leave it blank to keep deciding
-              by hand.
+              {catchUpPrefill.alreadyPaid !== null
+                ? "This enrollment has no agreed total yet. Set one to see the remaining balance from now on, or leave it blank to keep deciding by hand."
+                : "This enrollment's checkout payment is already recorded. Set a total to see the remaining balance from now on, or leave it blank to keep deciding by hand."}
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div
+            className={
+              catchUpPrefill.alreadyPaid !== null
+                ? "grid gap-3 sm:grid-cols-2"
+                : "grid gap-3"
+            }
+          >
             <div>
               <Label htmlFor="totalDue">Total due (₱)</Label>
               <Input
@@ -45,17 +51,21 @@ export function ApproveForm({
                 defaultValue={catchUpPrefill.totalDue}
               />
             </div>
-            <div>
-              <Label htmlFor="alreadyPaid">Already paid, before this (₱)</Label>
-              <Input
-                id="alreadyPaid"
-                name="alreadyPaid"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={catchUpPrefill.alreadyPaid}
-              />
-            </div>
+            {catchUpPrefill.alreadyPaid !== null && (
+              <div>
+                <Label htmlFor="alreadyPaid">
+                  Already paid, before this (₱)
+                </Label>
+                <Input
+                  id="alreadyPaid"
+                  name="alreadyPaid"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={catchUpPrefill.alreadyPaid}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
