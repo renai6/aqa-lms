@@ -66,16 +66,27 @@ export async function createPaymentAction(
   }
 
   const storagePath = `payment/${paymentId}/proof.${image.ext}`;
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(process.env.SUPABASE_STORAGE_BUCKET!)
-    .upload(storagePath, image.buffer, {
-      contentType: image.contentType,
-      upsert: true,
-    });
+  // Some upload failures (e.g. a network error) come back as a thrown
+  // exception rather than the `{ error }` result shape, so both are caught
+  // into the same variable and handled by the one block below.
+  let uploadError: unknown = null;
+  try {
+    const { error } = await supabaseAdmin.storage
+      .from(process.env.SUPABASE_STORAGE_BUCKET!)
+      .upload(storagePath, image.buffer, {
+        contentType: image.contentType,
+        upsert: true,
+      });
+    uploadError = error;
+  } catch (err) {
+    uploadError = err;
+  }
   if (uploadError) {
     console.error("[createPayment] Supabase error:", uploadError);
     // Leave no pending row behind that the admin could never review.
-    await db.payment.delete({ where: { id: paymentId } }).catch(() => {});
+    await db.payment
+      .delete({ where: { id: paymentId } })
+      .catch((err) => console.error("[createPayment] Cleanup error:", err));
     return { error: "Failed to upload payment proof. Please try again." };
   }
 
