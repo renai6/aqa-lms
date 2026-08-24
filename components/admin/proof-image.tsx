@@ -30,8 +30,8 @@ export function ProofImage({ src }: { src: string }) {
       </p>
     );
   if (!url) return <div className="bg-muted h-48 animate-pulse rounded-lg" />;
-  // eslint-disable-next-line @next/next/no-img-element
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img src={url} alt="Payment proof" className="max-h-96 rounded-lg border" />
   );
 }
