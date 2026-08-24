@@ -98,7 +98,11 @@ export default async function PurchaseDetailPage({ params }: Props) {
 
       {isPending && (
         <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
-          <ApproveForm id={purchase.id} />
+          <ApproveForm
+            id={purchase.id}
+            courses={purchase.courses}
+            amountPaid={purchase.amountPaid}
+          />
           <div className="border-t pt-4">
             <RejectForm id={purchase.id} />
           </div>
