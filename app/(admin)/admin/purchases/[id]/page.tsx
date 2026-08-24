@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
 import { getAdminPurchaseById } from "@/lib/purchases/queries";
-import { ProofImage } from "./proof-image";
+import { ProofImage } from "@/components/admin/proof-image";
 import { ApproveForm } from "./approve-form";
 import { RejectForm } from "./reject-form";
 import { PaymentStatusForm } from "./payment-status-form";
@@ -17,16 +17,16 @@ export default async function PurchaseDetailPage({ params }: Props) {
   const isPending = purchase.status === "PENDING";
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6 p-6">
       <PageHeader title="Purchase Detail" />
 
-      <div className="rounded-xl border bg-card p-4 space-y-1">
+      <div className="bg-card space-y-1 rounded-xl border p-4">
         <div className="flex items-center justify-between">
           <p className="font-semibold">
             {purchase.student.firstName} {purchase.student.lastName}
           </p>
           {purchase.status === "APPROVED" ? (
-            <Badge className="bg-green-100 text-green-800 border-green-200">
+            <Badge className="border-green-200 bg-green-100 text-green-800">
               Approved
             </Badge>
           ) : purchase.status === "REJECTED" ? (
@@ -35,18 +35,18 @@ export default async function PurchaseDetailPage({ params }: Props) {
             <Badge variant="outline">Pending</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {purchase.student.email}
         </p>
         {purchase.student.contactNumber && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {purchase.student.contactNumber}
           </p>
         )}
       </div>
 
-      <div className="rounded-xl border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+      <div className="bg-card rounded-xl border p-4">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           Courses
         </p>
         <ul className="divide-y">
@@ -74,14 +74,14 @@ export default async function PurchaseDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+      <div className="bg-card rounded-xl border p-4">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           Proof of payment
         </p>
-        <ProofImage purchaseId={purchase.id} />
+        <ProofImage src={`/api/admin/purchases/${purchase.id}/proof`} />
       </div>
 
-      <div className="rounded-xl border bg-card p-4">
+      <div className="bg-card rounded-xl border p-4">
         <PaymentStatusForm
           id={purchase.id}
           currentStatus={
@@ -91,13 +91,13 @@ export default async function PurchaseDetailPage({ params }: Props) {
       </div>
 
       {purchase.status === "REJECTED" && purchase.adminRemarks && (
-        <p className="text-sm text-destructive">
+        <p className="text-destructive text-sm">
           <strong>Rejection reason:</strong> {purchase.adminRemarks}
         </p>
       )}
 
       {isPending && (
-        <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+        <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
           <ApproveForm id={purchase.id} />
           <div className="border-t pt-4">
             <RejectForm id={purchase.id} />

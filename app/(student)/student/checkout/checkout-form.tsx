@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { PaymentInstructions } from "@/components/payment-instructions";
 import type { CheckoutCourse } from "@/lib/purchases/queries";
 
 type Props = { courses: CheckoutCourse[] };
@@ -43,53 +44,7 @@ export function CheckoutForm({ courses }: Props) {
         </div>
       </div>
 
-      <div className="bg-muted/40 space-y-4 rounded-xl border p-4">
-        <div>
-          <h2 className="text-foreground text-sm font-semibold">
-            Where to send your payment
-          </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
-            Pay via bank transfer or GCash, then upload your proof of payment
-            below.
-          </p>
-        </div>
-
-        <div className="border-primary/25 bg-secondary space-y-1 rounded-lg border p-3">
-          <p className="text-primary text-xs font-semibold tracking-wide uppercase">
-            BPI
-          </p>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Account Name</span>
-            <span className="text-foreground text-right font-medium">
-              AQA-Online Islamic School
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Account Number</span>
-            <span className="text-foreground text-right font-medium tabular-nums">
-              2129356823
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-1 rounded-lg border border-[#2a6fb0]/25 bg-[#e6f0fa] p-3">
-          <p className="text-xs font-semibold tracking-wide text-[#1e5a94] uppercase">
-            GCash
-          </p>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Number</span>
-            <span className="text-foreground text-right font-medium tabular-nums">
-              09970767501
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Name</span>
-            <span className="text-foreground text-right font-medium">
-              Malihah M.
-            </span>
-          </div>
-        </div>
-      </div>
+      <PaymentInstructions />
 
       <input type="hidden" name="paymentType" value="PARTIAL" />
 
