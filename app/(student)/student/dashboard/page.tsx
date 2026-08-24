@@ -11,6 +11,7 @@ import {
   getEnrollmentBalances,
 } from "@/lib/payments/queries";
 import { describeBalance, type Balance } from "@/lib/payments/balance";
+import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
@@ -67,8 +68,15 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     getEnrollmentBalances(session.userId),
   ]);
 
-  const partialEnrollments = enrollments.filter(
-    (e) => e.paymentStatus === "PARTIALLY_PAID",
+  // Same rule the payment guard enforces, so the button offered here and the
+  // action behind it cannot disagree. An enrollment an admin labelled
+  // FULLY_PAID while the ledger still shows a balance stays payable.
+  const unsettledEnrollments = enrollments.filter(
+    (e) =>
+      !isSettled({
+        paymentStatus: e.paymentStatus,
+        balance: balances[e.id] ?? { kind: "untracked" },
+      }),
   );
 
   return (
@@ -334,13 +342,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       )}
 
       {/* Payment summary */}
-      {partialEnrollments.length > 0 && (
+      {unsettledEnrollments.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Payment
           </h2>
           <div className="space-y-2">
-            {partialEnrollments.map((e) => {
+            {unsettledEnrollments.map((e) => {
               const state = paymentStates[e.id] ?? { kind: "idle" as const };
               return (
                 <div

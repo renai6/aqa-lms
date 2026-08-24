@@ -184,8 +184,13 @@ export type AdminPaymentDetail = {
   // The enrollment's balance as it stands now. This payment is PENDING, so it
   // is not in the approved sum and is not counted here.
   balance: Balance;
-  // What that balance becomes if this payment is approved.
-  balanceIfApproved: Balance;
+  // The approve form projects the balance after approval itself, from these
+  // two plus `amount` and whatever the admin types into the catch-up fields.
+  // Computing it here instead reported "not tracked" in exactly the case the
+  // admin is setting a total in, since `catchUpPrefill` is only offered when
+  // the stored `totalDue` is null.
+  totalDue: number | null;
+  approvedPaid: number;
   // Non-null only when the enrollment has no total yet, in which case the
   // approve form offers to start tracking it. `alreadyPaid` is itself
   // nullable: null means "do not render this field", which is the case when
@@ -292,7 +297,9 @@ export async function getAdminPaymentById(
     student: r.enrollment.user,
     courseTitle: r.enrollment.course.title,
     balance: computeBalance(totalDue, approvedAmounts),
-    balanceIfApproved: computeBalance(totalDue, [...approvedAmounts, amount]),
+    totalDue,
+    approvedPaid:
+      approvedAmounts.reduce((sum, a) => sum + Math.round(a * 100), 0) / 100,
     catchUpPrefill,
   };
 }

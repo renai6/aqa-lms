@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import type { PaymentFrequency } from "@prisma/client";
 import { approvePurchaseAction } from "./actions";
 import { allocate } from "@/lib/purchases/allocation";
+import { peso } from "@/lib/payments/balance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,12 +14,18 @@ export type ApproveCourse = {
   title: string;
   tuitionFee: number | null;
   paymentFrequency: PaymentFrequency | null;
+  priorPaid: number | null;
 };
 
 // Only a fixed-total course has a meaningful lifetime total to prefill.
 // Monthly and yearly courses are billed per period, which this feature does
 // not model, so their totals start blank and the enrollment stays untracked
 // unless an admin types one.
+//
+// Money already approved against an earlier enrollment in the same course is
+// added on top. Approving revives that enrollment with its payments still
+// attached, so a total of just the tuition fee would count that old money
+// against this term and show the student owing less than they do.
 function prefillTotal(course: ApproveCourse): string {
   if (course.tuitionFee === null) return "";
   if (
@@ -27,7 +34,10 @@ function prefillTotal(course: ApproveCourse): string {
   ) {
     return "";
   }
-  return String(course.tuitionFee);
+  const centavos =
+    Math.round(course.tuitionFee * 100) +
+    Math.round((course.priorPaid ?? 0) * 100);
+  return String(centavos / 100);
 }
 
 export function ApproveForm({
@@ -49,11 +59,15 @@ export function ApproveForm({
   );
   const [applied, setApplied] = useState<string[]>(prefill.map(String));
 
-  const appliedTotal =
-    Math.round(
-      applied.reduce((sum, value) => sum + (Number(value) || 0), 0) * 100,
-    ) / 100;
-  const reconciles = appliedTotal === amountPaid;
+  // Integer centavos, rounded per field exactly as the server rounds them.
+  // Comparing floats here let a split the server would accept leave Approve
+  // permanently disabled, with no input the admin could type to satisfy it.
+  const appliedTotalCentavos = applied.reduce(
+    (sum, value) => sum + Math.round((Number(value) || 0) * 100),
+    0,
+  );
+  const appliedTotal = appliedTotalCentavos / 100;
+  const reconciles = appliedTotalCentavos === Math.round(amountPaid * 100);
 
   return (
     <form action={action} className="space-y-4">
@@ -62,9 +76,9 @@ export function ApproveForm({
       <div>
         <p className="text-sm font-semibold">Enrollment totals</p>
         <p className="text-muted-foreground text-sm">
-          Set what each course costs this student, and how much of the ₱
-          {amountPaid.toLocaleString("en-PH")} received applies to each. Leave a
-          total blank to skip balance tracking for that course.
+          Set what each course costs this student, and how much of the{" "}
+          {peso(amountPaid)} received applies to each. Leave a total blank to
+          skip balance tracking for that course.
         </p>
       </div>
 
@@ -72,6 +86,15 @@ export function ApproveForm({
         {courses.map((course, i) => (
           <div key={course.id} className="rounded-md border p-3">
             <p className="mb-2 text-sm font-medium">{course.title}</p>
+            {course.priorPaid !== null && course.priorPaid > 0 && (
+              <p className="text-muted-foreground mb-2 text-xs">
+                {peso(course.priorPaid)} is already recorded against this
+                student&apos;s earlier enrollment in this course. Approving
+                revives that enrollment and keeps those payments, so the total
+                below includes them. Lower it if that money should count toward
+                this term instead.
+              </p>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor={`totalDue_${course.id}`}>Total due (₱)</Label>
@@ -109,8 +132,8 @@ export function ApproveForm({
 
       {!reconciles && (
         <p className="text-destructive text-sm">
-          Applied amounts total ₱{appliedTotal.toLocaleString("en-PH")}, but the
-          student paid ₱{amountPaid.toLocaleString("en-PH")}.
+          Applied amounts total {peso(appliedTotal)}, but the student paid{" "}
+          {peso(amountPaid)}.
         </p>
       )}
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
 import { getAdminPurchaseById } from "@/lib/purchases/queries";
+import { peso } from "@/lib/payments/balance";
 import { ProofImage } from "@/components/admin/proof-image";
 import { ApproveForm } from "./approve-form";
 import { RejectForm } from "./reject-form";
@@ -57,9 +58,7 @@ export default async function PurchaseDetailPage({ params }: Props) {
             >
               <span>{c.title}</span>
               <span className="font-semibold">
-                {c.tuitionFee != null
-                  ? `₱${c.tuitionFee.toLocaleString("en-PH")}`
-                  : "—"}
+                {c.tuitionFee != null ? peso(c.tuitionFee) : "—"}
               </span>
             </li>
           ))}
@@ -68,9 +67,7 @@ export default async function PurchaseDetailPage({ params }: Props) {
           <span className="text-muted-foreground">
             Amount paid ({purchase.paymentType === "FULL" ? "Full" : "Partial"})
           </span>
-          <span className="text-lg font-bold">
-            ₱{purchase.amountPaid.toLocaleString("en-PH")}
-          </span>
+          <span className="text-lg font-bold">{peso(purchase.amountPaid)}</span>
         </div>
       </div>
 

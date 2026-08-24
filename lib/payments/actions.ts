@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -11,6 +12,11 @@ import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { sendPaymentConfirmationEmail } from "@/lib/payments/email";
 
 type ActionState = { error: string | null };
+
+// Thrown inside the create transaction when the enrollment picked up a PENDING
+// payment between the guard's read and the write, so the whole thing rolls
+// back instead of leaving a second row for the same money.
+class DuplicatePendingError extends Error {}
 
 export async function createPaymentAction(
   _prev: ActionState,
@@ -51,16 +57,36 @@ export async function createPaymentAction(
 
   let paymentId: string;
   try {
-    const payment = await db.payment.create({
-      data: {
-        enrollmentId,
-        amount,
-        proofUrl: "", // set after upload
+    const payment = await db.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // The guard above read the payment list several statements ago, which
+        // makes the "one pending payment" rule a check-then-act: two tabs, a
+        // double-click or a retried submit each pass it and each create a row,
+        // and approving both counts the same money twice against totalDue.
+        // Locking the enrollment row serialises submissions for this enrollment
+        // so the re-check below is authoritative.
+        await tx.$queryRaw`SELECT id FROM "Enrollment" WHERE id = ${enrollmentId} FOR UPDATE`;
+        const pending = await tx.payment.findFirst({
+          where: { enrollmentId, status: "PENDING" },
+          select: { id: true },
+        });
+        if (pending) throw new DuplicatePendingError();
+
+        return tx.payment.create({
+          data: {
+            enrollmentId,
+            amount,
+            proofUrl: "", // set after upload
+          },
+          select: { id: true },
+        });
       },
-      select: { id: true },
-    });
+    );
     paymentId = payment.id;
   } catch (err) {
+    if (err instanceof DuplicatePendingError) {
+      return { error: "You already have a payment awaiting review." };
+    }
     console.error("[createPayment] DB error:", err);
     return { error: "A database error occurred. Please try again." };
   }

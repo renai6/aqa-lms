@@ -142,6 +142,12 @@ export type AdminPurchaseDetail = {
     title: string;
     tuitionFee: number | null;
     paymentFrequency: PaymentFrequency | null;
+    // What this student has already had approved against an existing
+    // enrollment in this course, removed or not. Null means there is no
+    // enrollment yet, so there is nothing carried over. A removed enrollment
+    // is revived in place on approval and keeps its payments, so the admin
+    // needs this figure in front of them before they set a total.
+    priorPaid: number | null;
   }[];
 };
 
@@ -158,6 +164,7 @@ export async function getAdminPurchaseById(
       paymentProofUrl: true,
       adminRemarks: true,
       createdAt: true,
+      userId: true,
       user: {
         select: {
           firstName: true,
@@ -181,6 +188,30 @@ export async function getAdminPurchaseById(
     },
   });
   if (!r) return null;
+
+  // Deliberately not filtered by ACTIVE_ENROLLMENT: a removed enrollment is
+  // exactly the case this figure exists for, since approving revives that row
+  // with its old payments still attached.
+  const existing = await db.enrollment.findMany({
+    where: {
+      userId: r.userId,
+      courseId: { in: r.items.map((i) => i.course.id) },
+    },
+    select: {
+      courseId: true,
+      payments: { where: { status: "APPROVED" }, select: { amount: true } },
+    },
+  });
+  const priorPaidByCourse = new Map(
+    existing.map((e) => [
+      e.courseId,
+      e.payments.reduce(
+        (sum, p) => sum + Math.round(p.amount.toNumber() * 100),
+        0,
+      ) / 100,
+    ]),
+  );
+
   return {
     id: r.id,
     status: r.status,
@@ -195,6 +226,7 @@ export async function getAdminPurchaseById(
       title: i.course.title,
       tuitionFee: i.course.tuitionFee?.toNumber() ?? null,
       paymentFrequency: i.course.paymentFrequency,
+      priorPaid: priorPaidByCourse.get(i.course.id) ?? null,
     })),
   };
 }

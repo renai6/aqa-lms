@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { ProofImage } from "@/components/admin/proof-image";
 import { BalanceSummary } from "@/components/admin/balance-summary";
 import { getAdminPaymentById } from "@/lib/payments/queries";
+import { peso } from "@/lib/payments/balance";
 import { ApproveForm } from "./approve-form";
 import { RejectForm } from "./reject-form";
 
@@ -62,9 +63,7 @@ export default async function PaymentDetailPage({ params }: Props) {
         </div>
         <div className="flex items-center justify-between border-t pt-2 text-sm">
           <span className="text-muted-foreground">Amount</span>
-          <span className="text-lg font-bold">
-            ₱{payment.amount.toLocaleString("en-PH")}
-          </span>
+          <span className="text-lg font-bold">{peso(payment.amount)}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
@@ -78,12 +77,6 @@ export default async function PaymentDetailPage({ params }: Props) {
         </div>
         <div className="space-y-1 border-t pt-2">
           <BalanceSummary balance={payment.balance} label="Balance now" />
-          {isPending && (
-            <BalanceSummary
-              balance={payment.balanceIfApproved}
-              label="After approving"
-            />
-          )}
         </div>
       </div>
 
@@ -104,14 +97,11 @@ export default async function PaymentDetailPage({ params }: Props) {
         <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
           <ApproveForm
             id={payment.id}
+            amount={payment.amount}
+            totalDue={payment.totalDue}
+            approvedPaid={payment.approvedPaid}
+            fallbackStatus={payment.enrollmentPaymentStatus}
             catchUpPrefill={payment.catchUpPrefill}
-            defaultStatus={
-              payment.balanceIfApproved.kind === "tracked"
-                ? payment.balanceIfApproved.remaining <= 0
-                  ? "FULLY_PAID"
-                  : "PARTIALLY_PAID"
-                : payment.enrollmentPaymentStatus
-            }
           />
           <div className="border-t pt-4">
             <RejectForm id={payment.id} />

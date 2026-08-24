@@ -1,23 +1,75 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { approvePaymentAction } from "./actions";
+import { computeBalance, type Balance } from "@/lib/payments/balance";
+import { BalanceSummary } from "@/components/admin/balance-summary";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+type Status = "PARTIALLY_PAID" | "FULLY_PAID";
+
+function parseAmount(text: string): number | null {
+  const trimmed = text.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 export function ApproveForm({
   id,
-  defaultStatus,
+  amount,
+  totalDue,
+  approvedPaid,
+  fallbackStatus,
   catchUpPrefill,
 }: {
   id: string;
-  defaultStatus: "PARTIALLY_PAID" | "FULLY_PAID";
+  amount: number;
+  totalDue: number | null;
+  approvedPaid: number;
+  fallbackStatus: Status;
   catchUpPrefill?: { totalDue: string; alreadyPaid: string | null } | null;
 }) {
   const [state, action, isPending] = useActionState(approvePaymentAction, {
     error: null,
   });
+
+  // The catch-up fields decide the balance, so the projection below has to read
+  // them as they are typed. Server-rendering it from the stored totalDue showed
+  // "not tracked" in exactly the case the admin is setting a total in.
+  const [totalDueText, setTotalDueText] = useState(
+    catchUpPrefill?.totalDue ?? "",
+  );
+  const [alreadyPaidText, setAlreadyPaidText] = useState(
+    catchUpPrefill?.alreadyPaid ?? "",
+  );
+
+  const effectiveTotalDue = catchUpPrefill
+    ? parseAmount(totalDueText)
+    : totalDue;
+  // Mirrors the action's `writeCatchUp`: the field only counts when it is
+  // offered at all, and a blank or zero entry adds nothing.
+  const catchUp =
+    catchUpPrefill?.alreadyPaid !== null && catchUpPrefill !== null
+      ? (parseAmount(alreadyPaidText) ?? 0)
+      : 0;
+
+  const projected: Balance =
+    effectiveTotalDue === null
+      ? { kind: "untracked" }
+      : computeBalance(effectiveTotalDue, [approvedPaid, catchUp, amount]);
+
+  // The projection picks the status, until the admin picks one themselves.
+  const [override, setOverride] = useState<Status | null>(null);
+  const derived: Status =
+    projected.kind === "tracked"
+      ? projected.remaining <= 0
+        ? "FULLY_PAID"
+        : "PARTIALLY_PAID"
+      : fallbackStatus;
+  const status = override ?? derived;
 
   return (
     <form action={action} className="space-y-3">
@@ -48,7 +100,8 @@ export function ApproveForm({
                 type="number"
                 min="0"
                 step="0.01"
-                defaultValue={catchUpPrefill.totalDue}
+                value={totalDueText}
+                onChange={(e) => setTotalDueText(e.target.value)}
               />
             </div>
             {catchUpPrefill.alreadyPaid !== null && (
@@ -62,13 +115,18 @@ export function ApproveForm({
                   type="number"
                   min="0"
                   step="0.01"
-                  defaultValue={catchUpPrefill.alreadyPaid}
+                  value={alreadyPaidText}
+                  onChange={(e) => setAlreadyPaidText(e.target.value)}
                 />
               </div>
             )}
           </div>
         </div>
       )}
+
+      <div className="rounded-md border p-3">
+        <BalanceSummary balance={projected} label="After approving" />
+      </div>
 
       <div>
         <p className="text-sm font-semibold">Resulting payment status</p>
@@ -84,7 +142,8 @@ export function ApproveForm({
             type="radio"
             name="paymentStatus"
             value="PARTIALLY_PAID"
-            defaultChecked={defaultStatus === "PARTIALLY_PAID"}
+            checked={status === "PARTIALLY_PAID"}
+            onChange={() => setOverride("PARTIALLY_PAID")}
           />
           <span>Partially paid</span>
         </Label>
@@ -93,7 +152,8 @@ export function ApproveForm({
             type="radio"
             name="paymentStatus"
             value="FULLY_PAID"
-            defaultChecked={defaultStatus === "FULLY_PAID"}
+            checked={status === "FULLY_PAID"}
+            onChange={() => setOverride("FULLY_PAID")}
           />
           <span>Fully paid</span>
         </Label>

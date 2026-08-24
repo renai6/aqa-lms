@@ -127,7 +127,11 @@ describe("approving a purchase for a removed enrollment", () => {
     });
   });
 
-  it("still skips an enrollment that is active, leaving it untouched", async () => {
+  // The enrollment's own fields are settled and this purchase does not restate
+  // them. The money still has to land: the reconcile check forces the admin to
+  // allocate every peso across the items, so dropping the row here would delete
+  // money they had no way to withhold.
+  it("leaves an active enrollment untouched but still records the money", async () => {
     tx.enrollment.findUnique.mockResolvedValue({
       id: "e-old",
       removedAt: null,
@@ -137,6 +141,29 @@ describe("approving a purchase for a removed enrollment", () => {
 
     expect(tx.enrollment.create).not.toHaveBeenCalled();
     expect(tx.enrollment.update).not.toHaveBeenCalled();
+    expect(tx.payment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ enrollmentId: "e-old", amount: 1000 }),
+      }),
+    );
+  });
+
+  // Zero is not money, and a zero-amount row is noise in a ledger the admin
+  // reads to reconcile against receipts.
+  it("writes no ledger row when nothing was applied to the course", async () => {
+    vi.mocked(db.purchase.findUnique).mockResolvedValue({
+      ...purchase,
+      amountPaid: { toNumber: () => 0 },
+    } as never);
+
+    await expect(
+      approvePurchaseAction(
+        { error: null },
+        form({ id: "p1", totalDue_c1: "10000", applied_c1: "0" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(tx.enrollment.create).toHaveBeenCalled();
     expect(tx.payment.create).not.toHaveBeenCalled();
   });
 });

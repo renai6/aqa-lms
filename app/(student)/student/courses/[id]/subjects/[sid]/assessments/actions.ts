@@ -140,6 +140,22 @@ export async function submitAttemptAction(
     return { error: 'This assessment is no longer available.' }
   }
 
+  // A student removed from the course mid-attempt must not be able to submit
+  // and be graded. The attempt query above scopes by userId and active course
+  // but says nothing about the enrollment, so it is checked here the same way
+  // startAttemptAction checks it.
+  const enrollment = await db.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId: session.userId,
+        courseId: attempt.assessment.subject.courseId,
+      },
+      ...ACTIVE_ENROLLMENT,
+    },
+    select: { id: true },
+  })
+  if (!enrollment) return { error: 'Not enrolled in this course.' }
+
   const submitted: SubmittedAnswer[] = attempt.assessment.questions.map(q => ({
     questionId: q.id,
     answer: String(formData.get('answer_' + q.id) ?? '').trim(),
