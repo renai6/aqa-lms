@@ -104,6 +104,7 @@ export default async function PaymentDetailPage({ params }: Props) {
         <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
           <ApproveForm
             id={payment.id}
+            catchUpPrefill={payment.catchUpPrefill}
             defaultStatus={
               payment.balanceIfApproved.kind === "tracked" &&
               payment.balanceIfApproved.remaining <= 0

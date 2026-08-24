@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
-    payment: { findUnique: vi.fn(), updateMany: vi.fn() },
+    payment: { findUnique: vi.fn(), updateMany: vi.fn(), create: vi.fn() },
     enrollment: { update: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -40,6 +40,7 @@ function approveForm(id: string, paymentStatus: string) {
 const paymentRow = {
   enrollmentId: "e1",
   enrollment: {
+    totalDue: "unused",
     course: { title: "Tajweed Basics" },
     user: { email: "s@example.com", firstName: "Sam" },
   },
@@ -51,7 +52,10 @@ const paymentRow = {
 // sequential, unguarded, non-atomic writes on `db` pass the same assertions
 // as a real single-transaction implementation.
 let tx: {
-  payment: { updateMany: ReturnType<typeof vi.fn> };
+  payment: {
+    updateMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
   enrollment: { update: ReturnType<typeof vi.fn> };
 };
 
@@ -64,7 +68,7 @@ describe("approvePaymentAction", () => {
     } as never);
 
     tx = {
-      payment: { updateMany: vi.fn() },
+      payment: { updateMany: vi.fn(), create: vi.fn() },
       enrollment: { update: vi.fn() },
     };
     // Run the transaction callback against the distinct `tx` double above,
@@ -233,5 +237,71 @@ describe("rejectPaymentAction", () => {
 
     expect(result.error).toBe("This payment has already been processed.");
     expect(sendPaymentRejectionEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe("approvePaymentAction starting to track an untracked enrollment", () => {
+  beforeEach(() => {
+    // Clears call history left over from earlier tests in this file
+    // (including on `tx`, whose mocks are registered globally) and restores
+    // sendPaymentApprovalEmail, which a prior test left rejecting; these
+    // tests exercise the success path.
+    vi.clearAllMocks();
+    vi.mocked(sendPaymentApprovalEmail).mockResolvedValue(undefined);
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      enrollmentId: "e1",
+      enrollment: {
+        totalDue: null,
+        purchaseId: "p1",
+        purchase: { paymentProofUrl: "purchase/p1/proof.jpg" },
+        course: { title: "Tajweed Basics" },
+        user: { email: "s@example.com", firstName: "Sam" },
+      },
+    } as never);
+  });
+
+  it("writes the total and a catch-up ledger row in one transaction", async () => {
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "5000");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID", totalDue: 20000 },
+    });
+    expect(tx.payment.create).toHaveBeenCalledWith({
+      data: {
+        enrollmentId: "e1",
+        purchaseId: "p1",
+        amount: 5000,
+        proofUrl: "purchase/p1/proof.jpg",
+        status: "APPROVED",
+        source: "CHECKOUT",
+        reviewedById: "admin1",
+        reviewedAt: expect.any(Date),
+      },
+    });
+  });
+
+  // Leaving the total blank must keep behaving exactly as it did before
+  // balances existed, so an admin who does not want this is never forced into it.
+  it("leaves the enrollment untracked when the total is blank", async () => {
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("totalDue", "");
+    f.set("alreadyPaid", "");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID" },
+    });
+    expect(tx.payment.create).not.toHaveBeenCalled();
   });
 });

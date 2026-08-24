@@ -4,13 +4,16 @@ import { useActionState } from "react";
 import { approvePaymentAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export function ApproveForm({
   id,
   defaultStatus,
+  catchUpPrefill,
 }: {
   id: string;
   defaultStatus: "PARTIALLY_PAID" | "FULLY_PAID";
+  catchUpPrefill?: { totalDue: string; alreadyPaid: string } | null;
 }) {
   const [state, action, isPending] = useActionState(approvePaymentAction, {
     error: null,
@@ -19,6 +22,44 @@ export function ApproveForm({
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={id} />
+
+      {catchUpPrefill && (
+        <div className="space-y-3 rounded-md border border-dashed p-3">
+          <div>
+            <p className="text-sm font-semibold">Start tracking this balance</p>
+            <p className="text-muted-foreground text-sm">
+              This enrollment has no agreed total yet. Set one to see the
+              remaining balance from now on, or leave it blank to keep deciding
+              by hand.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="totalDue">Total due (₱)</Label>
+              <Input
+                id="totalDue"
+                name="totalDue"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={catchUpPrefill.totalDue}
+              />
+            </div>
+            <div>
+              <Label htmlFor="alreadyPaid">Already paid, before this (₱)</Label>
+              <Input
+                id="alreadyPaid"
+                name="alreadyPaid"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={catchUpPrefill.alreadyPaid}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <p className="text-sm font-semibold">Resulting payment status</p>
         <p className="text-muted-foreground text-sm">

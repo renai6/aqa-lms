@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
+import { allocate } from "@/lib/purchases/allocation";
 
 export type PaymentEnrollment = {
   id: string;
@@ -143,6 +144,9 @@ export type AdminPaymentDetail = {
   balance: Balance;
   // What that balance becomes if this payment is approved.
   balanceIfApproved: Balance;
+  // Non-null only when the enrollment has no total yet, in which case the
+  // approve form offers to start tracking it.
+  catchUpPrefill: { totalDue: string; alreadyPaid: string } | null;
 };
 
 export async function getAdminPaymentById(
@@ -172,7 +176,22 @@ export async function getAdminPaymentById(
               contactNumber: true,
             },
           },
-          course: { select: { title: true } },
+          course: {
+            select: {
+              id: true,
+              title: true,
+              tuitionFee: true,
+              paymentFrequency: true,
+            },
+          },
+          purchase: {
+            select: {
+              amountPaid: true,
+              items: {
+                select: { course: { select: { id: true, tuitionFee: true } } },
+              },
+            },
+          },
         },
       },
     },
@@ -181,6 +200,31 @@ export async function getAdminPaymentById(
   const totalDue = r.enrollment.totalDue?.toNumber() ?? null;
   const approvedAmounts = r.enrollment.payments.map((p) => p.amount.toNumber());
   const amount = r.amount.toNumber();
+  const catchUpPrefill =
+    r.enrollment.totalDue === null
+      ? {
+          totalDue:
+            r.enrollment.course.tuitionFee !== null &&
+            r.enrollment.course.paymentFrequency !== "MONTHLY" &&
+            r.enrollment.course.paymentFrequency !== "YEARLY"
+              ? String(r.enrollment.course.tuitionFee.toNumber())
+              : "",
+          alreadyPaid: r.enrollment.purchase
+            ? String(
+                allocate(
+                  r.enrollment.purchase.amountPaid.toNumber(),
+                  r.enrollment.purchase.items.map(
+                    (i) => i.course.tuitionFee?.toNumber() ?? null,
+                  ),
+                )[
+                  r.enrollment.purchase.items.findIndex(
+                    (i) => i.course.id === r.enrollment.course.id,
+                  )
+                ] ?? 0,
+              )
+            : "",
+        }
+      : null;
   return {
     id: r.id,
     status: r.status,
@@ -192,5 +236,6 @@ export async function getAdminPaymentById(
     courseTitle: r.enrollment.course.title,
     balance: computeBalance(totalDue, approvedAmounts),
     balanceIfApproved: computeBalance(totalDue, [...approvedAmounts, amount]),
+    catchUpPrefill,
   };
 }

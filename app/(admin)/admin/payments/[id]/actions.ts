@@ -45,6 +45,9 @@ export async function approvePaymentAction(
       enrollmentId: true,
       enrollment: {
         select: {
+          totalDue: true,
+          purchaseId: true,
+          purchase: { select: { paymentProofUrl: true } },
           course: { select: { title: true } },
           user: { select: { email: true, firstName: true } },
         },
@@ -52,6 +55,34 @@ export async function approvePaymentAction(
     },
   });
   if (!payment) return { error: "Payment not found." };
+
+  // Only offered when the enrollment has no total yet. Every enrollment that
+  // predates balance tracking is in that state, and this is how it converts
+  // to the ledger model, one student at a time, with no bulk migration.
+  const isUntracked = payment.enrollment.totalDue === null;
+  const rawTotal = formData.get("totalDue");
+  const rawAlreadyPaid = formData.get("alreadyPaid");
+  const totalText = typeof rawTotal === "string" ? rawTotal.trim() : "";
+  const alreadyPaidText =
+    typeof rawAlreadyPaid === "string" ? rawAlreadyPaid.trim() : "";
+
+  const catchUp =
+    isUntracked && totalText !== ""
+      ? {
+          totalDue: Number(totalText),
+          alreadyPaid: alreadyPaidText === "" ? 0 : Number(alreadyPaidText),
+        }
+      : null;
+
+  if (
+    catchUp &&
+    (!Number.isFinite(catchUp.totalDue) ||
+      catchUp.totalDue < 0 ||
+      !Number.isFinite(catchUp.alreadyPaid) ||
+      catchUp.alreadyPaid < 0)
+  ) {
+    return { error: "Amounts must be zero or a positive number." };
+  }
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -69,8 +100,29 @@ export async function approvePaymentAction(
 
       await tx.enrollment.update({
         where: { id: payment.enrollmentId },
-        data: { paymentStatus },
+        data: catchUp
+          ? { paymentStatus, totalDue: catchUp.totalDue }
+          : { paymentStatus },
       });
+
+      if (catchUp) {
+        // One row standing for everything received before this payment, so the
+        // ledger is complete from here on. purchaseId and proofUrl come from
+        // the originating purchase when there is one; source alone keeps the
+        // row out of the review queue either way.
+        await tx.payment.create({
+          data: {
+            enrollmentId: payment.enrollmentId,
+            purchaseId: payment.enrollment.purchaseId,
+            amount: catchUp.alreadyPaid,
+            proofUrl: payment.enrollment.purchase?.paymentProofUrl ?? "",
+            status: "APPROVED",
+            source: "CHECKOUT",
+            reviewedById: auth.userId,
+            reviewedAt: new Date(),
+          },
+        });
+      }
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
