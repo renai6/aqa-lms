@@ -14,6 +14,7 @@ import {
 import { NavLink } from "./nav-link";
 import { TopBar } from "@/components/admin/top-bar";
 import { getSession } from "@/lib/auth/session";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Admin — Al-Qur'an Academy",
@@ -36,6 +37,12 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
+  const user = session
+    ? await db.user.findUnique({
+        where: { id: session.userId },
+        select: { firstName: true, lastName: true, email: true },
+      })
+    : null;
 
   return (
     <div className="flex h-dvh bg-background">
@@ -111,10 +118,12 @@ export default async function AdminLayout({
               </div>
               <div className="leading-none min-w-0">
                 <p className="text-sidebar-foreground text-xs font-medium truncate">
-                  {roleLabel(session.role)}
+                  {user
+                    ? `${user.firstName} ${user.lastName}`.trim() || user.email
+                    : roleLabel(session.role)}
                 </p>
                 <p className="text-sidebar-foreground/70 text-[10px] mt-0.5 truncate">
-                  {session.userId.slice(0, 8)}…
+                  {roleLabel(session.role)}
                 </p>
               </div>
             </div>
