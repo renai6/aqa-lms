@@ -19,10 +19,11 @@ Balance is then `totalDue - sum(approved payments)`, computed by one pure functi
 - Currency renders as `₱` followed by `value.toLocaleString("en-PH")`, matching `app/(admin)/admin/purchases/[id]/page.tsx:60`.
 - There are no component tests in this repo and vitest runs with `environment: 'node'`. Keep all testable logic in pure functions under `lib/`; keep `.tsx` files thin. Do not add jsdom or a new test environment.
 - Tests mock `@/lib/db`. There is no test database.
+- vitest does NOT typecheck. A green test run is not proof the code compiles. Every task must run `./node_modules/.bin/tsc --noEmit` before committing, not just the test command.
 - Do not run `pnpm prisma migrate dev` yourself. The user runs migrations in their own terminal. See Task 1.
 - No em dashes in code, comments, copy, or commit messages. Use a plain dash.
 - Never add a co-author trailer or a "generated with" line to commit messages.
-- Run `pnpm format` before committing when a task touched `.tsx` files, since the repo is prettier-formatted.
+- The repo is NOT fully prettier-formatted, and `pnpm format` runs `prettier --write .` across everything, which rewrites 230+ unrelated files including generated output and docs. Never run it. Format only the files your task touched: `pnpm prettier --write <path> <path>`.
 
 ---
 
@@ -305,18 +306,37 @@ describe("computeBalance", () => {
     });
   });
 
+  // Assert the whole object, not `.remaining`: Balance is a discriminated
+  // union and TypeScript cannot narrow a property off the bare return value,
+  // so `computeBalance(...).remaining` fails `tsc --noEmit` even though it
+  // runs fine under vitest.
   it("reports zero remaining when settled exactly", () => {
-    expect(computeBalance(20000, [20000]).remaining).toBe(0);
+    expect(computeBalance(20000, [20000])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 20000,
+      remaining: 0,
+    });
   });
 
   // Not clamped: an admin needs to see that a student sent too much, because
   // the resolution is a refund or a credit, not a silent zero.
   it("reports a negative remainder when the student overpaid", () => {
-    expect(computeBalance(20000, [20500]).remaining).toBe(-500);
+    expect(computeBalance(20000, [20500])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 20500,
+      remaining: -500,
+    });
   });
 
   it("treats no payments as nothing paid", () => {
-    expect(computeBalance(20000, []).remaining).toBe(20000);
+    expect(computeBalance(20000, [])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 0,
+      remaining: 20000,
+    });
   });
 });
 
@@ -427,7 +447,7 @@ export function BalanceSummary({
 - [ ] **Step 6: Commit**
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add lib/payments/balance.ts lib/__tests__/payments/balance.test.ts components/admin/balance-summary.tsx
 git commit -m "feat: add balance computation and its admin summary component"
 ```
@@ -933,7 +953,7 @@ Run `pnpm dev`, open a pending multi-course purchase at `/admin/purchases/[id]`,
 - [ ] **Step 6: Commit**
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add app/\(admin\)/admin/purchases/\[id\]/ lib/purchases/queries.ts
 git commit -m "feat: collect per-course totals and payment split on purchase approval"
 ```
@@ -1109,7 +1129,7 @@ Import it with `import { describeBalance } from "@/lib/payments/balance";`.
 Run: `./node_modules/.bin/tsc --noEmit && pnpm vitest run && pnpm lint`
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add lib/payments/queries.ts lib/__tests__/payments/queries.test.ts app/\(admin\)/admin/payments/page.tsx
 git commit -m "feat: filter the payment queue to student submissions and show balances"
 ```
@@ -1211,7 +1231,7 @@ Expected: all pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add lib/payments/queries.ts app/\(admin\)/admin/payments/\[id\]/
 git commit -m "feat: show the enrollment balance when reviewing a payment"
 ```
@@ -1496,7 +1516,7 @@ Then with `pnpm dev`, open a pending payment for an enrollment created before th
 - [ ] **Step 10: Commit**
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add app/\(admin\)/admin/payments/\[id\]/ lib/payments/queries.ts lib/__tests__/payments/approve.test.ts
 git commit -m "feat: let admins start tracking the balance of an existing enrollment"
 ```
@@ -1619,7 +1639,7 @@ With `pnpm dev`:
 - [ ] **Step 6: Commit**
 
 ```bash
-pnpm format
+# format only this task's files, never `pnpm format`
 git add lib/payments/queries.ts app/\(student\)/student/
 git commit -m "feat: show students their remaining balance"
 ```
