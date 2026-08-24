@@ -2,11 +2,23 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getSession } from "@/lib/auth/session";
-import { getStudentDashboard, getStudentRecentResults } from "@/lib/student/queries";
-import { getEnrollmentPaymentStates } from "@/lib/payments/queries";
+import {
+  getStudentDashboard,
+  getStudentRecentResults,
+} from "@/lib/student/queries";
+import {
+  getEnrollmentPaymentStates,
+  getEnrollmentBalances,
+} from "@/lib/payments/queries";
+import { describeBalance, type Balance } from "@/lib/payments/balance";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
+
+function balanceLine(balance: Balance | undefined): string {
+  if (balance && balance.kind === "tracked") return describeBalance(balance);
+  return "Partial payment - balance outstanding";
+}
 
 function formatTime(t: string): string {
   const [hStr, mStr] = t.split(":");
@@ -43,6 +55,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     recentResults,
     user,
     paymentStates,
+    balances,
   ] = await Promise.all([
     getStudentDashboard(session.userId),
     getStudentRecentResults(session.userId),
@@ -51,6 +64,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       select: { firstName: true },
     }),
     getEnrollmentPaymentStates(session.userId),
+    getEnrollmentBalances(session.userId),
   ]);
 
   const partialEnrollments = enrollments.filter(
@@ -58,10 +72,10 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
   );
 
   return (
-    <div className="px-6 md:px-10 py-10 space-y-12">
+    <div className="space-y-12 px-6 py-10 md:px-10">
       {/* Page title */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">
+        <h1 className="text-foreground text-2xl font-bold tracking-tight">
           Welcome{user?.firstName ? `, ${user.firstName}` : ""}!
         </h1>
         <Button asChild size="sm" className="shrink-0">
@@ -74,12 +88,12 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
         <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
           <div className="space-y-1">
-            <p className="font-semibold text-sm text-emerald-900">
+            <p className="text-sm font-semibold text-emerald-900">
               Congratulations! Your enrollment has been submitted. 🎉
             </p>
             <p className="text-sm text-emerald-700">
-              Our admin team will review your enrollment and payment first.
-              Once approved, the program will appear in your dashboard and
+              Our admin team will review your enrollment and payment first. Once
+              approved, the program will appear in your dashboard and
               you&apos;ll be able to access it.
             </p>
           </div>
@@ -91,7 +105,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
         <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
           <div className="space-y-1">
-            <p className="font-semibold text-sm text-emerald-900">
+            <p className="text-sm font-semibold text-emerald-900">
               Your payment has been submitted for review.
             </p>
             <p className="text-sm text-emerald-700">
@@ -105,7 +119,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Pending enrollments awaiting admin review */}
       {pendingPurchases.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Pending Enrollments
           </h2>
           <div className="space-y-2">
@@ -116,7 +130,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
               >
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                 <div className="min-w-0 space-y-1">
-                  <p className="font-semibold text-sm text-amber-900">
+                  <p className="text-sm font-semibold text-amber-900">
                     {p.courseTitles.length > 0
                       ? p.courseTitles.join(", ")
                       : "Enrollment"}
@@ -135,14 +149,14 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Schedules strip */}
       {schedules.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Upcoming Schedule
           </h2>
           <div className="flex flex-wrap gap-2">
             {schedules.map((s, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 border border-border px-3.5 py-1.5 text-xs font-medium text-foreground"
+                className="bg-muted/60 border-border text-foreground inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
               >
                 <span className="font-semibold">{s.subjectTitle}</span>
                 <span className="text-muted-foreground/60">·</span>
@@ -159,19 +173,21 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Announcements */}
       {announcements.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Announcements
           </h2>
           <div className="space-y-2">
             {announcements.slice(0, 3).map((a) => (
               <div
                 key={a.id}
-                className="flex rounded-lg bg-white overflow-hidden border border-border shadow-sm"
+                className="border-border flex overflow-hidden rounded-lg border bg-white shadow-sm"
               >
-                <div className="w-[3px] bg-primary shrink-0" />
+                <div className="bg-primary w-[3px] shrink-0" />
                 <div className="px-4 py-3">
-                  <p className="font-medium text-sm text-foreground">{a.title}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                  <p className="text-foreground text-sm font-medium">
+                    {a.title}
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">
                     {a.content}
                   </p>
                 </div>
@@ -183,51 +199,53 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
       {/* My Courses */}
       <section className="space-y-4">
-        <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+        <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
           My Courses
         </h2>
         {enrollments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No active enrollments.</p>
+          <p className="text-muted-foreground text-sm">
+            No active enrollments.
+          </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {enrollments.map((e) => {
               const pct =
                 e.totalLessons > 0
                   ? Math.round((e.completedLessons / e.totalLessons) * 100)
                   : 0;
               return (
-                <div key={e.id} className="relative group">
+                <div key={e.id} className="group relative">
                   {/* Card overlay link — covers whole card for primary navigation */}
                   <Link
                     href={"/student/courses/" + e.courseId}
                     className="absolute inset-0 z-0 rounded-xl"
                     aria-label={e.course.title}
                   />
-                  <div className="h-full rounded-xl bg-white border border-border overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-input transition-all duration-200">
+                  <div className="border-border group-hover:border-input h-full overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 group-hover:shadow-md">
                     {e.course.imageUrl ? (
                       <div className="relative h-72 w-full overflow-hidden">
                         <Image
                           src={e.course.imageUrl}
                           alt={e.course.title}
                           fill
-                          className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       </div>
                     ) : (
-                      <div className="h-20 w-full bg-muted" />
+                      <div className="bg-muted h-20 w-full" />
                     )}
-                    <div className="p-4 space-y-3">
+                    <div className="space-y-3 p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors duration-150">
+                        <p className="text-foreground group-hover:text-primary text-sm font-semibold transition-colors duration-150">
                           {e.course.title}
                         </p>
                         <span
                           className={[
-                            "shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border",
+                            "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
                             e.paymentStatus === "FULLY_PAID"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200",
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700",
                           ].join(" ")}
                         >
                           {e.paymentStatus === "FULLY_PAID"
@@ -236,13 +254,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                           <div
-                            className="h-full rounded-full bg-primary transition-all duration-300"
+                            className="bg-primary h-full rounded-full transition-all duration-300"
                             style={{ width: pct + "%" }}
                           />
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-muted-foreground text-[11px]">
                           {e.completedLessons} of {e.totalLessons} lessons
                           completed
                         </p>
@@ -259,7 +277,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Recent Results */}
       {recentResults.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Recent Results
           </h2>
           <div className="space-y-2">
@@ -273,33 +291,33 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                 <Link
                   key={r.attemptId}
                   href={`/student/courses/${r.courseId}/subjects/${r.subjectId}/assessments/${r.assessmentId}/attempt/${r.attemptId}`}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-border shadow-sm px-5 py-4 hover:border-input hover:shadow-md transition-all"
+                  className="border-border hover:border-input flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 shadow-sm transition-all hover:shadow-md"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">
+                    <p className="text-foreground truncate text-sm font-semibold">
                       {r.assessmentTitle}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
                       {r.courseTitle} · {r.subjectTitle}
                     </p>
                   </div>
-                  <div className="shrink-0 flex items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-3">
                     {awaiting ? (
                       <span className="text-xs font-medium text-amber-600">
                         Awaiting grading
                       </span>
                     ) : (
                       <>
-                        <span className="text-sm font-bold text-foreground tabular-nums">
+                        <span className="text-foreground text-sm font-bold tabular-nums">
                           {Math.round(r.score as number)}%
                         </span>
                         {passed !== null && (
                           <span
                             className={[
-                              "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border",
+                              "rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
                               passed
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-red-50 text-red-700 border-red-200",
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-red-200 bg-red-50 text-red-700",
                             ].join(" ")}
                           >
                             {passed ? "Pass" : "Fail"}
@@ -318,7 +336,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Payment summary */}
       {partialEnrollments.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
             Payment
           </h2>
           <div className="space-y-2">
@@ -327,17 +345,17 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
               return (
                 <div
                   key={e.id}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white border border-border shadow-sm px-5 py-4"
+                  className="border-border flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 shadow-sm"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground">
+                    <p className="text-foreground text-sm font-semibold">
                       {e.course.title}
                     </p>
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      Partial payment — balance outstanding
+                    <p className="mt-0.5 text-xs text-amber-600">
+                      {balanceLine(balances[e.id])}
                     </p>
                     {state.kind === "rejected" && (
-                      <p className="text-xs text-destructive mt-1">
+                      <p className="text-destructive mt-1 text-xs">
                         Your last payment was rejected
                         {state.reason ? `: ${state.reason}` : "."}
                       </p>
@@ -349,7 +367,9 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                     </span>
                   ) : (
                     <Button asChild size="sm" className="shrink-0">
-                      <Link href={"/student/payments/" + e.id}>Add payment</Link>
+                      <Link href={"/student/payments/" + e.id}>
+                        Add payment
+                      </Link>
                     </Button>
                   )}
                 </div>

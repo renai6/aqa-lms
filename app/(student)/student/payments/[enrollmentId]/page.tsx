@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { canAddPayment } from "@/lib/payments/guards";
+import { describeBalance } from "@/lib/payments/balance";
 import { PaymentForm } from "./payment-form";
 
 export const metadata = { title: "Add Payment — AQA" };
@@ -29,6 +30,11 @@ export default async function AddPaymentPage({ params }: Props) {
       <p className="text-muted-foreground mt-1 text-sm">
         {enrollment.course.title}
       </p>
+      {enrollment.balance.kind === "tracked" && (
+        <p className="mt-2 text-sm font-medium text-amber-600">
+          {describeBalance(enrollment.balance)}
+        </p>
+      )}
       <div className="mt-6">
         <PaymentForm enrollmentId={enrollment.id} />
       </div>

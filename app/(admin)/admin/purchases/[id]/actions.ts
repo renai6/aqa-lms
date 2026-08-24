@@ -49,6 +49,8 @@ export async function approvePurchaseAction(
     where: { id },
     select: {
       paymentType: true,
+      amountPaid: true,
+      paymentProofUrl: true,
       user: { select: { id: true, email: true, firstName: true } },
       items: {
         select: {
@@ -59,6 +61,48 @@ export async function approvePurchaseAction(
     },
   });
   if (!purchase) return { error: "Purchase not found." };
+
+  // The approve form submits one pair of fields per course. Blank totalDue is
+  // meaningful: it means "do not track this enrollment's balance", which is
+  // how every enrollment behaved before balances existed.
+  const entries = purchase.items.map((item) => {
+    const rawTotal = formData.get(`totalDue_${item.courseId}`);
+    const rawApplied = formData.get(`applied_${item.courseId}`);
+    const total = typeof rawTotal === "string" ? rawTotal.trim() : "";
+    const applied = typeof rawApplied === "string" ? rawApplied.trim() : "";
+    return {
+      courseId: item.courseId,
+      totalDue: total === "" ? null : Number(total),
+      applied: applied === "" ? 0 : Number(applied),
+    };
+  });
+
+  if (
+    entries.some(
+      (e) =>
+        !Number.isFinite(e.applied) ||
+        e.applied < 0 ||
+        (e.totalDue !== null &&
+          (!Number.isFinite(e.totalDue) || e.totalDue < 0)),
+    )
+  ) {
+    return { error: "Amounts must be zero or a positive number." };
+  }
+
+  const amountPaid = purchase.amountPaid.toNumber();
+  // Compare in integer centavos, not raw floats: rounding only one side (or
+  // neither) leaves amounts that are equal to the peso but never satisfy
+  // `!==`, permanently blocking approval.
+  const amountPaidCentavos = Math.round(amountPaid * 100);
+  const appliedTotalCentavos = Math.round(
+    entries.reduce((sum, e) => sum + e.applied, 0) * 100,
+  );
+  if (appliedTotalCentavos !== amountPaidCentavos) {
+    const appliedTotal = appliedTotalCentavos / 100;
+    return {
+      error: `Applied amounts total ₱${appliedTotal.toLocaleString("en-PH")}, but the student paid ₱${amountPaid.toLocaleString("en-PH")}. Adjust them so they match.`,
+    };
+  }
 
   const paymentStatus = paymentStatusFromType(purchase.paymentType);
 
@@ -75,7 +119,8 @@ export async function approvePurchaseAction(
       if (updated.count === 0) throw new Error("ALREADY_PROCESSED");
 
       for (const item of purchase.items) {
-        if (item.course.archivedAt) throw new ArchivedCourseError(item.course.title);
+        if (item.course.archivedAt)
+          throw new ArchivedCourseError(item.course.title);
 
         const exists = await tx.enrollment.findUnique({
           where: {
@@ -91,13 +136,31 @@ export async function approvePurchaseAction(
           where: { courseId: item.courseId, isActive: true },
           select: { id: true },
         });
-        await tx.enrollment.create({
+        const entry = entries.find((e) => e.courseId === item.courseId)!;
+        const enrollment = await tx.enrollment.create({
           data: {
             userId: purchase.user.id,
             courseId: item.courseId,
             paymentStatus,
             purchaseId: id,
             batchId: activeBatch?.id ?? null,
+            totalDue: entry.totalDue,
+          },
+        });
+
+        // The checkout payment enters the ledger here, so every peso received
+        // for this enrollment lives in one table. The proof URL is reused
+        // rather than copied, so no second file is stored.
+        await tx.payment.create({
+          data: {
+            enrollmentId: enrollment.id,
+            purchaseId: id,
+            amount: entry.applied,
+            proofUrl: purchase.paymentProofUrl,
+            status: "APPROVED",
+            source: "CHECKOUT",
+            reviewedById: auth.userId,
+            reviewedAt: new Date(),
           },
         });
       }

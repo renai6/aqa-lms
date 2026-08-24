@@ -36,7 +36,10 @@ export const createPurchaseSchema = z.object({
   paymentType: z.enum(["PARTIAL", "FULL"], {
     error: "Payment type is required.",
   }),
-  amountPaid: z.coerce.number().positive("Amount paid must be greater than 0."),
+  amountPaid: z.coerce
+    .number()
+    .positive("Amount paid must be greater than 0.")
+    .multipleOf(0.01, "Amount paid must be a whole number of centavos."),
   studentType: z.enum(["NEW", "OLD"]),
 });
 

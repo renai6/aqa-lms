@@ -4,6 +4,7 @@ vi.mock("@/lib/db", () => ({
   db: {
     purchase: { findUnique: vi.fn(), updateMany: vi.fn() },
     enrollment: { findUnique: vi.fn(), create: vi.fn() },
+    payment: { create: vi.fn() },
     batch: { findFirst: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -43,15 +44,17 @@ describe("approvePurchaseAction blocks enrolling into an archived course", () =>
 
     // Run the transaction callback against a tx mock mirroring db, so the
     // guard logic inside the transaction actually executes.
-    vi.mocked(db.$transaction).mockImplementation(
-      ((cb: (tx: typeof db) => unknown) => cb(db)) as unknown as typeof db.$transaction,
-    );
+    vi.mocked(db.$transaction).mockImplementation(((
+      cb: (tx: typeof db) => unknown,
+    ) => cb(db)) as unknown as typeof db.$transaction);
     vi.mocked(db.purchase.updateMany).mockResolvedValue({ count: 1 } as never);
   });
 
   it("rolls back and returns a clear error when a purchase item's course is archived", async () => {
     vi.mocked(db.purchase.findUnique).mockResolvedValue({
       paymentType: "FULL",
+      amountPaid: { toNumber: () => 0 },
+      paymentProofUrl: "",
       user: { id: "u1", email: "s@example.com", firstName: "Sam" },
       items: [
         {
@@ -71,14 +74,20 @@ describe("approvePurchaseAction blocks enrolling into an archived course", () =>
   it("enrolls normally when the course is active", async () => {
     vi.mocked(db.purchase.findUnique).mockResolvedValue({
       paymentType: "FULL",
+      amountPaid: { toNumber: () => 0 },
+      paymentProofUrl: "",
       user: { id: "u1", email: "s@example.com", firstName: "Sam" },
       items: [
-        { courseId: "c1", course: { title: "Tajweed Basics", archivedAt: null } },
+        {
+          courseId: "c1",
+          course: { title: "Tajweed Basics", archivedAt: null },
+        },
       ],
     } as never);
     vi.mocked(db.enrollment.findUnique).mockResolvedValue(null as never);
     vi.mocked(db.batch.findFirst).mockResolvedValue(null as never);
-    vi.mocked(db.enrollment.create).mockResolvedValue({} as never);
+    vi.mocked(db.enrollment.create).mockResolvedValue({ id: "e1" } as never);
+    vi.mocked(db.payment.create).mockResolvedValue({} as never);
 
     await expect(
       approvePurchaseAction({ error: null }, form("p1")),

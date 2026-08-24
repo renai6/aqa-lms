@@ -1,14 +1,17 @@
 import { db } from "@/lib/db";
 import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
+import { computeBalance, type Balance } from "@/lib/payments/balance";
+import { allocate } from "@/lib/purchases/allocation";
 
 export type PaymentEnrollment = {
   id: string;
   paymentStatus: PaymentStatus;
   course: { title: string; archivedAt: Date | null };
-  // Only `status` is selected: the guard asks whether one is PENDING, and
-  // nothing on this page needs the rest. The dashboard's richer per-enrollment
-  // state comes from getEnrollmentPaymentStates below.
+  // The guard asks whether one is PENDING; balance is computed from the
+  // APPROVED subset. The dashboard's richer per-enrollment state comes from
+  // getEnrollmentPaymentStates below.
   payments: { status: EnrollmentStatus }[];
+  balance: Balance;
 };
 
 // Scoped by userId, so another student's enrollment simply comes back null and
@@ -17,15 +20,29 @@ export async function getEnrollmentForPayment(
   userId: string,
   enrollmentId: string,
 ): Promise<PaymentEnrollment | null> {
-  return db.enrollment.findFirst({
+  const r = await db.enrollment.findFirst({
     where: { id: enrollmentId, userId },
     select: {
       id: true,
       paymentStatus: true,
+      totalDue: true,
       course: { select: { title: true, archivedAt: true } },
-      payments: { select: { status: true } },
+      payments: { select: { status: true, amount: true } },
     },
   });
+  if (!r) return null;
+  return {
+    id: r.id,
+    paymentStatus: r.paymentStatus,
+    course: r.course,
+    payments: r.payments,
+    balance: computeBalance(
+      r.totalDue?.toNumber() ?? null,
+      r.payments
+        .filter((p) => p.status === "APPROVED")
+        .map((p) => p.amount.toNumber()),
+    ),
+  };
 }
 
 export type EnrollmentPaymentState =
@@ -59,6 +76,32 @@ export async function getEnrollmentPaymentStates(
   return states;
 }
 
+// One balance per enrollment for the dashboard's Payment section, keyed by
+// enrollment id. Mirrors getEnrollmentPaymentStates, which the same section
+// already calls.
+export async function getEnrollmentBalances(
+  userId: string,
+): Promise<Record<string, Balance>> {
+  const rows = await db.enrollment.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      totalDue: true,
+      payments: { where: { status: "APPROVED" }, select: { amount: true } },
+    },
+  });
+
+  return Object.fromEntries(
+    rows.map((r) => [
+      r.id,
+      computeBalance(
+        r.totalDue?.toNumber() ?? null,
+        r.payments.map((p) => p.amount.toNumber()),
+      ),
+    ]),
+  );
+}
+
 export type AdminPaymentRow = {
   id: string;
   status: EnrollmentStatus;
@@ -67,13 +110,14 @@ export type AdminPaymentRow = {
   studentName: string;
   studentEmail: string;
   courseTitle: string;
+  balance: Balance;
 };
 
 export async function getAdminPaymentsByStatus(
   status: EnrollmentStatus,
 ): Promise<AdminPaymentRow[]> {
   const rows = await db.payment.findMany({
-    where: { status },
+    where: { status, source: "SUBMITTED" },
     orderBy: { createdAt: "desc" },
     take: 100,
     select: {
@@ -83,6 +127,13 @@ export async function getAdminPaymentsByStatus(
       createdAt: true,
       enrollment: {
         select: {
+          totalDue: true,
+          // Approved rows only: pending and rejected payments are not money
+          // received and must not move the balance.
+          payments: {
+            where: { status: "APPROVED" },
+            select: { amount: true },
+          },
           user: { select: { firstName: true, lastName: true, email: true } },
           course: { select: { title: true } },
         },
@@ -97,6 +148,10 @@ export async function getAdminPaymentsByStatus(
     studentName: `${r.enrollment.user.firstName} ${r.enrollment.user.lastName}`,
     studentEmail: r.enrollment.user.email,
     courseTitle: r.enrollment.course.title,
+    balance: computeBalance(
+      r.enrollment.totalDue?.toNumber() ?? null,
+      r.enrollment.payments.map((p) => p.amount.toNumber()),
+    ),
   }));
 }
 
@@ -105,6 +160,7 @@ export async function getPaymentStatusCounts(): Promise<
 > {
   const grouped = await db.payment.groupBy({
     by: ["status"],
+    where: { source: "SUBMITTED" },
     _count: { _all: true },
   });
   return Object.fromEntries(grouped.map((g) => [g.status, g._count._all]));
@@ -124,6 +180,18 @@ export type AdminPaymentDetail = {
     contactNumber: string | null;
   };
   courseTitle: string;
+  // The enrollment's balance as it stands now. This payment is PENDING, so it
+  // is not in the approved sum and is not counted here.
+  balance: Balance;
+  // What that balance becomes if this payment is approved.
+  balanceIfApproved: Balance;
+  // Non-null only when the enrollment has no total yet, in which case the
+  // approve form offers to start tracking it. `alreadyPaid` is itself
+  // nullable: null means "do not render this field", which is the case when
+  // an APPROVED CHECKOUT payment already exists for the enrollment - that
+  // money is already in the ledger, so prefilling and re-submitting it would
+  // double-count it.
+  catchUpPrefill: { totalDue: string; alreadyPaid: string | null } | null;
 };
 
 export async function getAdminPaymentById(
@@ -140,6 +208,11 @@ export async function getAdminPaymentById(
       enrollment: {
         select: {
           paymentStatus: true,
+          totalDue: true,
+          payments: {
+            where: { status: "APPROVED" },
+            select: { amount: true, source: true },
+          },
           user: {
             select: {
               firstName: true,
@@ -148,20 +221,77 @@ export async function getAdminPaymentById(
               contactNumber: true,
             },
           },
-          course: { select: { title: true } },
+          course: {
+            select: {
+              id: true,
+              title: true,
+              tuitionFee: true,
+              paymentFrequency: true,
+            },
+          },
+          purchase: {
+            select: {
+              amountPaid: true,
+              items: {
+                select: { course: { select: { id: true, tuitionFee: true } } },
+              },
+            },
+          },
         },
       },
     },
   });
   if (!r) return null;
+  const totalDue = r.enrollment.totalDue?.toNumber() ?? null;
+  const approvedAmounts = r.enrollment.payments.map((p) => p.amount.toNumber());
+  const amount = r.amount.toNumber();
+  // An APPROVED CHECKOUT row means the enrollment's checkout money is
+  // already in the ledger, whether or not `totalDue` happens to be null
+  // (a MONTHLY/YEARLY course, or one an admin cleared, leaves the total
+  // blank while still writing that row at purchase approval). Offering the
+  // already-paid figure again in that case would write a second CHECKOUT
+  // row for money already recorded.
+  const hasCheckoutPayment = r.enrollment.payments.some(
+    (p) => p.source === "CHECKOUT",
+  );
+  const catchUpPrefill =
+    r.enrollment.totalDue === null
+      ? {
+          totalDue:
+            r.enrollment.course.tuitionFee !== null &&
+            r.enrollment.course.paymentFrequency !== "MONTHLY" &&
+            r.enrollment.course.paymentFrequency !== "YEARLY"
+              ? String(r.enrollment.course.tuitionFee.toNumber())
+              : "",
+          alreadyPaid: hasCheckoutPayment
+            ? null
+            : r.enrollment.purchase
+              ? String(
+                  allocate(
+                    r.enrollment.purchase.amountPaid.toNumber(),
+                    r.enrollment.purchase.items.map(
+                      (i) => i.course.tuitionFee?.toNumber() ?? null,
+                    ),
+                  )[
+                    r.enrollment.purchase.items.findIndex(
+                      (i) => i.course.id === r.enrollment.course.id,
+                    )
+                  ] ?? 0,
+                )
+              : "",
+        }
+      : null;
   return {
     id: r.id,
     status: r.status,
-    amount: r.amount.toNumber(),
+    amount,
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
     enrollmentPaymentStatus: r.enrollment.paymentStatus,
     student: r.enrollment.user,
     courseTitle: r.enrollment.course.title,
+    balance: computeBalance(totalDue, approvedAmounts),
+    balanceIfApproved: computeBalance(totalDue, [...approvedAmounts, amount]),
+    catchUpPrefill,
   };
 }

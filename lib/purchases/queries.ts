@@ -130,7 +130,12 @@ export type AdminPurchaseDetail = {
     email: string;
     contactNumber: string | null;
   };
-  courses: { id: string; title: string; tuitionFee: number | null }[];
+  courses: {
+    id: string;
+    title: string;
+    tuitionFee: number | null;
+    paymentFrequency: PaymentFrequency | null;
+  }[];
 };
 
 export async function getAdminPurchaseById(
@@ -156,7 +161,14 @@ export async function getAdminPurchaseById(
       },
       items: {
         select: {
-          course: { select: { id: true, title: true, tuitionFee: true } },
+          course: {
+            select: {
+              id: true,
+              title: true,
+              tuitionFee: true,
+              paymentFrequency: true,
+            },
+          },
         },
       },
     },
@@ -175,6 +187,7 @@ export async function getAdminPurchaseById(
       id: i.course.id,
       title: i.course.title,
       tuitionFee: i.course.tuitionFee?.toNumber() ?? null,
+      paymentFrequency: i.course.paymentFrequency,
     })),
   };
 }
