@@ -97,6 +97,15 @@ enum Gender {
   FEMALE
 }
 
+// Whether a Payment row is something a student submitted for review, or a
+// record of money an admin logged (the checkout payment, or a catch-up row
+// written when an existing enrollment starts being balance-tracked).
+// The admin review queue shows only SUBMITTED rows.
+enum PaymentSource {
+  SUBMITTED
+  CHECKOUT
+}
+
 //
 // USERS & AUTH
 //
@@ -110,13 +119,13 @@ model User {
   lastName    String
   displayName String?
 
-  role               UserRole @default(STUDENT)
-  isActive           Boolean  @default(true)
+  role               UserRole     @default(STUDENT)
+  isActive           Boolean      @default(true)
   // Bumped whenever the password changes, which invalidates every previously
   // issued session JWT (they carry the version they were signed with).
-  tokenVersion       Int      @default(0)
+  tokenVersion       Int          @default(0)
   gender             Gender?
-  mustChangePassword Boolean  @default(false)
+  mustChangePassword Boolean      @default(false)
   address            String?
   contactNumber      String?
   facebookName       String?
@@ -167,9 +176,9 @@ model Course {
   groupName String?
   level     Int?
 
-  courseType   CourseType @default(ON_SITE)
-  isPublished  Boolean    @default(false)
-  passingGrade Float      @default(75.0)
+  courseType       CourseType        @default(ON_SITE)
+  isPublished      Boolean           @default(false)
+  passingGrade     Float             @default(75.0)
   tuitionFee       Decimal?
   meetLink         String?
   courseDuration   CourseDuration?
@@ -307,6 +316,10 @@ model Enrollment {
   progress Float @default(0)
 
   paymentStatus PaymentStatus @default(PARTIALLY_PAID)
+  // The agreed total for this enrollment, snapshotted when an admin sets it.
+  // Null means this enrollment's balance is not tracked, which is how every
+  // enrollment created before this feature behaves.
+  totalDue      Decimal?
 
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
@@ -347,6 +360,7 @@ model Purchase {
   updatedAt       DateTime         @updatedAt
   items           PurchaseItem[]
   enrollments     Enrollment[]
+  payments        Payment[]
 
   @@index([userId])
 }
@@ -373,6 +387,11 @@ model Payment {
   amount       Decimal
   proofUrl     String
   status       EnrollmentStatus @default(PENDING)
+  source       PaymentSource    @default(SUBMITTED)
+  // Which purchase this money arrived with, when it arrived with one. Null for
+  // student submissions and for enrollments created without a purchase.
+  purchaseId   String?
+  purchase     Purchase?        @relation(fields: [purchaseId], references: [id])
   adminRemarks String?
   reviewedById String?
   reviewedBy   User?            @relation("ReviewedPayments", fields: [reviewedById], references: [id])
@@ -382,6 +401,8 @@ model Payment {
 
   @@index([enrollmentId])
   @@index([status])
+  @@index([purchaseId])
+  @@index([source, status])
 }
 
 //
@@ -401,7 +422,7 @@ model Assessment {
   durationMins Int?
   passingScore Float?
   maxAttempts  Int?
-  weight       Float  @default(1.0)
+  weight       Float   @default(1.0)
 
   // totalPoints is derived: SUM(Question.points)
 
