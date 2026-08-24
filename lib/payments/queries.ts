@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
+import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 
 export type PaymentEnrollment = {
   id: string;
@@ -21,7 +22,7 @@ export async function getEnrollmentForPayment(
   enrollmentId: string,
 ): Promise<PaymentEnrollment | null> {
   const r = await db.enrollment.findFirst({
-    where: { id: enrollmentId, userId },
+    where: { id: enrollmentId, userId, ...ACTIVE_ENROLLMENT },
     select: {
       id: true,
       paymentStatus: true,
@@ -56,7 +57,7 @@ export async function getEnrollmentPaymentStates(
   userId: string,
 ): Promise<Record<string, EnrollmentPaymentState>> {
   const rows = await db.payment.findMany({
-    where: { enrollment: { userId } },
+    where: { enrollment: { userId, ...ACTIVE_ENROLLMENT } },
     orderBy: { createdAt: "desc" },
     select: { enrollmentId: true, status: true, adminRemarks: true },
   });
@@ -83,7 +84,7 @@ export async function getEnrollmentBalances(
   userId: string,
 ): Promise<Record<string, Balance>> {
   const rows = await db.enrollment.findMany({
-    where: { userId },
+    where: { userId, ...ACTIVE_ENROLLMENT },
     select: {
       id: true,
       totalDue: true,
@@ -183,8 +184,13 @@ export type AdminPaymentDetail = {
   // The enrollment's balance as it stands now. This payment is PENDING, so it
   // is not in the approved sum and is not counted here.
   balance: Balance;
-  // What that balance becomes if this payment is approved.
-  balanceIfApproved: Balance;
+  // The approve form projects the balance after approval itself, from these
+  // two plus `amount` and whatever the admin types into the catch-up fields.
+  // Computing it here instead reported "not tracked" in exactly the case the
+  // admin is setting a total in, since `catchUpPrefill` is only offered when
+  // the stored `totalDue` is null.
+  totalDue: number | null;
+  approvedPaid: number;
   // Non-null only when the enrollment has no total yet, in which case the
   // approve form offers to start tracking it. `alreadyPaid` is itself
   // nullable: null means "do not render this field", which is the case when
@@ -291,7 +297,9 @@ export async function getAdminPaymentById(
     student: r.enrollment.user,
     courseTitle: r.enrollment.course.title,
     balance: computeBalance(totalDue, approvedAmounts),
-    balanceIfApproved: computeBalance(totalDue, [...approvedAmounts, amount]),
+    totalDue,
+    approvedPaid:
+      approvedAmounts.reduce((sum, a) => sum + Math.round(a * 100), 0) / 100,
     catchUpPrefill,
   };
 }

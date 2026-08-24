@@ -313,6 +313,13 @@ model Enrollment {
   enrolledAt  DateTime  @default(now())
   completedAt DateTime?
 
+  // Set when an admin removes this student from the course. The row survives,
+  // so payments, grades and certificates stay intact and auditable; the student
+  // simply loses access. Cleared by a restore, or when a later purchase of the
+  // same course is approved.
+  removedAt     DateTime?
+  removedReason String?
+
   progress Float @default(0)
 
   paymentStatus PaymentStatus @default(PARTIALLY_PAID)

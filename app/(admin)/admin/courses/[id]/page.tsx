@@ -13,6 +13,7 @@ import { TogglePublishedButton } from './toggle-published-button'
 import { ArchiveCourseButton } from './archive-course-button'
 import { CourseImageCard } from './course-image-card'
 import { StartBatchButton } from './start-batch-button'
+import { CourseRoster } from './course-roster'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -95,6 +96,8 @@ export default async function CourseDetailPage({ params }: Props) {
           </Card>
         </div>
       </div>
+
+      <CourseRoster courseId={course.id} courseTitle={course.title} />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

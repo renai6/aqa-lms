@@ -34,6 +34,14 @@ export function describeBalance(balance: Balance): string {
   return `${peso(paid)} of ${peso(totalDue)} paid. ${peso(remaining)} remaining.`;
 }
 
-function peso(amount: number): string {
-  return `₱${amount.toLocaleString("en-PH")}`;
+// The one money formatter. Every peso figure in the app goes through it, so
+// amounts cannot disagree between surfaces. Explicit fraction digits are the
+// point: the default drops a trailing zero (₱1,500.50 renders as "₱1,500.5")
+// and keeps a third decimal on a stray value, and both read as a wrong amount
+// to anyone checking the figure against a receipt.
+export function peso(amount: number): string {
+  return `₱${amount.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }

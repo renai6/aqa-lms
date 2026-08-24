@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { getUserGender } from '@/lib/subjects/access'
 import { subjectGenderFilter } from '@/lib/subjects/visibility'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
+import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 import {
   certificateEligibility,
   type CertificateEligibility,
@@ -29,7 +30,7 @@ export async function getCertificateEligibility(
       },
     }),
     db.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
+      where: { userId_courseId: { userId, courseId }, ...ACTIVE_ENROLLMENT },
       select: { paymentStatus: true },
     }),
   ])

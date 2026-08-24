@@ -173,9 +173,10 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
     expect(db.$transaction).not.toHaveBeenCalled();
   });
 
-  // A re-purchase of a course the student already has must not add money to
-  // an existing balance, or the student appears to owe less than they do.
-  it("creates no payment row for a course the student is already enrolled in", async () => {
+  // The enrollment itself is left alone, but the money the admin allocated to
+  // it is still money received and belongs in that enrollment's ledger.
+  // Skipping the row understated the balance with no way to recover it.
+  it("records the applied money against a course the student is already enrolled in", async () => {
     tx.enrollment.findUnique.mockImplementation(
       ({ where }: { where: { userId_courseId: { courseId: string } } }) =>
         Promise.resolve(
@@ -196,10 +197,18 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(tx.payment.create).toHaveBeenCalledTimes(1);
+    expect(tx.payment.create).toHaveBeenCalledTimes(2);
     expect(tx.payment.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ enrollmentId: "e-c2" }),
+        data: expect.objectContaining({
+          enrollmentId: "existing",
+          amount: 1000,
+        }),
+      }),
+    );
+    expect(tx.payment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ enrollmentId: "e-c2", amount: 2000 }),
       }),
     );
   });

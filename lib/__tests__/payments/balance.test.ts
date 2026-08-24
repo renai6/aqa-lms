@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeBalance, describeBalance } from "@/lib/payments/balance";
+import { computeBalance, describeBalance, peso } from "@/lib/payments/balance";
 
 describe("computeBalance", () => {
   it("is untracked when no total has been agreed", () => {
@@ -59,7 +59,9 @@ describe("computeBalance", () => {
       paid: 19603,
       remaining: 0,
     });
-    expect(describeBalance(balance)).toBe("Fully paid. ₱19,603 of ₱19,603.");
+    expect(describeBalance(balance)).toBe(
+      "Fully paid. ₱19,603.00 of ₱19,603.00.",
+    );
   });
 });
 
@@ -70,19 +72,33 @@ describe("describeBalance", () => {
 
   it("states paid and remaining", () => {
     expect(describeBalance(computeBalance(20000, [8000]))).toBe(
-      "₱8,000 of ₱20,000 paid. ₱12,000 remaining.",
+      "₱8,000.00 of ₱20,000.00 paid. ₱12,000.00 remaining.",
     );
   });
 
   it("states fully paid on exact settlement", () => {
     expect(describeBalance(computeBalance(20000, [20000]))).toBe(
-      "Fully paid. ₱20,000 of ₱20,000.",
+      "Fully paid. ₱20,000.00 of ₱20,000.00.",
     );
   });
 
   it("states the overpaid amount", () => {
     expect(describeBalance(computeBalance(20000, [20500]))).toBe(
-      "Overpaid by ₱500.",
+      "Overpaid by ₱500.00.",
     );
+  });
+});
+
+// Verified failure before the fix: the default en-PH formatting renders
+// ₱1,500.50 as "₱1,500.5" and keeps a third decimal on a stray value, both of
+// which read as a wrong amount next to a receipt.
+describe("peso", () => {
+  it("always renders both centavo digits", () => {
+    expect(peso(1500.5)).toBe("₱1,500.50");
+    expect(peso(1500)).toBe("₱1,500.00");
+  });
+
+  it("rounds a sub-centavo value rather than showing a third decimal", () => {
+    expect(peso(1234.567)).toBe("₱1,234.57");
   });
 });

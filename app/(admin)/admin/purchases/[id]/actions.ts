@@ -14,6 +14,7 @@ import {
   sendPurchaseApprovalEmail,
   sendPurchaseRejectionEmail,
 } from "@/lib/purchases/email";
+import { peso } from "@/lib/payments/balance";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -94,13 +95,17 @@ export async function approvePurchaseAction(
   // neither) leaves amounts that are equal to the peso but never satisfy
   // `!==`, permanently blocking approval.
   const amountPaidCentavos = Math.round(amountPaid * 100);
-  const appliedTotalCentavos = Math.round(
-    entries.reduce((sum, e) => sum + e.applied, 0) * 100,
+  // Each field is rounded on its own, not the float sum: the form does the
+  // same, and the two have to agree exactly or the client disables Approve on
+  // a split the server would have accepted.
+  const appliedTotalCentavos = entries.reduce(
+    (sum, e) => sum + Math.round(e.applied * 100),
+    0,
   );
   if (appliedTotalCentavos !== amountPaidCentavos) {
     const appliedTotal = appliedTotalCentavos / 100;
     return {
-      error: `Applied amounts total ₱${appliedTotal.toLocaleString("en-PH")}, but the student paid ₱${amountPaid.toLocaleString("en-PH")}. Adjust them so they match.`,
+      error: `Applied amounts total ${peso(appliedTotal)}, but the student paid ${peso(amountPaid)}. Adjust them so they match.`,
     };
   }
 
@@ -129,40 +134,76 @@ export async function approvePurchaseAction(
               courseId: item.courseId,
             },
           },
-          select: { id: true },
-        });
-        if (exists) continue;
-        const activeBatch = await tx.batch.findFirst({
-          where: { courseId: item.courseId, isActive: true },
-          select: { id: true },
+          select: { id: true, removedAt: true },
         });
         const entry = entries.find((e) => e.courseId === item.courseId)!;
-        const enrollment = await tx.enrollment.create({
-          data: {
-            userId: purchase.user.id,
-            courseId: item.courseId,
-            paymentStatus,
-            purchaseId: id,
-            batchId: activeBatch?.id ?? null,
-            totalDue: entry.totalDue,
-          },
-        });
+
+        let enrollmentId: string;
+        if (exists && !exists.removedAt) {
+          // An active enrollment already covers this course, so nothing about
+          // the enrollment itself changes - its total, batch and status were
+          // settled when it was created and this purchase does not restate
+          // them. Only the ledger row below is still owed.
+          enrollmentId = exists.id;
+        } else {
+          const activeBatch = await tx.batch.findFirst({
+            where: { courseId: item.courseId, isActive: true },
+            select: { id: true },
+          });
+          // A removed enrollment still owns the unique (userId, courseId)
+          // slot, so it is revived in place rather than duplicated. Its
+          // earlier payments stay attached and keep counting toward the
+          // balance, which is why the form shows the admin what those come to
+          // before they choose a total.
+          const enrollment = exists
+            ? await tx.enrollment.update({
+                where: { id: exists.id },
+                data: {
+                  removedAt: null,
+                  removedReason: null,
+                  paymentStatus,
+                  purchaseId: id,
+                  batchId: activeBatch?.id ?? null,
+                  totalDue: entry.totalDue,
+                },
+              })
+            : await tx.enrollment.create({
+                data: {
+                  userId: purchase.user.id,
+                  courseId: item.courseId,
+                  paymentStatus,
+                  purchaseId: id,
+                  batchId: activeBatch?.id ?? null,
+                  totalDue: entry.totalDue,
+                },
+              });
+          enrollmentId = enrollment.id;
+        }
 
         // The checkout payment enters the ledger here, so every peso received
         // for this enrollment lives in one table. The proof URL is reused
         // rather than copied, so no second file is stored.
-        await tx.payment.create({
-          data: {
-            enrollmentId: enrollment.id,
-            purchaseId: id,
-            amount: entry.applied,
-            proofUrl: purchase.paymentProofUrl,
-            status: "APPROVED",
-            source: "CHECKOUT",
-            reviewedById: auth.userId,
-            reviewedAt: new Date(),
-          },
-        });
+        //
+        // This runs for an already-active enrollment too. The reconcile check
+        // above forces the admin to allocate every peso of `amountPaid` across
+        // the items, so skipping the row would delete money the admin had no
+        // way to withhold, and understate that enrollment's balance forever.
+        // Zero is the one amount worth skipping: it is not money, and a
+        // zero-amount row is noise in the ledger.
+        if (Math.round(entry.applied * 100) > 0) {
+          await tx.payment.create({
+            data: {
+              enrollmentId,
+              purchaseId: id,
+              amount: entry.applied,
+              proofUrl: purchase.paymentProofUrl,
+              status: "APPROVED",
+              source: "CHECKOUT",
+              reviewedById: auth.userId,
+              reviewedAt: new Date(),
+            },
+          });
+        }
       }
     });
   } catch (err) {

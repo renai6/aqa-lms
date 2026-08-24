@@ -4,10 +4,14 @@ import { ChevronRight, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { StudentRow } from '@/lib/students/queries'
+import { RemoveEnrollmentButton } from '@/components/admin/remove-enrollment-button'
 
-type Props = { students: StudentRow[] }
+// `courseId` is the course the list is currently filtered to. Remove/Restore is
+// offered only then, because outside a course filter there is no single
+// enrollment the action could unambiguously target.
+type Props = { students: StudentRow[]; courseId?: string }
 
-export function StudentTable({ students }: Props) {
+export function StudentTable({ students, courseId }: Props) {
   if (students.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
@@ -41,7 +45,14 @@ export function StudentTable({ students }: Props) {
               </td>
               <td className="px-4 py-3 text-muted-foreground">
                 {s.enrollments.length > 0
-                  ? s.enrollments.map((e) => e.courseTitle).join(', ')
+                  ? s.enrollments.map((e, i) => (
+                      <span key={e.id}>
+                        {i > 0 && ', '}
+                        <span className={cn(e.removedAt && 'line-through')}>
+                          {e.courseTitle}
+                        </span>
+                      </span>
+                    ))
                   : '—'}
               </td>
               <td className="px-4 py-3 text-muted-foreground text-xs">
@@ -58,16 +69,35 @@ export function StudentTable({ students }: Props) {
                 </span>
               </td>
               <td className="px-4 py-3">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/admin/students/${s.id}`}>
-                    <ChevronRight className="w-3 h-3" aria-hidden="true" />
-                  </Link>
-                </Button>
+                <div className="flex items-center justify-end gap-2">
+                  {filtered(s, courseId)}
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/admin/students/${s.id}`}>
+                      <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  )
+}
+
+// The enrollment the current course filter points at, rendered as its
+// remove/restore control. Nothing is rendered when no course is selected.
+function filtered(student: StudentRow, courseId?: string) {
+  if (!courseId) return null
+  const enrollment = student.enrollments.find((e) => e.courseId === courseId)
+  if (!enrollment) return null
+  return (
+    <RemoveEnrollmentButton
+      enrollmentId={enrollment.id}
+      studentName={`${student.firstName} ${student.lastName}`}
+      courseTitle={enrollment.courseTitle}
+      isRemoved={enrollment.removedAt !== null}
+    />
   )
 }
