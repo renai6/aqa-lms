@@ -15,18 +15,37 @@ describe("computeBalance", () => {
     });
   });
 
+  // Assert the whole object, not `.remaining`: Balance is a discriminated
+  // union and TypeScript cannot narrow a property off the bare return value,
+  // so `computeBalance(...).remaining` fails `tsc --noEmit` even though it
+  // runs fine under vitest.
   it("reports zero remaining when settled exactly", () => {
-    expect(computeBalance(20000, [20000]).remaining).toBe(0);
+    expect(computeBalance(20000, [20000])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 20000,
+      remaining: 0,
+    });
   });
 
   // Not clamped: an admin needs to see that a student sent too much, because
   // the resolution is a refund or a credit, not a silent zero.
   it("reports a negative remainder when the student overpaid", () => {
-    expect(computeBalance(20000, [20500]).remaining).toBe(-500);
+    expect(computeBalance(20000, [20500])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 20500,
+      remaining: -500,
+    });
   });
 
   it("treats no payments as nothing paid", () => {
-    expect(computeBalance(20000, []).remaining).toBe(20000);
+    expect(computeBalance(20000, [])).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 0,
+      remaining: 20000,
+    });
   });
 });
 
