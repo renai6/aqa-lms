@@ -26,15 +26,25 @@ export default async function PurchaseDetailPage({ params }: Props) {
           <p className="font-semibold">
             {purchase.student.firstName} {purchase.student.lastName}
           </p>
-          {purchase.status === "APPROVED" ? (
-            <Badge className="border-green-200 bg-green-100 text-green-800">
-              Approved
-            </Badge>
-          ) : purchase.status === "REJECTED" ? (
-            <Badge variant="destructive">Rejected</Badge>
-          ) : (
-            <Badge variant="outline">Pending</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {purchase.payLater && (
+              <Badge
+                variant="outline"
+                className="border-amber-200 bg-amber-50 text-amber-800"
+              >
+                Pay later
+              </Badge>
+            )}
+            {purchase.status === "APPROVED" ? (
+              <Badge className="border-green-200 bg-green-100 text-green-800">
+                Approved
+              </Badge>
+            ) : purchase.status === "REJECTED" ? (
+              <Badge variant="destructive">Rejected</Badge>
+            ) : (
+              <Badge variant="outline">Pending</Badge>
+            )}
+          </div>
         </div>
         <p className="text-muted-foreground text-sm">
           {purchase.student.email}
@@ -75,7 +85,13 @@ export default async function PurchaseDetailPage({ params }: Props) {
         <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           Proof of payment
         </p>
-        <ProofImage src={`/api/admin/purchases/${purchase.id}/proof`} />
+        {purchase.payLater ? (
+          <p className="text-muted-foreground text-sm">
+            No proof submitted - the student chose to pay later.
+          </p>
+        ) : (
+          <ProofImage src={`/api/admin/purchases/${purchase.id}/proof`} />
+        )}
       </div>
 
       <div className="bg-card rounded-xl border p-4">

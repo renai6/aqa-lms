@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ACTIVE_COURSE } from "@/lib/courses/archive";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
+import { isPayLater } from "@/lib/purchases/payment";
 import type {
   CourseType,
   EnrollmentStatus,
@@ -94,6 +95,7 @@ export type AdminPurchaseRow = {
   studentName: string;
   studentEmail: string;
   courseCount: number;
+  payLater: boolean;
 };
 
 export async function getAdminPurchasesByStatus(
@@ -107,6 +109,7 @@ export async function getAdminPurchasesByStatus(
       id: true,
       status: true,
       amountPaid: true,
+      paymentProofUrl: true,
       createdAt: true,
       user: { select: { firstName: true, lastName: true, email: true } },
       _count: { select: { items: true } },
@@ -120,6 +123,7 @@ export async function getAdminPurchasesByStatus(
     studentName: `${r.user.firstName} ${r.user.lastName}`,
     studentEmail: r.user.email,
     courseCount: r._count.items,
+    payLater: isPayLater(r),
   }));
 }
 
@@ -129,6 +133,7 @@ export type AdminPurchaseDetail = {
   paymentType: PaymentType;
   amountPaid: number;
   paymentProofUrl: string | null;
+  payLater: boolean;
   adminRemarks: string | null;
   createdAt: Date;
   student: {
@@ -218,6 +223,7 @@ export async function getAdminPurchaseById(
     paymentType: r.paymentType,
     amountPaid: r.amountPaid.toNumber(),
     paymentProofUrl: r.paymentProofUrl,
+    payLater: isPayLater(r),
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
     student: r.user,
