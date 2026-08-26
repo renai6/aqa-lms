@@ -128,7 +128,7 @@ export type AdminPurchaseDetail = {
   status: EnrollmentStatus;
   paymentType: PaymentType;
   amountPaid: number;
-  paymentProofUrl: string;
+  paymentProofUrl: string | null;
   adminRemarks: string | null;
   createdAt: Date;
   student: {
