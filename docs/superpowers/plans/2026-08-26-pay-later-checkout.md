@@ -191,11 +191,12 @@ git commit -m "feat: allow a purchase to carry no payment proof"
 
 **Files:**
 - Modify: `lib/purchases/schema.ts`
+- Modify: `lib/purchases/actions.ts` (one line, so the caller keeps compiling)
 - Test: `lib/__tests__/purchases/schema.test.ts`
 
 **Interfaces:**
 - Consumes: nothing from Task 1.
-- Produces: `createPurchaseSchema` now expects a `payLater: boolean` field. `CreatePurchaseInput` gains `payLater: boolean`. Task 3 supplies that field.
+- Produces: `createPurchaseSchema` now expects a `payLater: boolean` field, and `CreatePurchaseInput` gains `payLater: boolean`. This task also supplies that field from FormData in `createPurchaseAction`, so the tree stays green; Task 3 is what actually uses it.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -302,13 +303,35 @@ export const createPurchaseSchema = z
 Run: `pnpm vitest run lib/__tests__/purchases/schema.test.ts`
 Expected: PASS.
 
-Run: `./node_modules/.bin/tsc --noEmit`
-Expected: one error in `lib/purchases/actions.ts`, because its `raw` object has no `payLater`. Task 3 fixes it. Do not fix it here.
+- [ ] **Step 5: Keep the caller typechecking**
 
-- [ ] **Step 5: Commit**
+The schema now requires `payLater`, so `createPurchaseAction` stops compiling until it supplies one.
+Add exactly one line to the `raw` object in `lib/purchases/actions.ts`, between `amountPaid` and `studentType`:
+
+```ts
+    // An unchecked checkbox is absent from FormData, and a checked one is "on".
+    // Converted here rather than coerced in the schema, because Boolean("false")
+    // is true and coercion would quietly accept a wrong value.
+    payLater: formData.get('payLater') === 'on',
+```
+
+Do not destructure `payLater` out of `result.data` yet. Nothing uses it until Task 3, and an unused binding fails lint.
+
+- [ ] **Step 6: Verify the tree is green**
+
+Run: `./node_modules/.bin/tsc --noEmit`
+Expected: no errors.
+
+Run: `pnpm lint`
+Expected: no errors.
+
+Run: `pnpm vitest run`
+Expected: all tests pass. Paying now still works, because an absent `payLater` field reads as `false`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/purchases/schema.ts lib/__tests__/purchases/schema.test.ts
+git add lib/purchases/schema.ts lib/purchases/actions.ts lib/__tests__/purchases/schema.test.ts
 git commit -m "feat: validate pay-later purchases at checkout"
 ```
 
@@ -442,24 +465,10 @@ describe("createPurchaseAction pay later", () => {
 Run: `pnpm vitest run lib/__tests__/purchases/create-pay-later.test.ts`
 Expected: FAIL. Validation rejects the submission because `raw` has no `payLater` key, so `z.boolean()` sees `undefined`.
 
-- [ ] **Step 3: Read `payLater` off the form**
+- [ ] **Step 3: Read `payLater` out of the parsed result**
 
-In `lib/purchases/actions.ts`, change the `raw` object to:
-
-```ts
-  const raw = {
-    courseIds: formData.getAll('courseIds').map(String),
-    paymentType: formData.get('paymentType'),
-    amountPaid: formData.get('amountPaid'),
-    // An unchecked checkbox is absent from FormData, and a checked one is "on".
-    // Converted here rather than coerced in the schema, because Boolean("false")
-    // is true and coercion would quietly accept a wrong value.
-    payLater: formData.get('payLater') === 'on',
-    studentType: user.studentType ?? 'OLD',
-  }
-```
-
-And widen the destructure on the line below the `safeParse` guard:
+Task 2 already added `payLater: formData.get('payLater') === 'on',` to the `raw` object in `lib/purchases/actions.ts`.
+Confirm that line is present, then widen the destructure on the line below the `safeParse` guard:
 
 ```ts
   const { courseIds, paymentType, amountPaid, payLater } = result.data
