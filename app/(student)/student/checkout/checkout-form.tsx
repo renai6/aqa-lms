@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createPurchaseAction } from "@/lib/purchases/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ export function CheckoutForm({ courses }: Props) {
     error: null,
   });
   const total = courses.reduce((s, c) => s + (c.tuitionFee ?? 0), 0);
+  const [payLater, setPayLater] = useState(false);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -44,36 +45,64 @@ export function CheckoutForm({ courses }: Props) {
         </div>
       </div>
 
-      <PaymentInstructions />
+      <PaymentInstructions payLater={payLater} />
 
       <input type="hidden" name="paymentType" value="PARTIAL" />
 
-      <div className="space-y-2">
-        <Label htmlFor="amountPaid">Amount Paying Now (₱)</Label>
-        <Input
-          id="amountPaid"
-          name="amountPaid"
-          type="number"
-          min="1"
-          step="0.01"
-          required
-          placeholder="e.g. 5000"
+      <label className="border-input hover:bg-muted/40 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors">
+        <input
+          type="checkbox"
+          name="payLater"
+          checked={payLater}
+          onChange={(e) => setPayLater(e.target.checked)}
+          className="accent-primary mt-0.5 h-4 w-4 shrink-0"
         />
-      </div>
+        <span>
+          <span className="text-foreground block text-sm font-medium">
+            Pay later
+          </span>
+          <span className="text-muted-foreground mt-1 block text-xs">
+            Submit your enrollment now and pay after it is approved.
+          </span>
+        </span>
+      </label>
 
-      <div className="space-y-2">
-        <Label htmlFor="file">Proof of Payment</Label>
-        <Input
-          id="file"
-          name="file"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          required
-        />
-        <p className="text-muted-foreground text-xs">
-          JPG, PNG, or WEBP. Max 10MB.
+      {payLater ? (
+        <p className="text-muted-foreground bg-muted/40 rounded-xl border p-4 text-xs">
+          An admin will review your request. Once it is approved you are
+          enrolled, and the full ₱{total.toLocaleString("en-PH")} shows as your
+          outstanding balance until you pay it.
         </p>
-      </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="amountPaid">Amount Paying Now (₱)</Label>
+            <Input
+              id="amountPaid"
+              name="amountPaid"
+              type="number"
+              min="1"
+              step="0.01"
+              required
+              placeholder="e.g. 5000"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="file">Proof of Payment</Label>
+            <Input
+              id="file"
+              name="file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              required
+            />
+            <p className="text-muted-foreground text-xs">
+              JPG, PNG, or WEBP. Max 10MB.
+            </p>
+          </div>
+        </>
+      )}
 
       {state.error && (
         <div
@@ -90,7 +119,11 @@ export function CheckoutForm({ courses }: Props) {
         disabled={isPending}
         className="h-11 w-full font-semibold"
       >
-        {isPending ? "Submitting…" : "Submit Payment"}
+        {isPending
+          ? "Submitting…"
+          : payLater
+            ? "Submit Enrollment Request"
+            : "Submit Payment"}
       </Button>
     </form>
   );

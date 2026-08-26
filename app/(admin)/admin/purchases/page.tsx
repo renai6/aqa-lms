@@ -55,7 +55,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
   const getStatusBadge = (s: EnrollmentStatus) => {
     if (s === "APPROVED")
       return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">
+        <Badge className="border-green-200 bg-green-100 text-green-800">
           Approved
         </Badge>
       );
@@ -64,10 +64,10 @@ export default async function PurchasesPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <PageHeader title="Course Enrollment Requests" />
 
-      <div className="flex gap-1 border-b -mt-2">
+      <div className="-mt-2 flex gap-1 border-b">
         {tabs.map((t) => {
           const isActive = t.enumStatus === status;
           const count = countMap[t.enumStatus] ?? 0;
@@ -78,12 +78,12 @@ export default async function PurchasesPage({ searchParams }: Props) {
               className={cn(
                 "flex items-center gap-1.5 px-4 pb-3 text-sm transition-colors",
                 isActive
-                  ? "border-b-2 border-primary text-foreground font-medium"
+                  ? "border-primary text-foreground border-b-2 font-medium"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t.label}
-              <span className="inline-block bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-medium">
+              <span className="bg-muted text-muted-foreground inline-block rounded px-1.5 py-0.5 text-xs font-medium">
                 {count}
               </span>
             </Link>
@@ -92,48 +92,48 @@ export default async function PurchasesPage({ searchParams }: Props) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-          <Inbox className="w-8 h-8" aria-hidden="true" />
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-12">
+          <Inbox className="h-8 w-8" aria-hidden="true" />
           <p className="text-sm">No {status.toLowerCase()} purchases.</p>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-hidden rounded-lg border">
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Student
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Email
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Courses
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Amount
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Submitted
                 </th>
                 <th
                   scope="col"
-                  className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                  className="text-muted-foreground px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Status
                 </th>
@@ -144,14 +144,30 @@ export default async function PurchasesPage({ searchParams }: Props) {
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-2 font-medium">{r.studentName}</td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-2">
                     {r.studentEmail}
                   </td>
                   <td className="px-4 py-2">{r.courseCount}</td>
                   <td className="px-4 py-2">
-                    ₱{r.amountPaid.toLocaleString("en-PH")}
+                    {/* A row can be genuinely pay-later (amountPaid 0) or one
+                        stranded by a failed proof-url write (payLater true but
+                        amountPaid > 0). Rendering both when they disagree keeps
+                        that inconsistent row conspicuous instead of hiding real
+                        money behind the badge. */}
+                    <span className="flex items-center gap-2">
+                      {r.payLater && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-200 bg-amber-50 text-amber-800"
+                        >
+                          Pay later
+                        </Badge>
+                      )}
+                      {Math.round(r.amountPaid * 100) !== 0 &&
+                        `₱${r.amountPaid.toLocaleString("en-PH")}`}
+                    </span>
                   </td>
-                  <td className="px-4 py-2 text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-2">
                     {dateFormatter.format(r.createdAt)}
                   </td>
                   <td className="px-4 py-2">{getStatusBadge(r.status)}</td>
@@ -160,7 +176,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
                       <Link href={"/admin/purchases/" + r.id}>
                         View{" "}
                         <ChevronRight
-                          className="w-3 h-3 ml-1"
+                          className="ml-1 h-3 w-3"
                           aria-hidden="true"
                         />
                       </Link>

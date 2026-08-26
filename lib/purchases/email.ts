@@ -10,14 +10,18 @@ export async function sendPurchaseConfirmationEmail(params: {
   to: string;
   firstName: string;
   purchaseId: string;
+  payLater: boolean;
 }): Promise<void> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL}/student/dashboard`;
+  const received = params.payLater
+    ? "We have received your enrollment request. You chose to pay later, so nothing is due yet - our team will review your request shortly."
+    : "We have received your course purchase and proof of payment. Our team will review it shortly.";
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
-    subject: "We received your course purchase — Al-Qur'an Academy",
+    subject: "We received your course purchase - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
-<p>We have received your course purchase and proof of payment. Our team will review it shortly.</p>
+<p>${received}</p>
 <p>You can track its status here: <a href="${url}">${url}</a></p>
 <p>Best regards,<br>Al-Qur'an Academy Team</p>`,
   });
@@ -39,7 +43,7 @@ export async function sendPurchaseApprovalEmail(params: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
-    subject: "Your course purchase is approved — Al-Qur'an Academy",
+    subject: "Your course purchase is approved - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Your purchase has been approved. You now have access to:</p>
 <ul>${list}</ul>
@@ -59,7 +63,7 @@ export async function sendPurchaseRejectionEmail(params: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
-    subject: "Update on your course purchase — Al-Qur'an Academy",
+    subject: "Update on your course purchase - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Unfortunately, your recent course purchase could not be approved.</p>
 <p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p>

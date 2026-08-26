@@ -1,7 +1,12 @@
 // The BPI and GCash account details shown wherever a student is asked to pay
 // offline: checkout, and the additional-payment page. One copy, so the account
-// numbers cannot drift apart.
-export function PaymentInstructions() {
+// numbers cannot drift apart. `payLater` only changes when the student is told
+// to pay, never the details themselves.
+export function PaymentInstructions({
+  payLater = false,
+}: {
+  payLater?: boolean;
+}) {
   return (
     <div className="bg-muted/40 space-y-4 rounded-xl border p-4">
       <div>
@@ -9,8 +14,9 @@ export function PaymentInstructions() {
           Where to send your payment
         </h2>
         <p className="text-muted-foreground mt-1 text-xs">
-          Pay via bank transfer or GCash, then upload your proof of payment
-          below.
+          {payLater
+            ? "Once an admin approves your enrollment, pay via bank transfer or GCash and submit your proof from your course balance page."
+            : "Pay via bank transfer or GCash, then upload your proof of payment below."}
         </p>
       </div>
 

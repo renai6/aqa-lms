@@ -358,7 +358,8 @@ model Purchase {
   status          EnrollmentStatus @default(PENDING)
   paymentType     PaymentType      @default(FULL)
   amountPaid      Decimal          @default(0)
-  paymentProofUrl String
+  // Null means the student chose to pay later, so no proof exists to upload.
+  paymentProofUrl String?
   adminRemarks    String?
   reviewedById    String?
   reviewedBy      User?            @relation("ReviewedPurchases", fields: [reviewedById], references: [id])

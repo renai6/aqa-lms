@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   paymentStatusFromType,
   paymentTypeFromStatus,
+  isPayLater,
 } from "@/lib/purchases/payment";
 
 describe("paymentStatusFromType", () => {
@@ -20,5 +21,15 @@ describe("paymentTypeFromStatus", () => {
 
   it("maps PARTIALLY_PAID to PARTIAL", () => {
     expect(paymentTypeFromStatus("PARTIALLY_PAID")).toBe("PARTIAL");
+  });
+});
+
+describe("isPayLater", () => {
+  it("is true when no proof was submitted", () => {
+    expect(isPayLater({ paymentProofUrl: null })).toBe(true);
+  });
+
+  it("is false when a proof was submitted", () => {
+    expect(isPayLater({ paymentProofUrl: "proof/p1/proof.jpg" })).toBe(false);
   });
 });
