@@ -43,7 +43,7 @@ export async function sendPurchaseApprovalEmail(params: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
-    subject: "Your course purchase is approved — Al-Qur'an Academy",
+    subject: "Your course purchase is approved - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Your purchase has been approved. You now have access to:</p>
 <ul>${list}</ul>
@@ -63,7 +63,7 @@ export async function sendPurchaseRejectionEmail(params: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
-    subject: "Update on your course purchase — Al-Qur'an Academy",
+    subject: "Update on your course purchase - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Unfortunately, your recent course purchase could not be approved.</p>
 <p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p>
