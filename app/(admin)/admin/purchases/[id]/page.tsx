@@ -115,6 +115,7 @@ export default async function PurchaseDetailPage({ params }: Props) {
             id={purchase.id}
             courses={purchase.courses}
             amountPaid={purchase.amountPaid}
+            payLater={purchase.payLater}
           />
           <div className="border-t pt-4">
             <RejectForm id={purchase.id} />

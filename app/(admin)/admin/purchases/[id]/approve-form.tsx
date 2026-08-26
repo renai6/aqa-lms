@@ -44,10 +44,12 @@ export function ApproveForm({
   id,
   courses,
   amountPaid,
+  payLater,
 }: {
   id: string;
   courses: ApproveCourse[];
   amountPaid: number;
+  payLater: boolean;
 }) {
   const [state, action, isPending] = useActionState(approvePurchaseAction, {
     error: null,
@@ -69,10 +71,11 @@ export function ApproveForm({
   const appliedTotal = appliedTotalCentavos / 100;
   const reconciles = appliedTotalCentavos === Math.round(amountPaid * 100);
 
-  // A pay-later purchase brought no money, so every applied amount must be
-  // zero for the reconcile check to pass. Showing inputs whose only valid
-  // value is the one already in them invites an admin to type a number that
-  // blocks their own approval.
+  // `payLater` (the single-sourced fact from the server) drives the copy.
+  // `nothingPaid` stays a local, amount-based check and drives layout only:
+  // an input whose only valid value is zero is pointless regardless of why
+  // amountPaid is zero, so the grid and the applied-amount inputs key off the
+  // amount directly rather than off why it is zero.
   const nothingPaid = Math.round(amountPaid * 100) === 0;
 
   return (
@@ -82,8 +85,8 @@ export function ApproveForm({
       <div>
         <p className="text-sm font-semibold">Enrollment totals</p>
         <p className="text-muted-foreground text-sm">
-          {nothingPaid
-            ? "This student chose to pay later, so nothing has been received yet. Set what each course costs them, and the full amount will show as their balance. Leave a total blank to skip balance tracking for that course."
+          {payLater
+            ? "This student chose to pay later, so nothing has been received yet. Set what each course costs them. Leave a total blank to skip balance tracking for that course."
             : `Set what each course costs this student, and how much of the ${peso(amountPaid)} received applies to each. Leave a total blank to skip balance tracking for that course.`}
         </p>
       </div>

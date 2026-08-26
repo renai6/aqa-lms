@@ -132,7 +132,6 @@ export type AdminPurchaseDetail = {
   status: EnrollmentStatus;
   paymentType: PaymentType;
   amountPaid: number;
-  paymentProofUrl: string | null;
   payLater: boolean;
   adminRemarks: string | null;
   createdAt: Date;
@@ -222,7 +221,6 @@ export async function getAdminPurchaseById(
     status: r.status,
     paymentType: r.paymentType,
     amountPaid: r.amountPaid.toNumber(),
-    paymentProofUrl: r.paymentProofUrl,
     payLater: isPayLater(r),
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,

@@ -191,11 +191,13 @@ export async function approvePurchaseAction(
         // Zero is the one amount worth skipping: it is not money, and a
         // zero-amount row is noise in the ledger.
         if (Math.round(entry.applied * 100) > 0) {
-          // Applied money means money arrived at checkout, which means a proof
-          // was uploaded: a pay-later purchase has amountPaid 0, and the
-          // reconcile check above forces every applied amount to 0. An empty
-          // string here would enter the ledger as a payment with no evidence,
-          // so an impossible state fails loudly instead.
+          // Money applied here means money arrived at checkout, which means a
+          // proof was uploaded: a pay-later purchase has amountPaid 0, and the
+          // reconcile check above forces every applied amount to 0, so this
+          // branch cannot run for one. Reaching this point with no proof means
+          // the purchase was stranded by a failed upload-url write, so the
+          // whole approval fails loudly rather than recording a payment that
+          // points at nothing.
           if (purchase.paymentProofUrl === null)
             throw new Error("MISSING_PROOF");
           await tx.payment.create({

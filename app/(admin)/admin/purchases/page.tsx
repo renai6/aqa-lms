@@ -149,16 +149,23 @@ export default async function PurchasesPage({ searchParams }: Props) {
                   </td>
                   <td className="px-4 py-2">{r.courseCount}</td>
                   <td className="px-4 py-2">
-                    {r.payLater ? (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-200 bg-amber-50 text-amber-800"
-                      >
-                        Pay later
-                      </Badge>
-                    ) : (
-                      `₱${r.amountPaid.toLocaleString("en-PH")}`
-                    )}
+                    {/* A row can be genuinely pay-later (amountPaid 0) or one
+                        stranded by a failed proof-url write (payLater true but
+                        amountPaid > 0). Rendering both when they disagree keeps
+                        that inconsistent row conspicuous instead of hiding real
+                        money behind the badge. */}
+                    <span className="flex items-center gap-2">
+                      {r.payLater && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-200 bg-amber-50 text-amber-800"
+                        >
+                          Pay later
+                        </Badge>
+                      )}
+                      {Math.round(r.amountPaid * 100) !== 0 &&
+                        `₱${r.amountPaid.toLocaleString("en-PH")}`}
+                    </span>
                   </td>
                   <td className="text-muted-foreground px-4 py-2">
                     {dateFormatter.format(r.createdAt)}
