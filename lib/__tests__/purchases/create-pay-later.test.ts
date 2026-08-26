@@ -50,9 +50,7 @@ describe("createPurchaseAction pay later", () => {
       studentType: "OLD",
       isActive: true,
     } as never);
-    vi.mocked(getPurchasableCourses).mockResolvedValue([
-      { id: "c1" },
-    ] as never);
+    vi.mocked(getPurchasableCourses).mockResolvedValue([{ id: "c1" }] as never);
     vi.mocked(db.purchase.create).mockResolvedValue({ id: "p1" } as never);
     vi.mocked(db.purchase.delete).mockResolvedValue({ id: "p1" } as never);
   });

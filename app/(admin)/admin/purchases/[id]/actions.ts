@@ -196,7 +196,8 @@ export async function approvePurchaseAction(
           // reconcile check above forces every applied amount to 0. An empty
           // string here would enter the ledger as a payment with no evidence,
           // so an impossible state fails loudly instead.
-          if (purchase.paymentProofUrl === null) throw new Error("MISSING_PROOF");
+          if (purchase.paymentProofUrl === null)
+            throw new Error("MISSING_PROOF");
           await tx.payment.create({
             data: {
               enrollmentId,
