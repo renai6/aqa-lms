@@ -47,9 +47,10 @@ export function isPayLater(p: { paymentProofUrl: string | null }): boolean {
 ```
 
 Existing rows cannot be mistaken for pay later, because the derivation tests for `null` specifically.
-An earlier draft of this spec claimed no persisted row carries a falsy proof at all; that was wrong.
-Before this change, a failed proof-URL write left a row with an empty-string proof and money attached, so such rows may exist.
-They read as pay-now under `=== null`, which is the same answer they got before this feature, so nothing regresses.
+An earlier draft of this spec claimed no persisted row could carry a falsy proof, reasoning that a failed upload always deletes the purchase.
+The conclusion held but the reasoning did not: a failed upload does delete, but a failed proof-URL write did not, and that path could leave a row with an empty-string proof and money attached.
+A direct count against the production table returned zero such rows, so none exist in practice.
+Were one to appear, it would read as pay-now under `=== null`, the same answer it got before this feature, so nothing regresses.
 The failure that created them is closed off in the purchase-creation section below.
 
 A `PAY_LATER` value on the `PaymentType` enum was considered and rejected.
