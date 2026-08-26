@@ -55,6 +55,7 @@ describe("createPurchaseSchema", () => {
     courseIds: ["c1", "c2"],
     paymentType: "FULL",
     amountPaid: 5000,
+    payLater: false,
     studentType: "OLD",
   };
   it("accepts a valid OLD-student partial purchase", () => {
@@ -81,5 +82,55 @@ describe("createPurchaseSchema", () => {
       amountPaid: 1000,
     });
     expect(r.success).toBe(true);
+  });
+});
+
+const validPurchase = {
+  courseIds: ["c1"],
+  paymentType: "PARTIAL",
+  amountPaid: "5000",
+  payLater: false,
+  studentType: "OLD",
+};
+
+describe("createPurchaseSchema pay-later rules", () => {
+  it("accepts a pay-now purchase with a positive amount", () => {
+    expect(createPurchaseSchema.safeParse(validPurchase).success).toBe(true);
+  });
+
+  it("rejects a pay-now purchase with no amount", () => {
+    // FormData yields null for a missing field, which coerces to 0.
+    const r = createPurchaseSchema.safeParse({
+      ...validPurchase,
+      amountPaid: null,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts a pay-later purchase with no amount", () => {
+    const r = createPurchaseSchema.safeParse({
+      ...validPurchase,
+      payLater: true,
+      amountPaid: null,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.amountPaid).toBe(0);
+  });
+
+  it("rejects a pay-later purchase that also carries an amount", () => {
+    const r = createPurchaseSchema.safeParse({
+      ...validPurchase,
+      payLater: true,
+      amountPaid: "5000",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects a negative amount", () => {
+    const r = createPurchaseSchema.safeParse({
+      ...validPurchase,
+      amountPaid: "-1",
+    });
+    expect(r.success).toBe(false);
   });
 });

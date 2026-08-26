@@ -26,6 +26,10 @@ export async function createPurchaseAction(_prev: ActionState, formData: FormDat
     courseIds: formData.getAll('courseIds').map(String),
     paymentType: formData.get('paymentType'),
     amountPaid: formData.get('amountPaid'),
+    // An unchecked checkbox is absent from FormData, and a checked one is "on".
+    // Converted here rather than coerced in the schema, because Boolean("false")
+    // is true and coercion would quietly accept a wrong value.
+    payLater: formData.get('payLater') === 'on',
     studentType: user.studentType ?? 'OLD',
   }
   const result = createPurchaseSchema.safeParse(raw)
