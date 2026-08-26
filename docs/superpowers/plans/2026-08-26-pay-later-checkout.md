@@ -1167,10 +1167,20 @@ git commit -m "feat: simplify approval when nothing was paid at checkout"
 ./node_modules/.bin/tsc --noEmit
 pnpm lint
 pnpm vitest run
-pnpm format:check
 ```
 
-Expected: all clean. If `format:check` complains, run `pnpm format` and commit the result.
+Expected: `tsc` clean, `pnpm lint` 0 errors (8 pre-existing warnings are the baseline), all tests passing.
+
+Do **not** run `pnpm format:check` or `pnpm format` across the repo.
+255 files fail that check on `main` already, so a repo-wide format would bury this feature in thousands of unrelated lines.
+Check only the files this branch touched:
+
+```bash
+./node_modules/.bin/prettier --check $(git diff --name-only main...HEAD -- '*.ts' '*.tsx')
+```
+
+One known exception: `lib/purchases/actions.ts` was already unformatted before this branch and stays that way, so that its diff shows only the pay-later change.
+Everything else this branch touched must pass.
 
 Every failure gets fixed, including any that predates this branch, per the project's quality standard.
 
