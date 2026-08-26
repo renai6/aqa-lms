@@ -69,6 +69,12 @@ export function ApproveForm({
   const appliedTotal = appliedTotalCentavos / 100;
   const reconciles = appliedTotalCentavos === Math.round(amountPaid * 100);
 
+  // A pay-later purchase brought no money, so every applied amount must be
+  // zero for the reconcile check to pass. Showing inputs whose only valid
+  // value is the one already in them invites an admin to type a number that
+  // blocks their own approval.
+  const nothingPaid = Math.round(amountPaid * 100) === 0;
+
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="id" value={id} />
@@ -76,9 +82,9 @@ export function ApproveForm({
       <div>
         <p className="text-sm font-semibold">Enrollment totals</p>
         <p className="text-muted-foreground text-sm">
-          Set what each course costs this student, and how much of the{" "}
-          {peso(amountPaid)} received applies to each. Leave a total blank to
-          skip balance tracking for that course.
+          {nothingPaid
+            ? "This student chose to pay later, so nothing has been received yet. Set what each course costs them, and the full amount will show as their balance. Leave a total blank to skip balance tracking for that course."
+            : `Set what each course costs this student, and how much of the ${peso(amountPaid)} received applies to each. Leave a total blank to skip balance tracking for that course.`}
         </p>
       </div>
 
@@ -95,7 +101,11 @@ export function ApproveForm({
                 this term instead.
               </p>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div
+              className={
+                nothingPaid ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"
+              }
+            >
               <div>
                 <Label htmlFor={`totalDue_${course.id}`}>Total due (₱)</Label>
                 <Input
@@ -107,24 +117,26 @@ export function ApproveForm({
                   defaultValue={prefillTotal(course)}
                 />
               </div>
-              <div>
-                <Label htmlFor={`applied_${course.id}`}>
-                  Amount applied (₱)
-                </Label>
-                <Input
-                  id={`applied_${course.id}`}
-                  name={`applied_${course.id}`}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={applied[i] ?? ""}
-                  onChange={(e) =>
-                    setApplied((prev) =>
-                      prev.map((v, j) => (j === i ? e.target.value : v)),
-                    )
-                  }
-                />
-              </div>
+              {!nothingPaid && (
+                <div>
+                  <Label htmlFor={`applied_${course.id}`}>
+                    Amount applied (₱)
+                  </Label>
+                  <Input
+                    id={`applied_${course.id}`}
+                    name={`applied_${course.id}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={applied[i] ?? ""}
+                    onChange={(e) =>
+                      setApplied((prev) =>
+                        prev.map((v, j) => (j === i ? e.target.value : v)),
+                      )
+                    }
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -144,7 +156,11 @@ export function ApproveForm({
         disabled={isPending || !reconciles}
         className="bg-green-600 hover:bg-green-700"
       >
-        {isPending ? "Approving…" : "Approve purchase"}
+        {isPending
+          ? "Approving…"
+          : nothingPaid
+            ? "Approve and enroll"
+            : "Approve purchase"}
       </Button>
     </form>
   );
