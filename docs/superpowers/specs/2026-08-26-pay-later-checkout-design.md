@@ -90,7 +90,11 @@ The confirmation email, the redirect, and the error handling around them are oth
 
 ## Admin review
 
-The approval logic in `approvePurchaseAction` does not change.
+The approval logic in `approvePurchaseAction` is unchanged in behaviour, with one type-safety guard added.
+`Payment.proofUrl` stays non-null, so once `purchase.paymentProofUrl` is nullable the ledger write needs the null ruled out.
+The branch that writes it already runs only when an applied amount is above zero, which can only happen when money arrived at checkout, which means a proof exists.
+The guard therefore throws on a null proof at that point rather than writing an empty string, so an impossible state fails loudly instead of silently entering the ledger as a payment with no evidence.
+
 It already requires the applied amounts across courses to sum to `amountPaid`, and for a pay-later purchase that reconciles as `0 = 0`.
 It already skips writing a `Payment` ledger row when an applied amount rounds to zero, so an approved pay-later purchase correctly produces no ledger rows.
 Enrollment creation, revival of a removed enrollment, `totalDue`, batch assignment, and the archived-course guard are all unaffected.
