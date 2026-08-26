@@ -46,8 +46,11 @@ export function isPayLater(p: { paymentProofUrl: string | null }): boolean {
 }
 ```
 
-No existing row can be mistaken for pay later.
-`createPurchaseAction` writes an empty-string proof only inside the create call and overwrites it moments later, and it deletes the purchase outright if the upload fails, so no persisted row carries a falsy proof today.
+Existing rows cannot be mistaken for pay later, because the derivation tests for `null` specifically.
+An earlier draft of this spec claimed no persisted row carries a falsy proof at all; that was wrong.
+Before this change, a failed proof-URL write left a row with an empty-string proof and money attached, so such rows may exist.
+They read as pay-now under `=== null`, which is the same answer they got before this feature, so nothing regresses.
+The failure that created them is closed off in the purchase-creation section below.
 
 A `PAY_LATER` value on the `PaymentType` enum was considered and rejected.
 `PaymentType` maps one-to-one onto `PaymentStatus` through `paymentStatusFromType`, and it is admin-editable through `PaymentStatusForm`.
@@ -85,7 +88,19 @@ The page heading copy on `page.tsx` ("Review your selection, then upload your pr
   Create the purchase with `amountPaid: 0` and `paymentProofUrl: null`.
 - Paying now: unchanged.
 
-The confirmation email, the redirect, and the error handling around them are otherwise untouched.
+The confirmation email and the redirect are otherwise untouched, but one error path changes, and it has to.
+
+Today, if the proof image uploads but the follow-up write of its URL fails, the purchase is left behind with `paymentProofUrl` set to the empty string and the student's money attached.
+Empty string is not null, so it reads as pay-now: the admin sees a broken image and investigates.
+Once creation writes `null` instead, that same failure strands a row that reads as a genuine pay-later purchase, and the admin is told a paying student chose to pay later.
+Approving it applies nothing and the payment is lost silently.
+
+So that failure path now deletes the purchase, exactly as the upload-failure path beside it already does, and asks the student to submit again.
+That is what makes "a null proof means pay later" true by construction rather than merely intended.
+The cost is an orphaned image in storage, which the neighbouring path already accepts.
+
+Do not restore the old behaviour of returning an error and leaving the row in place.
+The `MISSING_PROOF` guard in the approval action is the backstop for the case where the compensating delete itself fails, since a database outage can take both writes down together.
 `sendPurchaseConfirmationEmail` currently says "We have received your course purchase and proof of payment", which is wrong for pay later, so it takes a flag and uses a variant sentence.
 
 ## Admin review
