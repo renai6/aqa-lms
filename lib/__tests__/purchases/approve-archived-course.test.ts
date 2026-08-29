@@ -85,7 +85,7 @@ describe("approvePurchaseAction blocks enrolling into an archived course", () =>
       ],
     } as never);
     vi.mocked(db.enrollment.findUnique).mockResolvedValue(null as never);
-    vi.mocked(db.batch.findFirst).mockResolvedValue(null as never);
+    vi.mocked(db.batch.findFirst).mockResolvedValue({ id: "b1" } as never);
     vi.mocked(db.enrollment.create).mockResolvedValue({ id: "e1" } as never);
     vi.mocked(db.payment.create).mockResolvedValue({} as never);
 
