@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import type { AssessmentType, QuestionType } from '@prisma/client'
+import type { AssessmentType, QuestionMediaType, QuestionType } from '@prisma/client'
 
 export type AssessmentRow = {
   id: string
@@ -126,6 +126,8 @@ export type QuestionDetail = {
   type: QuestionType
   points: number
   order: number
+  mediaType: QuestionMediaType | null
+  mediaUrl: string | null
   options: QuestionOptionRow[]
   assessment: {
     id: string
@@ -146,6 +148,8 @@ export async function getQuestionById(qid: string): Promise<QuestionDetail | nul
       type: true,
       points: true,
       order: true,
+      mediaType: true,
+      mediaUrl: true,
       options: {
         select: { id: true, label: true, value: true, isCorrect: true },
       },

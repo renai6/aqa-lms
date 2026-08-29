@@ -5,6 +5,7 @@ import { Clock } from 'lucide-react'
 import { submitAttemptAction } from '../../../actions'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { QuestionMedia } from '@/components/assessments/question-media'
 
 type TakeOption = { id: string; label: string; value: string }
 type TakeQuestion = {
@@ -13,6 +14,8 @@ type TakeQuestion = {
   type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'ESSAY'
   points: number
   order: number
+  mediaType: 'AUDIO' | 'IMAGE' | null
+  mediaUrl: string | null
   options: TakeOption[]
 }
 
@@ -90,6 +93,8 @@ export function AttemptForm({ attemptId, assessmentTitle, questions, deadline }:
                 {q.points} {q.points === 1 ? 'pt' : 'pts'}
               </span>
             </div>
+
+            <QuestionMedia type={q.mediaType} url={q.mediaUrl} />
 
             {q.type === 'ESSAY' ? (
               <Textarea

@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
+import { QuestionMedia } from '@/components/assessments/question-media'
+import { extractDriveFileId } from '@/lib/assessments/media'
 import type { QuestionDetail } from '@/lib/assessments/queries'
 
 type Props = {
@@ -52,6 +54,14 @@ export function QuestionForm({
     initialType === 'MULTIPLE_CHOICE' ? initialOptions : ['', ''],
   )
   const [correctIndex, setCorrectIndex] = useState<number>(initialCorrectIndex)
+  const [mediaType, setMediaType] = useState<string>(
+    question?.mediaType ?? 'NONE',
+  )
+  const [mediaUrl, setMediaUrl] = useState(question?.mediaUrl ?? '')
+
+  // Preview only once the link parses, so a half-typed URL does not flash a
+  // broken frame at the admin on every keystroke.
+  const mediaLinkValid = extractDriveFileId(mediaUrl) !== null
 
   const [state, formAction, isPending] = useActionState(
     isEdit ? updateQuestionAction : createQuestionAction,
@@ -153,6 +163,63 @@ export function QuestionForm({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label>Media (optional)</Label>
+            <div className="flex flex-wrap gap-4">
+              {(['NONE', 'AUDIO', 'IMAGE'] as const).map((m) => (
+                <label
+                  key={m}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <input
+                    type="radio"
+                    name="mediaType"
+                    value={m}
+                    checked={mediaType === m}
+                    onChange={() => setMediaType(m)}
+                    disabled={locked}
+                    className="accent-primary"
+                  />
+                  {m === 'NONE' ? 'None' : m === 'AUDIO' ? 'Audio' : 'Image'}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {mediaType !== 'NONE' && (
+            <div className="space-y-2">
+              <Label htmlFor="q-media-url">
+                Google Drive link <span aria-hidden="true">*</span>
+              </Label>
+              <Input
+                id="q-media-url"
+                name="mediaUrl"
+                type="url"
+                required
+                disabled={locked}
+                value={mediaUrl}
+                onChange={(e) => setMediaUrl(e.target.value)}
+                placeholder="https://drive.google.com/file/d/.../view"
+              />
+              <p className="text-muted-foreground text-xs">
+                Share the file as &ldquo;Anyone with the link&rdquo; in Google
+                Drive, otherwise students will see an access-denied box here.
+              </p>
+              {mediaLinkValid ? (
+                <QuestionMedia
+                  type={mediaType as 'AUDIO' | 'IMAGE'}
+                  url={mediaUrl}
+                />
+              ) : (
+                mediaUrl.trim() !== '' && (
+                  <p className="text-destructive text-sm">
+                    That is not a Google Drive file link.
+                  </p>
+                )
+              )}
+            </div>
+          )}
+
           {type === 'MULTIPLE_CHOICE' && (
             <div className="space-y-3">
               <Label>Answer Options</Label>
@@ -251,7 +318,10 @@ export function QuestionForm({
             <p className="text-sm text-green-600">Saved successfully.</p>
           )}
           {!locked && (
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={isPending || (mediaType !== 'NONE' && !mediaLinkValid)}
+            >
               {isPending
                 ? isEdit
                   ? 'Saving...'
