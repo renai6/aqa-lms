@@ -41,6 +41,8 @@ export default async function AttemptPage({ params }: Props) {
       type: q.type,
       points: q.points,
       order: q.order,
+      mediaType: q.mediaType,
+      mediaUrl: q.mediaUrl,
       options: q.options.map(o => ({ id: o.id, label: o.label, value: o.value })),
     }))
 

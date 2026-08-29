@@ -40,6 +40,11 @@ enum QuestionType {
   ESSAY
 }
 
+enum QuestionMediaType {
+  AUDIO
+  IMAGE
+}
+
 enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
@@ -452,6 +457,11 @@ model Question {
 
   points Int
   order  Int
+
+  // Optional Google Drive audio/image shown with the question. Written together
+  // or both left null; see lib/assessments/media.ts for the link parsing.
+  mediaType QuestionMediaType?
+  mediaUrl  String?
 
   options QuestionOption[]
   answers StudentAnswer[]

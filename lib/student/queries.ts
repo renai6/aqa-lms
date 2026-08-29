@@ -1,6 +1,6 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
-import type { DayOfWeek, AssessmentType, QuestionType, AttemptStatus } from '@prisma/client'
+import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus } from '@prisma/client'
 import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
@@ -523,6 +523,8 @@ export type AttemptQuestion = {
   type: QuestionType
   points: number
   order: number
+  mediaType: QuestionMediaType | null
+  mediaUrl: string | null
   options: AttemptOption[]
   // The student's answer for this question (null while in progress / unanswered).
   answer: string | null
@@ -582,6 +584,8 @@ export async function getStudentAttempt(
               type: true,
               points: true,
               order: true,
+              mediaType: true,
+              mediaUrl: true,
               options: { select: { id: true, label: true, value: true, isCorrect: true } },
             },
           },
@@ -615,6 +619,8 @@ export async function getStudentAttempt(
       type: q.type,
       points: q.points,
       order: q.order,
+      mediaType: q.mediaType,
+      mediaUrl: q.mediaUrl,
       options: q.options,
       answer: a?.answer ?? null,
       isCorrect: a?.isCorrect ?? null,

@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { canManageSubject } from '@/lib/auth/capabilities'
 import { getPublishBlockers } from '@/lib/assessments/publish-validation'
+import { parseMedia } from '@/lib/assessments/media'
 
 // Neutral assessment + question authoring actions shared by the admin and
 // teacher route groups. Authorization is by capability (canManageSubject), and
@@ -334,6 +335,9 @@ export async function createQuestionAction(
   const optionsOrError = parseOptions(result.data.type, formData)
   if (typeof optionsOrError === 'string') return { error: optionsOrError }
 
+  const mediaOrError = parseMedia(formData)
+  if (typeof mediaOrError === 'string') return { error: mediaOrError }
+
   try {
     const maxOrder = await db.question.aggregate({
       where: { assessmentId },
@@ -349,6 +353,8 @@ export async function createQuestionAction(
           type: result.data.type,
           points: result.data.points,
           order,
+          mediaType: mediaOrError.mediaType,
+          mediaUrl: mediaOrError.mediaUrl,
         },
         select: { id: true },
       })
@@ -404,6 +410,9 @@ export async function updateQuestionAction(
   const optionsOrError = parseOptions(result.data.type, formData)
   if (typeof optionsOrError === 'string') return { error: optionsOrError }
 
+  const mediaOrError = parseMedia(formData)
+  if (typeof mediaOrError === 'string') return { error: mediaOrError }
+
   try {
     await db.$transaction(async (tx) => {
       await tx.question.update({
@@ -412,6 +421,8 @@ export async function updateQuestionAction(
           questionText: result.data.questionText,
           type: result.data.type,
           points: result.data.points,
+          mediaType: mediaOrError.mediaType,
+          mediaUrl: mediaOrError.mediaUrl,
         },
       })
       await tx.questionOption.deleteMany({ where: { questionId: id } })
