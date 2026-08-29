@@ -15,6 +15,7 @@ import {
   sendPurchaseRejectionEmail,
 } from "@/lib/purchases/email";
 import { peso } from "@/lib/payments/balance";
+import { ensureActiveBatchId } from "@/lib/batches/ensure";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -146,10 +147,7 @@ export async function approvePurchaseAction(
           // them. Only the ledger row below is still owed.
           enrollmentId = exists.id;
         } else {
-          const activeBatch = await tx.batch.findFirst({
-            where: { courseId: item.courseId, isActive: true },
-            select: { id: true },
-          });
+          const batchId = await ensureActiveBatchId(tx, item.courseId);
           // A removed enrollment still owns the unique (userId, courseId)
           // slot, so it is revived in place rather than duplicated. Its
           // earlier payments stay attached and keep counting toward the
@@ -163,7 +161,7 @@ export async function approvePurchaseAction(
                   removedReason: null,
                   paymentStatus,
                   purchaseId: id,
-                  batchId: activeBatch?.id ?? null,
+                  batchId,
                   totalDue: entry.totalDue,
                 },
               })
@@ -173,7 +171,7 @@ export async function approvePurchaseAction(
                   courseId: item.courseId,
                   paymentStatus,
                   purchaseId: id,
-                  batchId: activeBatch?.id ?? null,
+                  batchId,
                   totalDue: entry.totalDue,
                 },
               });

@@ -73,7 +73,7 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
           ),
       },
       payment: { create: vi.fn().mockResolvedValue({ id: "pay1" }) },
-      batch: { findFirst: vi.fn().mockResolvedValue(null) },
+      batch: { findFirst: vi.fn().mockResolvedValue({ id: "b1" }) },
     };
     vi.mocked(db.$transaction).mockImplementation(((
       cb: (t: unknown) => unknown,
