@@ -38,6 +38,7 @@ let tx: {
     aggregate: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
   };
+  course: { findUnique: ReturnType<typeof vi.fn> };
 };
 
 function form(fields: Record<string, string>) {
@@ -79,6 +80,7 @@ describe("approvePurchaseAction always puts the enrollment in a batch", () => {
         aggregate: vi.fn().mockResolvedValue({ _max: { number: null } }),
         create: vi.fn().mockResolvedValue({ id: "b-new" }),
       },
+      course: { findUnique: vi.fn().mockResolvedValue({ courseAlias: null }) },
     };
     vi.mocked(db.$transaction).mockImplementation(((
       cb: (t: unknown) => unknown,
@@ -98,7 +100,7 @@ describe("approvePurchaseAction always puts the enrollment in a batch", () => {
     ).rejects.toThrow("NEXT_REDIRECT");
 
     expect(tx.batch.create).toHaveBeenCalledWith({
-      data: { courseId: "c1", number: 34, isActive: true },
+      data: { courseId: "c1", number: 34, isActive: true, name: null },
       select: { id: true },
     });
     expect(tx.enrollment.create).toHaveBeenCalledWith(

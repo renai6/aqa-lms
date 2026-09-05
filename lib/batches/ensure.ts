@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { nextBatchNumber } from './number'
+import { generateBatchName } from './name'
 
 // A student reaches lesson content only through their batch: `getStudentSubjectDetail`
 // loads BatchLessonContent by `enrollment.batchId`, so an enrollment left with no
@@ -22,8 +23,17 @@ export async function ensureActiveBatchId(
   if (active) return active.id
 
   const { _max } = await tx.batch.aggregate({ where: { courseId }, _max: { number: true } })
+  const course = await tx.course.findUnique({
+    where: { id: courseId },
+    select: { courseAlias: true },
+  })
   const created = await tx.batch.create({
-    data: { courseId, number: nextBatchNumber(_max.number), isActive: true },
+    data: {
+      courseId,
+      number: nextBatchNumber(_max.number),
+      isActive: true,
+      name: generateBatchName(course?.courseAlias ?? null, new Date()),
+    },
     select: { id: true },
   })
   return created.id

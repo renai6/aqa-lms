@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { getBatchDetail } from '@/lib/batches/queries'
+import { getBatchDetail, batchLabel } from '@/lib/batches/queries'
 import { getCourseById } from '@/lib/courses/queries'
 import { getSession } from '@/lib/auth/session'
 import { PageHeader } from '@/components/admin/page-header'
@@ -12,7 +12,7 @@ type Props = { params: Promise<{ id: string; bid: string }> }
 export async function generateMetadata({ params }: Props) {
   const { bid } = await params
   const batch = await getBatchDetail(bid)
-  return { title: batch ? 'Batch ' + batch.number + ' — AQA Admin' : 'Batch — AQA Admin' }
+  return { title: batch ? batchLabel(batch) + ' — AQA Admin' : 'Batch — AQA Admin' }
 }
 
 export default async function BatchDetailPage({ params }: Props) {
@@ -30,9 +30,9 @@ export default async function BatchDetailPage({ params }: Props) {
           { label: 'Courses', href: '/admin/courses' },
           { label: course.title, href: '/admin/courses/' + id },
           { label: 'Batches', href: '/admin/courses/' + id + '/batches' },
-          { label: 'Batch ' + batch.number },
+          { label: batchLabel(batch) },
         ]}
-        title={'Batch ' + batch.number}
+        title={batchLabel(batch)}
         action={
           batch.isActive
             ? <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>

@@ -134,6 +134,20 @@ export function CreateCourseForm() {
             </p>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="courseAlias">Course Alias</Label>
+            <Input
+              id="courseAlias"
+              name="courseAlias"
+              placeholder="e.g. MM01"
+              maxLength={20}
+            />
+            <p className="text-muted-foreground text-xs">
+              Names every batch this course opens: month, then year, then
+              the alias. A September 2026 batch of MM01 becomes
+              &ldquo;0926MM01&rdquo;. Leave blank to keep numbered batch labels.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="passingGrade">Passing Grade (%)</Label>
             <Input
               id="passingGrade"
