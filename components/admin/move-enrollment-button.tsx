@@ -66,7 +66,11 @@ export function MoveEnrollmentButton({
       <form action={action} id={formId}>
         <input type="hidden" name="enrollmentId" value={enrollmentId} />
       </form>
-      <AlertDialog onOpenChange={(open) => !open && setBatchId("")}>
+      {/* The selection resets on open, not on close. Radix closes the dialog
+          as part of the confirm click, and clearing batchId there re-renders
+          this button as disabled before the browser runs its submit, so the
+          form never submits at all. */}
+      <AlertDialog onOpenChange={(open) => open && setBatchId("")}>
         <AlertDialogTrigger asChild>
           <Button
             type="button"
