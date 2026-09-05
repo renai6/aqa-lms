@@ -158,6 +158,9 @@ export type RosterRow = {
   paymentStatus: PaymentStatus
   removedAt: Date | null
   removedReason: string | null
+  // Null for enrollments written before ensureActiveBatchId existed; those
+  // students see no lesson content until an admin moves them into a batch.
+  batch: { id: string; name: string | null; number: number } | null
 }
 
 // Every student ever enrolled in the course, removed ones included: this is the
@@ -179,6 +182,7 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
       user: {
         select: { id: true, firstName: true, lastName: true, email: true },
       },
+      batch: { select: { id: true, name: true, number: true } },
     },
   })
 
@@ -192,5 +196,6 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
     paymentStatus: e.paymentStatus,
     removedAt: e.removedAt,
     removedReason: e.removedReason,
+    batch: e.batch,
   }))
 }

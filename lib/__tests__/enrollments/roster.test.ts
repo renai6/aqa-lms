@@ -60,3 +60,45 @@ describe("getCourseRoster", () => {
     ]);
   });
 });
+
+describe("getCourseRoster batch", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const enrollment = (batch: unknown) => [
+    {
+      id: "e1",
+      enrolledAt: new Date("2026-01-05"),
+      removedAt: null,
+      removedReason: null,
+      paymentStatus: "FULLY_PAID",
+      user: {
+        id: "s1",
+        firstName: "Sam",
+        lastName: "Ali",
+        email: "s@example.com",
+      },
+      batch,
+    },
+  ];
+
+  it("carries the batch the student sits in", async () => {
+    vi.mocked(db.enrollment.findMany).mockResolvedValue(
+      enrollment({ id: "b34", name: "0925MM01", number: 34 }) as never,
+    );
+
+    const rows = await getCourseRoster("c1");
+    expect(rows[0].batch).toEqual({ id: "b34", name: "0925MM01", number: 34 });
+  });
+
+  // Enrollments predating ensureActiveBatchId were written with a null batch.
+  it("leaves batch null for an enrollment that was never assigned one", async () => {
+    vi.mocked(db.enrollment.findMany).mockResolvedValue(
+      enrollment(null) as never,
+    );
+
+    const rows = await getCourseRoster("c1");
+    expect(rows[0].batch).toBeNull();
+  });
+});
