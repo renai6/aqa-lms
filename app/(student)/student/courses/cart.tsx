@@ -95,7 +95,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
           No courses available to purchase right now.
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {entries.map((entry) => {
             if (entry.kind === "group") {
               const { groupName, slug, levels } = entry;
@@ -103,11 +103,13 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
               const selectedCount = levels.filter((l) =>
                 selected.has(l.id),
               ).length;
-              const cover = levels[0];
-              const coverImage =
-                cover?.imageUrl && /^https?:\/\//.test(cover.imageUrl)
-                  ? cover.imageUrl
-                  : null;
+              const cover = levels.find(
+                (l) => l.imageUrl && /^https?:\/\//.test(l.imageUrl),
+              );
+              const prices = levels
+                .map((l) => l.tuitionFee)
+                .filter((f): f is number => f != null);
+              const minPrice = prices.length ? Math.min(...prices) : null;
               return (
                 <div
                   key={slug}
@@ -118,42 +120,64 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                       : "border-border bg-card",
                   ].join(" ")}
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleExpanded(slug)}
-                    aria-expanded={isOpen}
-                    className="flex items-center gap-3 p-4 text-left"
-                  >
-                    <span className="bg-primary/10 text-primary relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                      {coverImage ? (
-                        <Image
-                          src={coverImage}
-                          alt={groupName}
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
+                  <div className="bg-muted relative h-72 w-full">
+                    {cover ? (
+                      <Image
+                        src={cover.imageUrl!}
+                        alt={groupName}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+                        <Layers className="h-8 w-8" aria-hidden="true" />
+                      </div>
+                    )}
+                    <span className="bg-gold text-gold-foreground absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                      Multiple Levels
+                    </span>
+                    {selectedCount > 0 && (
+                      <div className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold shadow">
+                        {selectedCount}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-4">
+                    <p className="text-foreground font-semibold">{groupName}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {levels.length} levels available
+                      {selectedCount > 0 && ` • ${selectedCount} selected`}
+                    </p>
+                    <p className="text-foreground mt-auto pt-2 text-sm font-bold">
+                      {minPrice != null ? (
+                        <>
+                          <span className="text-muted-foreground font-normal">
+                            From{" "}
+                          </span>
+                          ₱{minPrice.toLocaleString("en-PH")}
+                        </>
                       ) : (
-                        <Layers className="h-5 w-5" aria-hidden="true" />
+                        "Contact us for pricing"
                       )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="text-foreground block truncate font-semibold">
-                        {groupName}
-                      </span>
-                      <span className="text-muted-foreground block text-xs">
-                        {levels.length} levels
-                        {selectedCount > 0 && ` • ${selectedCount} selected`}
-                      </span>
-                    </span>
-                    <ChevronDown
-                      className={[
-                        "text-muted-foreground h-5 w-5 shrink-0 transition-transform",
-                        isOpen ? "rotate-180" : "",
-                      ].join(" ")}
-                      aria-hidden="true"
-                    />
-                  </button>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(slug)}
+                      aria-expanded={isOpen}
+                      className="border-border hover:border-primary/40 mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                    >
+                      {isOpen ? "Hide levels" : "View levels"}
+                      <ChevronDown
+                        className={[
+                          "text-muted-foreground h-4 w-4 transition-transform",
+                          isOpen ? "rotate-180" : "",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
 
                   {isOpen && (
                     <div className="border-border space-y-2 border-t p-3">
@@ -173,7 +197,7 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                             ].join(" ")}
                           >
                             <span className="min-w-0 flex-1">
-                              <span className="text-foreground block truncate text-sm font-medium">
+                              <span className="text-foreground block text-sm font-medium">
                                 {c.level != null && (
                                   <span className="text-muted-foreground">
                                     Level {c.level} •{" "}
