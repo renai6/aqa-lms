@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { ensureActiveBatchId } from '@/lib/batches/ensure'
 import type { Prisma } from '@prisma/client'
@@ -9,19 +9,31 @@ type FakeTx = {
     aggregate: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
   }
+  course: {
+    findUnique: ReturnType<typeof vi.fn>
+  }
 }
 
 let tx: FakeTx
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-09-15T04:00:00Z'))
   tx = {
     batch: {
       findFirst: vi.fn().mockResolvedValue(null),
       aggregate: vi.fn().mockResolvedValue({ _max: { number: null } }),
       create: vi.fn().mockResolvedValue({ id: 'new-batch' }),
     },
+    course: {
+      findUnique: vi.fn().mockResolvedValue({ courseAlias: null }),
+    },
   }
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 const run = (courseId: string) =>
@@ -40,7 +52,7 @@ describe('ensureActiveBatchId', () => {
   it('creates the first batch when the course has none', async () => {
     await expect(run('c1')).resolves.toBe('new-batch')
     expect(tx.batch.create).toHaveBeenCalledWith({
-      data: { courseId: 'c1', number: 34, isActive: true },
+      data: { courseId: 'c1', number: 34, isActive: true, name: null },
       select: { id: true },
     })
   })
@@ -52,7 +64,19 @@ describe('ensureActiveBatchId', () => {
 
     await run('c1')
     expect(tx.batch.create).toHaveBeenCalledWith({
-      data: { courseId: 'c1', number: 36, isActive: true },
+      data: { courseId: 'c1', number: 36, isActive: true, name: null },
+      select: { id: true },
+    })
+  })
+
+  // A batch opened by an approval, with no admin present, is named the same
+  // way as one an admin starts by hand.
+  it('names the batch from the course alias', async () => {
+    tx.course.findUnique.mockResolvedValue({ courseAlias: 'MM01' })
+
+    await run('c1')
+    expect(tx.batch.create).toHaveBeenCalledWith({
+      data: { courseId: 'c1', number: 34, isActive: true, name: '0926MM01' },
       select: { id: true },
     })
   })

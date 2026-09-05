@@ -181,6 +181,11 @@ model Course {
   groupName String?
   level     Int?
 
+  // Short course code (e.g. "MM01") used to name batches: a batch opened in
+  // September 2026 becomes "0926MM01". Courses without one keep numbered
+  // batch labels.
+  courseAlias String?
+
   courseType       CourseType        @default(ON_SITE)
   isPublished      Boolean           @default(false)
   passingGrade     Float             @default(75.0)
@@ -260,6 +265,10 @@ model Batch {
   course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   number   Int
   isActive Boolean @default(false)
+
+  // Display label snapshotted when the batch opens, from the course alias and
+  // the Manila month/year. Null for courses that had no alias at the time.
+  name String?
 
   createdAt DateTime @default(now())
 

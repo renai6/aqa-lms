@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCourseById } from '@/lib/courses/queries'
-import { getActiveBatch } from '@/lib/batches/queries'
+import { getActiveBatch, batchLabel } from '@/lib/batches/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,7 +67,7 @@ export default async function CourseDetailPage({ params }: Props) {
               <CardTitle className="flex items-center justify-between text-sm">
                 Batches
                 {activeBatch
-                  ? <Badge variant="outline">Batch {activeBatch.number}</Badge>
+                  ? <Badge variant="outline">{batchLabel(activeBatch)}</Badge>
                   : <Badge variant="destructive" className="text-xs">No Active Batch</Badge>
                 }
               </CardTitle>

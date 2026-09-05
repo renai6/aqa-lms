@@ -4,15 +4,18 @@ import { nextBatchNumber } from './number'
 export type BatchRow = {
   id: string
   number: number
+  name: string | null
   isActive: boolean
   createdAt: Date
   _count: { enrollments: number }
 }
 
-export async function getActiveBatch(courseId: string): Promise<{ id: string; number: number } | null> {
+export async function getActiveBatch(
+  courseId: string,
+): Promise<{ id: string; number: number; name: string | null } | null> {
   return db.batch.findFirst({
     where: { courseId, isActive: true },
-    select: { id: true, number: true },
+    select: { id: true, number: true, name: true },
   })
 }
 
@@ -23,6 +26,7 @@ export async function getCourseBatches(courseId: string): Promise<BatchRow[]> {
     select: {
       id: true,
       number: true,
+      name: true,
       isActive: true,
       createdAt: true,
       _count: { select: { enrollments: true } },
@@ -47,6 +51,7 @@ export type BatchSubject = {
 export type BatchDetail = {
   id: string
   number: number
+  name: string | null
   isActive: boolean
   courseId: string
   _count: { enrollments: number }
@@ -59,6 +64,7 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
     select: {
       id: true,
       number: true,
+      name: true,
       isActive: true,
       courseId: true,
       _count: { select: { enrollments: true } },
@@ -99,3 +105,4 @@ export async function getMaxBatchNumber(courseId: string): Promise<number | null
 }
 
 export { nextBatchNumber }
+export { batchLabel } from './name'

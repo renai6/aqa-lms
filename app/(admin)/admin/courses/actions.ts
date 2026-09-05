@@ -66,6 +66,15 @@ const courseSchema = z.object({
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
     z.string().max(100, "Group name is too long.").optional(),
   ),
+  // Normalised here rather than at the form, because the alias is concatenated
+  // verbatim into every batch name this course opens.
+  courseAlias: z.preprocess(
+    (v) => {
+      const alias = typeof v === "string" ? v.trim().toUpperCase() : "";
+      return alias === "" ? undefined : alias;
+    },
+    z.string().max(20, "Course alias is too long.").optional(),
+  ),
   level: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
     z.coerce
@@ -97,6 +106,7 @@ export async function createCourseAction(
     miscFeeNote: formData.get("miscFeeNote"),
     groupName: formData.get("groupName"),
     level: formData.get("level"),
+    courseAlias: formData.get("courseAlias"),
   };
 
   const result = courseSchema.safeParse(raw);
@@ -116,6 +126,7 @@ export async function createCourseAction(
     miscFeeNote,
     groupName,
     level,
+    courseAlias,
   } = result.data;
 
   let newCourse: { id: string };
@@ -133,6 +144,7 @@ export async function createCourseAction(
         miscFeeNote: miscFeeNote || null,
         groupName: groupName || null,
         level: level ?? null,
+        courseAlias: courseAlias ?? null,
       },
       select: { id: true },
     });
@@ -169,6 +181,7 @@ export async function updateCourseAction(
     miscFeeNote: formData.get("miscFeeNote"),
     groupName: formData.get("groupName"),
     level: formData.get("level"),
+    courseAlias: formData.get("courseAlias"),
   };
 
   const result = courseSchema.safeParse(raw);
@@ -188,6 +201,7 @@ export async function updateCourseAction(
     miscFeeNote,
     groupName,
     level,
+    courseAlias,
   } = result.data;
 
   try {
@@ -205,6 +219,7 @@ export async function updateCourseAction(
         miscFeeNote: miscFeeNote || null,
         groupName: groupName || null,
         level: level ?? null,
+        courseAlias: courseAlias ?? null,
       },
     });
   } catch (err) {

@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCourseById } from '@/lib/courses/queries'
-import { getCourseBatches } from '@/lib/batches/queries'
+import { getCourseBatches, batchLabel } from '@/lib/batches/queries'
 import { getSession } from '@/lib/auth/session'
 import { PageHeader } from '@/components/admin/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +53,7 @@ export default async function BatchesPage({ params }: Props) {
             <tbody className="divide-y">
               {batches.map((batch) => (
                 <tr key={batch.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-medium">Batch {batch.number}</td>
+                  <td className="px-4 py-3 font-medium">{batchLabel(batch)}</td>
                   <td className="px-4 py-3">{batch._count.enrollments}</td>
                   <td className="px-4 py-3">
                     {batch.isActive

@@ -162,6 +162,7 @@ export type CourseDetail = {
   miscFeeNote: string | null;
   groupName: string | null;
   level: number | null;
+  courseAlias: string | null;
   createdAt: Date;
   updatedAt: Date;
   subjects: SubjectRow[];
@@ -277,6 +278,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       miscFeeNote: true,
       groupName: true,
       level: true,
+      courseAlias: true,
       createdAt: true,
       updatedAt: true,
       subjects: {

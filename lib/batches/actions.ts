@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { getMaxBatchNumber, nextBatchNumber } from './queries'
+import { generateBatchName } from './name'
 import { toPreviewUrl } from './drive'
 
 type ActionState = { error: string | null; success?: boolean }
@@ -36,8 +37,17 @@ export async function startNewBatchAction(
         where: { courseId, isActive: true },
         data: { isActive: false },
       })
+      const course = await tx.course.findUnique({
+        where: { id: courseId },
+        select: { courseAlias: true },
+      })
       await tx.batch.create({
-        data: { courseId, number: newNumber, isActive: true },
+        data: {
+          courseId,
+          number: newNumber,
+          isActive: true,
+          name: generateBatchName(course?.courseAlias ?? null, new Date()),
+        },
       })
     })
   } catch (err) {
