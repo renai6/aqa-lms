@@ -1,7 +1,13 @@
 // app/(admin)/admin/courses/[id]/course-roster.tsx
 import Link from "next/link";
 import { getCourseRoster } from "@/lib/students/queries";
+import {
+  getCourseBatches,
+  getBatchContentCoverage,
+  batchLabel,
+} from "@/lib/batches/queries";
 import { RemoveEnrollmentButton } from "@/components/admin/remove-enrollment-button";
+import { MoveEnrollmentButton } from "@/components/admin/move-enrollment-button";
 import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -13,8 +19,18 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 type Props = { courseId: string; courseTitle: string };
 
 export async function CourseRoster({ courseId, courseTitle }: Props) {
-  const roster = await getCourseRoster(courseId);
+  const [roster, batches, coverage] = await Promise.all([
+    getCourseRoster(courseId),
+    getCourseBatches(courseId),
+    getBatchContentCoverage(courseId),
+  ]);
   const activeCount = roster.filter((r) => !r.removedAt).length;
+
+  const batchOptions = batches.map((b) => ({
+    id: b.id,
+    label: batchLabel(b) + (b.isActive ? " (current intake)" : ""),
+    covered: coverage.byBatch[b.id] ?? 0,
+  }));
 
   return (
     <div className="space-y-4">
@@ -47,6 +63,12 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                   className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Email
+                </th>
+                <th
+                  scope="col"
+                  className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
+                >
+                  Batch
                 </th>
                 <th
                   scope="col"
@@ -92,6 +114,13 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                     )}
                   </td>
                   <td className="text-muted-foreground px-4 py-3">{r.email}</td>
+                  <td className="px-4 py-3">
+                    {r.batch ? (
+                      batchLabel(r.batch)
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </td>
                   <td className="text-muted-foreground px-4 py-3">
                     {dateFormatter.format(r.enrolledAt)}
                   </td>
@@ -111,13 +140,30 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                         : "Partially Paid"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <RemoveEnrollmentButton
-                      enrollmentId={r.enrollmentId}
-                      studentName={`${r.firstName} ${r.lastName}`}
-                      courseTitle={courseTitle}
-                      isRemoved={r.removedAt !== null}
-                    />
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      {/* A removed student has no access to move between, and
+                          the action rejects them server-side. */}
+                      {!r.removedAt && (
+                        <MoveEnrollmentButton
+                          enrollmentId={r.enrollmentId}
+                          studentName={`${r.firstName} ${r.lastName}`}
+                          currentBatchLabel={
+                            r.batch ? batchLabel(r.batch) : null
+                          }
+                          batches={batchOptions.filter(
+                            (b) => b.id !== r.batch?.id,
+                          )}
+                          totalLessons={coverage.totalLessons}
+                        />
+                      )}
+                      <RemoveEnrollmentButton
+                        enrollmentId={r.enrollmentId}
+                        studentName={`${r.firstName} ${r.lastName}`}
+                        courseTitle={courseTitle}
+                        isRemoved={r.removedAt !== null}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}

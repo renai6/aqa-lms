@@ -96,6 +96,40 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
   })
 }
 
+// How much lesson content each batch of the course actually carries, so an
+// admin moving a student can see what the destination batch will show them.
+// A BatchLessonContent row with all three URLs cleared is not content, which
+// is why this counts lessons rather than rows.
+export type BatchContentCoverage = {
+  totalLessons: number
+  byBatch: Record<string, number>
+}
+
+export async function getBatchContentCoverage(
+  courseId: string,
+): Promise<BatchContentCoverage> {
+  const [totalLessons, grouped] = await Promise.all([
+    db.lesson.count({ where: { subject: { courseId } } }),
+    db.batchLessonContent.groupBy({
+      by: ['batchId'],
+      where: {
+        batch: { courseId },
+        OR: [
+          { materialUrl: { not: null } },
+          { recordingUrl: { not: null } },
+          { videoUrl: { not: null } },
+        ],
+      },
+      _count: { _all: true },
+    }),
+  ])
+
+  const byBatch: Record<string, number> = {}
+  for (const row of grouped) byBatch[row.batchId] = row._count._all
+
+  return { totalLessons, byBatch }
+}
+
 export async function getMaxBatchNumber(courseId: string): Promise<number | null> {
   const result = await db.batch.aggregate({
     where: { courseId },
