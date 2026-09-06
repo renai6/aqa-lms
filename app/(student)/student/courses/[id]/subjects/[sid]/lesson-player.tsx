@@ -423,14 +423,27 @@ export function LessonPlayer({
                 {activeMedia.title}
               </p>
             </div>
-            <iframe
-              key={activeMedia.previewUrl}
-              src={activeMedia.previewUrl}
-              allow="autoplay"
-              allowFullScreen
-              className="flex-1 w-full border-0"
-              title={activeMedia.title}
-            />
+            <div className="relative flex-1 bg-black">
+              <iframe
+                key={activeMedia.previewUrl}
+                src={activeMedia.previewUrl}
+                allow="autoplay"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+                title={activeMedia.title}
+              />
+              {/* Drive draws its own "pop out" button in this corner, inside a
+                  cross-origin iframe we cannot style. This cover hides it and
+                  swallows the click. It is the same black as the player's
+                  background, so it disappears into the letterbox. Note this
+                  only removes the affordance - it does not restrict access to
+                  the file itself, which is what Drive's own sharing settings
+                  are for. */}
+              <div
+                aria-hidden="true"
+                className="absolute top-0 right-0 h-14 w-14 bg-black"
+              />
+            </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
