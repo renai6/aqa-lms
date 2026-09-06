@@ -4,8 +4,8 @@ import { getCourseById } from '@/lib/courses/queries'
 import { getSession } from '@/lib/auth/session'
 import { PageHeader } from '@/components/admin/page-header'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BatchLessonForm } from './batch-lesson-form'
+import { BatchSubjectCard } from './batch-subject-card'
 import { BatchRecordingsPanel } from './batch-recordings-panel'
 
 type Props = { params: Promise<{ id: string; bid: string }> }
@@ -52,42 +52,37 @@ export default async function BatchDetailPage({ params }: Props) {
           </p>
         )}
         {batch.course.subjects.map((subject) => (
-          <Card key={subject.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{subject.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {subject.lessons.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No lessons in this subject.</p>
-              ) : (
-                <div>
-                  {subject.lessons.map((lesson) => {
-                    const content = lesson.batchContent[0] ?? null
-                    return (
-                      <BatchLessonForm
-                        key={lesson.id}
-                        batchId={bid}
-                        courseId={id}
-                        lessonId={lesson.id}
-                        lessonTitle={lesson.title}
-                        lessonOrder={lesson.order}
-                        materialUrl={content?.materialUrl ?? null}
-                        videoUrl={content?.videoUrl ?? null}
-                        audioUrl={content?.audioUrl ?? null}
-                        pptUrl={content?.pptUrl ?? null}
-                      />
-                    )
-                  })}
-                </div>
-              )}
-              <BatchRecordingsPanel
-                batchId={bid}
-                courseId={id}
-                subjectId={subject.id}
-                recordings={subject.recordings}
-              />
-            </CardContent>
-          </Card>
+          <BatchSubjectCard key={subject.id} title={subject.title}>
+            {subject.lessons.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No lessons in this subject.</p>
+            ) : (
+              <div>
+                {subject.lessons.map((lesson) => {
+                  const content = lesson.batchContent[0] ?? null
+                  return (
+                    <BatchLessonForm
+                      key={lesson.id}
+                      batchId={bid}
+                      courseId={id}
+                      lessonId={lesson.id}
+                      lessonTitle={lesson.title}
+                      lessonOrder={lesson.order}
+                      materialUrl={content?.materialUrl ?? null}
+                      videoUrl={content?.videoUrl ?? null}
+                      audioUrl={content?.audioUrl ?? null}
+                      pptUrl={content?.pptUrl ?? null}
+                    />
+                  )
+                })}
+              </div>
+            )}
+            <BatchRecordingsPanel
+              batchId={bid}
+              courseId={id}
+              subjectId={subject.id}
+              recordings={subject.recordings}
+            />
+          </BatchSubjectCard>
         ))}
       </div>
     </div>
