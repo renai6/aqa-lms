@@ -1,7 +1,8 @@
 'use client'
 
-import Link from 'next/link'
+import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LoaderCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type NavLinkProps = {
@@ -9,6 +10,21 @@ type NavLinkProps = {
   icon: React.ReactNode
   label: string
   disabled?: boolean
+}
+
+// useLinkStatus reports on the nearest <Link> ancestor, so this has to render
+// inside the link it belongs to. It closes the gap between the click and the
+// route's loading.tsx appearing, which is where a slow page feels frozen.
+function NavSpinner() {
+  const { pending } = useLinkStatus()
+  if (!pending) return null
+
+  return (
+    <LoaderCircle
+      className="ml-auto h-3.5 w-3.5 shrink-0 animate-spin"
+      aria-hidden="true"
+    />
+  )
 }
 
 export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
@@ -42,6 +58,7 @@ export function NavLink({ href, icon, label, disabled }: NavLinkProps) {
     >
       {icon}
       <span>{label}</span>
+      <NavSpinner />
     </Link>
   )
 }
