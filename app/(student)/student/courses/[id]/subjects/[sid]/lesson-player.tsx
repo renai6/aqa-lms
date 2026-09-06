@@ -423,14 +423,29 @@ export function LessonPlayer({
                 {activeMedia.title}
               </p>
             </div>
-            <iframe
-              key={activeMedia.previewUrl}
-              src={activeMedia.previewUrl}
-              allow="autoplay"
-              allowFullScreen
-              className="flex-1 w-full border-0"
-              title={activeMedia.title}
-            />
+            <div className="relative flex-1 bg-black">
+              <iframe
+                key={activeMedia.previewUrl}
+                src={activeMedia.previewUrl}
+                allow="autoplay"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+                title={activeMedia.title}
+              />
+              {/* Drive draws its own "pop out" button in this corner, inside a
+                  cross-origin iframe we cannot style. This cover hides it and,
+                  because it takes the pointer events itself, stops the click
+                  from ever reaching Drive. Sized with margin around the button
+                  rather than to it, since its exact position shifts with the
+                  player's own layout. A full-bleed video shows this as a black
+                  corner - roughly the weight of the dark button it replaces.
+                  It removes the affordance only: restricting access to the
+                  file is what Drive's sharing settings are for. */}
+              <div
+                aria-hidden="true"
+                className="absolute top-0 right-0 h-16 w-16 bg-black"
+              />
+            </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
