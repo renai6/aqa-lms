@@ -234,6 +234,7 @@ model Subject {
   grades      Grade[]
   teachers    SubjectTeacher[]
   schedules   SubjectSchedule[]
+  recordings  BatchRecording[]
 }
 
 model SubjectTeacher {
@@ -274,6 +275,7 @@ model Batch {
 
   enrollments   Enrollment[]
   lessonContent BatchLessonContent[]
+  recordings    BatchRecording[]
 
   @@unique([courseId, number])
   @@index([courseId])
@@ -286,11 +288,33 @@ model BatchLessonContent {
   lessonId String
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  materialUrl  String?
-  recordingUrl String?
-  videoUrl     String?
+  materialUrl String?
+  videoUrl    String?
+  audioUrl    String?
+  pptUrl      String?
 
   @@unique([batchId, lessonId])
+}
+
+// Class-session recordings for one subject as taught in one batch. Not tied to
+// a lesson: a batch records the sessions it actually held, and Batch 34's
+// Arabic recordings are a different list from Batch 35's.
+model BatchRecording {
+  id        String @id @default(cuid())
+  batchId   String
+  batch     Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  url   String
+  // A class date carries no time, so @db.Date keeps it from drifting a day
+  // across the Manila/UTC boundary.
+  date  DateTime @db.Date
+  title String?
+
+  createdAt DateTime @default(now())
+
+  @@index([batchId, subjectId])
 }
 
 model Lesson {

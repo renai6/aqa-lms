@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BatchLessonForm } from './batch-lesson-form'
+import { BatchRecordingsPanel } from './batch-recordings-panel'
 
 type Props = { params: Promise<{ id: string; bid: string }> }
 
@@ -72,12 +73,19 @@ export default async function BatchDetailPage({ params }: Props) {
                         lessonOrder={lesson.order}
                         materialUrl={content?.materialUrl ?? null}
                         videoUrl={content?.videoUrl ?? null}
-                        recordingUrl={content?.recordingUrl ?? null}
+                        audioUrl={content?.audioUrl ?? null}
+                        pptUrl={content?.pptUrl ?? null}
                       />
                     )
                   })}
                 </div>
               )}
+              <BatchRecordingsPanel
+                batchId={bid}
+                courseId={id}
+                subjectId={subject.id}
+                recordings={subject.recordings}
+              />
             </CardContent>
           </Card>
         ))}

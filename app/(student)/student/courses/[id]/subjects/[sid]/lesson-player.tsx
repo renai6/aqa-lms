@@ -7,18 +7,26 @@ import {
   ChevronRight,
   Download,
   PlayCircle,
+  Headphones,
+  Presentation,
   Check,
   VideoOff,
   ClipboardList,
   ChevronsRight,
 } from "lucide-react";
 import { LessonDoneButton } from "./lesson-done-button";
-import type { StudentLesson, StudentAssessment } from "@/lib/student/queries";
+import type {
+  StudentLesson,
+  StudentAssessment,
+  StudentRecording,
+} from "@/lib/student/queries";
 import { toPreviewUrl } from "@/lib/batches/drive";
+import { recordingLabel } from "@/lib/batches/recording-date";
 
 type Props = {
   lessons: StudentLesson[];
   assessments: StudentAssessment[];
+  recordings: StudentRecording[];
   subjectId: string;
   courseId: string;
 };
@@ -42,11 +50,13 @@ function assessmentStatus(a: StudentAssessment): {
   };
 }
 
-type VideoKind = "video" | "recording";
+type Tab = "lessons" | "recordings";
 
-type ActiveVideo = {
-  lessonId: string;
-  kind: VideoKind;
+// One key identifies whatever is loaded in the right-hand panel, so a lesson's
+// video, a lesson's audio and a class recording can never be "playing" at once.
+type ActiveMedia = {
+  key: string;
+  kindLabel: string;
   title: string;
   previewUrl: string;
 };
@@ -54,36 +64,45 @@ type ActiveVideo = {
 export function LessonPlayer({
   lessons,
   assessments,
+  recordings,
   subjectId,
   courseId,
 }: Props) {
+  const [tab, setTab] = useState<Tab>("lessons");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null);
+  const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
 
   function toggleLesson(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function playVideo(lesson: StudentLesson, kind: VideoKind) {
-    const url = kind === "video" ? lesson.videoUrl : lesson.recordingUrl;
-    if (!url) return;
+  function play(media: Omit<ActiveMedia, "previewUrl">, url: string) {
     const previewUrl = toPreviewUrl(url);
     if (!previewUrl) return;
-    setActiveVideo({ lessonId: lesson.id, kind, title: lesson.title, previewUrl });
+    setActiveMedia({ ...media, previewUrl });
   }
 
-  function videoEntry(lesson: StudentLesson, kind: VideoKind, label: string) {
-    const isActive = activeVideo?.lessonId === lesson.id && activeVideo.kind === kind;
+  // `activeLabel` exists because a recording row's label is the only thing
+  // naming it — swapping in "Now Playing" there would leave the list anonymous.
+  // A lesson's entries still swap, since the lesson title stays visible above.
+  function mediaEntry(
+    key: string,
+    label: string,
+    onPlay: () => void,
+    Icon: typeof PlayCircle,
+    activeLabel = "Now Playing",
+  ) {
+    const isActive = activeMedia?.key === key;
     return (
       <button
-        onClick={() => playVideo(lesson, kind)}
+        onClick={onPlay}
         className={
           "flex w-full items-center gap-2.5 px-3 py-5 text-xs font-medium text-left transition-colors hover:bg-muted/60 " +
           (isActive ? "text-primary" : "text-foreground")
         }
       >
-        <PlayCircle className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
-        <span className="flex-1">{isActive ? "Now Playing" : label}</span>
+        <Icon className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
+        <span className="flex-1">{isActive ? activeLabel : label}</span>
         {isActive && (
           <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
             Live
@@ -93,12 +112,63 @@ export function LessonPlayer({
     );
   }
 
+  function tabButton(value: Tab, label: string) {
+    const isActive = tab === value;
+    return (
+      <button
+        onClick={() => setTab(value)}
+        aria-current={isActive ? "page" : undefined}
+        className={
+          "flex-1 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors border-b-2 " +
+          (isActive
+            ? "border-primary text-primary"
+            : "border-transparent text-muted-foreground hover:text-foreground")
+        }
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden">
       {/* ── Sidebar ── */}
       <aside className="w-full lg:w-80 shrink-0 max-h-[40vh] lg:max-h-none border-r border-border flex flex-col overflow-hidden">
+        <div className="shrink-0 flex border-b border-border">
+          {tabButton("lessons", "Lessons")}
+          {tabButton("recordings", "Recordings")}
+        </div>
+
         <div className="flex-1 overflow-y-auto">
-          {lessons.length === 0 ? (
+          {tab === "recordings" ? (
+            recordings.length === 0 ? (
+              <p className="px-4 py-8 text-sm text-center text-muted-foreground">
+                No recordings for this subject yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {recordings.map((recording) => {
+                  const key = "recording:" + recording.id;
+                  const label = recordingLabel(recording);
+                  return (
+                    <li key={recording.id}>
+                      {mediaEntry(
+                        key,
+                        label,
+                        () =>
+                          play(
+                            { key, kindLabel: "Recording", title: label },
+                            recording.url,
+                          ),
+                        PlayCircle,
+                        label,
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : lessons.length === 0 ? (
             <p className="px-4 py-8 text-sm text-center text-muted-foreground">
               No lessons yet.
             </p>
@@ -106,82 +176,89 @@ export function LessonPlayer({
             <ul className="divide-y divide-border">
               {lessons.map((lesson, index) => {
                 const isOpen = expandedId === lesson.id;
+                const videoKey = "lesson:" + lesson.id + ":video";
+                const audioKey = "lesson:" + lesson.id + ":audio";
                 const videoPreviewUrl = lesson.videoUrl
                   ? toPreviewUrl(lesson.videoUrl)
                   : null;
-                const recordingPreviewUrl = lesson.recordingUrl
-                  ? toPreviewUrl(lesson.recordingUrl)
+                const audioPreviewUrl = lesson.audioUrl
+                  ? toPreviewUrl(lesson.audioUrl)
                   : null;
-                const isPlaying = activeVideo?.lessonId === lesson.id;
+                const isPlaying =
+                  activeMedia?.key === videoKey || activeMedia?.key === audioKey;
 
                 return (
                   <li key={lesson.id}>
-                    {/* Row header — click to expand/collapse */}
-                    <button
-                      onClick={() => toggleLesson(lesson.id)}
-                      aria-expanded={isOpen}
+                    {/* Row header — click to expand/collapse. LessonDoneButton
+                        renders its own button, so it has to be a sibling of the
+                        toggle rather than a child: a button inside a button is
+                        invalid HTML and breaks hydration. */}
+                    <div
                       className={
-                        "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 " +
+                        "w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 " +
                         (isPlaying ? "bg-primary/5" : "")
                       }
                     >
-                      {/* Completion indicator */}
-                      <span
-                        aria-label={
-                          lesson.isCompleted
-                            ? "Completed"
-                            : `Lesson ${index + 1}`
-                        }
-                        className={
-                          "flex-none w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold " +
-                          (lesson.isCompleted
-                            ? "bg-green-600 border-green-600 text-white"
-                            : "border-muted-foreground text-muted-foreground")
-                        }
+                      <button
+                        onClick={() => toggleLesson(lesson.id)}
+                        aria-expanded={isOpen}
+                        className="flex flex-1 min-w-0 items-center gap-3 text-left"
                       >
-                        {lesson.isCompleted ? (
-                          <Check className="w-3 h-3" aria-hidden="true" />
-                        ) : (
-                          index + 1
-                        )}
-                      </span>
+                        {/* Completion indicator */}
+                        <span
+                          aria-label={
+                            lesson.isCompleted
+                              ? "Completed"
+                              : `Lesson ${index + 1}`
+                          }
+                          className={
+                            "flex-none w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold " +
+                            (lesson.isCompleted
+                              ? "bg-green-600 border-green-600 text-white"
+                              : "border-muted-foreground text-muted-foreground")
+                          }
+                        >
+                          {lesson.isCompleted ? (
+                            <Check className="w-3 h-3" aria-hidden="true" />
+                          ) : (
+                            index + 1
+                          )}
+                        </span>
 
-                      <span
-                        className={
-                          "flex-1 text-sm font-medium line-clamp-2 " +
-                          (lesson.isCompleted
-                            ? "text-muted-foreground"
-                            : "text-foreground")
-                        }
+                        <span
+                          className={
+                            "flex-1 text-sm font-medium line-clamp-2 " +
+                            (lesson.isCompleted
+                              ? "text-muted-foreground"
+                              : "text-foreground")
+                          }
+                        >
+                          {lesson.title}
+                        </span>
+                      </button>
+
+                      {lesson.isCompleted && (
+                        <LessonDoneButton
+                          lessonId={lesson.id}
+                          subjectId={subjectId}
+                          courseId={courseId}
+                          isCompleted={lesson.isCompleted}
+                        />
+                      )}
+
+                      <button
+                        onClick={() => toggleLesson(lesson.id)}
+                        aria-expanded={isOpen}
+                        aria-label={isOpen ? "Collapse lesson" : "Expand lesson"}
+                        className="flex-none text-muted-foreground"
                       >
-                        {lesson.title}
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        {lesson.isCompleted && (
-                          <div>
-                            <LessonDoneButton
-                              lessonId={lesson.id}
-                              subjectId={subjectId}
-                              courseId={courseId}
-                              isCompleted={lesson.isCompleted}
-                            />
-                          </div>
-                        )}
-
                         {isOpen ? (
-                          <ChevronDown
-                            className="flex-none w-4 h-4 text-muted-foreground"
-                            aria-hidden="true"
-                          />
+                          <ChevronDown className="w-4 h-4" aria-hidden="true" />
                         ) : (
-                          <ChevronRight
-                            className="flex-none w-4 h-4 text-muted-foreground"
-                            aria-hidden="true"
-                          />
+                          <ChevronRight className="w-4 h-4" aria-hidden="true" />
                         )}
-                      </div>
-                    </button>
+                      </button>
+                    </div>
 
                     {/* Expanded content */}
                     {isOpen && (
@@ -206,11 +283,56 @@ export function LessonPlayer({
                             </a>
                           )}
 
-                          {videoPreviewUrl &&
-                            videoEntry(lesson, "video", "Watch Lesson Video")}
+                          {lesson.pptUrl && (
+                            <a
+                              href={lesson.pptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2.5 px-3 py-5 text-xs font-medium text-foreground transition-colors hover:bg-muted/60"
+                            >
+                              <Presentation
+                                className="flex-none w-4 h-4 text-primary"
+                                aria-hidden="true"
+                              />
+                              <span className="flex-1">Open Slides</span>
+                              <ChevronRight
+                                className="flex-none w-3.5 h-3.5 text-muted-foreground"
+                                aria-hidden="true"
+                              />
+                            </a>
+                          )}
 
-                          {recordingPreviewUrl &&
-                            videoEntry(lesson, "recording", "Watch Recording")}
+                          {videoPreviewUrl &&
+                            mediaEntry(
+                              videoKey,
+                              "Watch Lesson Video",
+                              () =>
+                                play(
+                                  {
+                                    key: videoKey,
+                                    kindLabel: "Lesson Video",
+                                    title: lesson.title,
+                                  },
+                                  lesson.videoUrl!,
+                                ),
+                              PlayCircle,
+                            )}
+
+                          {audioPreviewUrl &&
+                            mediaEntry(
+                              audioKey,
+                              "Listen to Audio",
+                              () =>
+                                play(
+                                  {
+                                    key: audioKey,
+                                    kindLabel: "Audio",
+                                    title: lesson.title,
+                                  },
+                                  lesson.audioUrl!,
+                                ),
+                              Headphones,
+                            )}
 
                           {!lesson.isCompleted && (
                             <div>
@@ -224,8 +346,9 @@ export function LessonPlayer({
                           )}
 
                           {!lesson.materialUrl &&
+                            !lesson.pptUrl &&
                             !videoPreviewUrl &&
-                            !recordingPreviewUrl && (
+                            !audioPreviewUrl && (
                               <p className="px-3 py-2 text-xs text-muted-foreground">
                                 No materials available.
                               </p>
@@ -240,7 +363,7 @@ export function LessonPlayer({
           )}
 
           {/* ── Assessments ── */}
-          {assessments.length > 0 && (
+          {tab === "lessons" && assessments.length > 0 && (
             <div className="border-t border-border">
               <p className="px-4 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 Assessments
@@ -290,23 +413,23 @@ export function LessonPlayer({
 
       {/* ── Video Player ── */}
       <main className="dark flex-1 flex flex-col overflow-hidden bg-background">
-        {activeVideo ? (
+        {activeMedia ? (
           <>
             <div className="shrink-0 px-4 py-1 bg-card border-b border-border">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {activeVideo.kind === "video" ? "Lesson Video" : "Recording"}
+                {activeMedia.kindLabel}
               </p>
               <p className="text-sm font-medium text-white truncate">
-                {activeVideo.title}
+                {activeMedia.title}
               </p>
             </div>
             <iframe
-              key={activeVideo.previewUrl}
-              src={activeVideo.previewUrl}
+              key={activeMedia.previewUrl}
+              src={activeMedia.previewUrl}
               allow="autoplay"
               allowFullScreen
               className="flex-1 w-full border-0"
-              title={activeVideo.title}
+              title={activeMedia.title}
             />
           </>
         ) : (

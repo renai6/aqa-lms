@@ -18,7 +18,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <StudentNav firstName={user?.firstName ?? ''} />
+      <StudentNav />
       <main className="flex-1">{children}</main>
     </div>
   )

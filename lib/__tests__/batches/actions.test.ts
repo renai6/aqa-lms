@@ -31,7 +31,8 @@ function form(fields: Record<string, string>): FormData {
   fd.set('courseId', 'c1')
   fd.set('materialUrl', '')
   fd.set('videoUrl', '')
-  fd.set('recordingUrl', '')
+  fd.set('audioUrl', '')
+  fd.set('pptUrl', '')
   for (const [key, value] of Object.entries(fields)) {
     fd.set(key, value)
   }
@@ -47,16 +48,16 @@ describe('upsertBatchLessonContentAction', () => {
     vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' } as never)
   })
 
-  it('accepts a valid Drive URL for videoUrl and recordingUrl', async () => {
+  it('accepts a valid Drive URL for videoUrl and audioUrl', async () => {
     const result = await upsertBatchLessonContentAction(
       initial,
-      form({ videoUrl: validDriveUrl, recordingUrl: validDriveUrl }),
+      form({ videoUrl: validDriveUrl, audioUrl: validDriveUrl }),
     )
     expect(result.error).toBeNull()
     expect(db.batchLessonContent.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({ videoUrl: validDriveUrl }),
-        update: expect.objectContaining({ videoUrl: validDriveUrl }),
+        create: expect.objectContaining({ videoUrl: validDriveUrl, audioUrl: validDriveUrl }),
+        update: expect.objectContaining({ videoUrl: validDriveUrl, audioUrl: validDriveUrl }),
       }),
     )
   })
@@ -80,22 +81,46 @@ describe('upsertBatchLessonContentAction', () => {
     expect(db.batchLessonContent.upsert).not.toHaveBeenCalled()
   })
 
-  it('rejects a non-empty malformed recordingUrl and does not call the db', async () => {
+  it('rejects a non-empty malformed audioUrl and does not call the db', async () => {
     const result = await upsertBatchLessonContentAction(
       initial,
-      form({ recordingUrl: 'https://drive.google.com/drive/folders/XYZ' }),
+      form({ audioUrl: 'https://drive.google.com/drive/folders/XYZ' }),
     )
-    expect(result.error).toBe('Recording URL must be a Google Drive file link.')
+    expect(result.error).toBe('Audio URL must be a Google Drive file link.')
     expect(db.batchLessonContent.upsert).not.toHaveBeenCalled()
   })
 
-  it('accepts empty strings for videoUrl and recordingUrl (clearing works)', async () => {
+  it('accepts empty strings for videoUrl and audioUrl (clearing works)', async () => {
     const result = await upsertBatchLessonContentAction(
       initial,
-      form({ videoUrl: '', recordingUrl: '' }),
+      form({ videoUrl: '', audioUrl: '' }),
     )
     expect(result.error).toBeNull()
     expect(db.batchLessonContent.upsert).toHaveBeenCalled()
+  })
+
+  // Slides get pasted from OneDrive, SharePoint and Google Slides alike, so
+  // pptUrl deliberately skips the Drive-file check that guards video and audio.
+  it('accepts a non-Drive pptUrl', async () => {
+    const sharePoint = 'https://contoso.sharepoint.com/:p:/g/personal/deck.pptx'
+    const result = await upsertBatchLessonContentAction(initial, form({ pptUrl: sharePoint }))
+    expect(result.error).toBeNull()
+    expect(db.batchLessonContent.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ pptUrl: sharePoint }),
+        update: expect.objectContaining({ pptUrl: sharePoint }),
+      }),
+    )
+  })
+
+  it('persists a cleared pptUrl as null in both upsert branches', async () => {
+    await upsertBatchLessonContentAction(initial, form({ pptUrl: '' }))
+    expect(db.batchLessonContent.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ pptUrl: null }),
+        update: expect.objectContaining({ pptUrl: null }),
+      }),
+    )
   })
 })
 
