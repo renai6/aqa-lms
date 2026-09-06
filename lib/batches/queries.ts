@@ -34,11 +34,25 @@ export async function getCourseBatches(courseId: string): Promise<BatchRow[]> {
   })
 }
 
+export type BatchLessonContentRow = {
+  materialUrl: string | null
+  videoUrl: string | null
+  audioUrl: string | null
+  pptUrl: string | null
+}
+
 export type BatchLesson = {
   id: string
   title: string
   order: number
-  batchContent: Array<{ materialUrl: string | null; recordingUrl: string | null; videoUrl: string | null }>
+  batchContent: BatchLessonContentRow[]
+}
+
+export type BatchRecordingRow = {
+  id: string
+  url: string
+  date: Date
+  title: string | null
 }
 
 export type BatchSubject = {
@@ -46,6 +60,7 @@ export type BatchSubject = {
   title: string
   order: number
   lessons: BatchLesson[]
+  recordings: BatchRecordingRow[]
 }
 
 export type BatchDetail = {
@@ -84,9 +99,19 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
                   order: true,
                   batchContent: {
                     where: { batchId },
-                    select: { materialUrl: true, recordingUrl: true, videoUrl: true },
+                    select: {
+                      materialUrl: true,
+                      videoUrl: true,
+                      audioUrl: true,
+                      pptUrl: true,
+                    },
                   },
                 },
+              },
+              recordings: {
+                where: { batchId },
+                orderBy: { date: 'desc' },
+                select: { id: true, url: true, date: true, title: true },
               },
             },
           },
@@ -116,8 +141,9 @@ export async function getBatchContentCoverage(
         batch: { courseId },
         OR: [
           { materialUrl: { not: null } },
-          { recordingUrl: { not: null } },
           { videoUrl: { not: null } },
+          { audioUrl: { not: null } },
+          { pptUrl: { not: null } },
         ],
       },
       _count: { _all: true },

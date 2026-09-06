@@ -4,7 +4,7 @@
 import { useActionState } from "react";
 import { markLessonDoneAction, unmarkLessonDoneAction } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Check, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 
 type Props = {
   lessonId: string;

@@ -43,6 +43,7 @@ export default async function StudentSubjectPage({ params }: Props) {
         <LessonPlayer
           lessons={subject.lessons}
           assessments={subject.assessments}
+          recordings={subject.recordings}
           subjectId={sid}
           courseId={id}
         />

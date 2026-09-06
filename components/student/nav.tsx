@@ -2,9 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { SignOutButton } from './sign-out-button'
 
-type Props = { firstName: string }
-
-export function StudentNav({ firstName }: Props) {
+export function StudentNav() {
   return (
     <header className="sticky top-0 z-10 bg-sidebar border-b border-white/10">
       <div className="px-6 md:px-10 h-16 flex items-center justify-between">

@@ -37,9 +37,11 @@ describe('getBatchContentCoverage', () => {
     expect(coverage.byBatch).toEqual({ b34: 18, b35: 3 })
   })
 
-  // upsertBatchLessonContentAction writes a row with all three URLs null when
-  // an admin clears the fields, so a row is not by itself evidence of content.
-  it('ignores rows whose material, recording and video are all null', async () => {
+  // upsertBatchLessonContentAction writes a row with every URL null when an
+  // admin clears the fields, so a row is not by itself evidence of content.
+  // Recordings are excluded on purpose: they belong to the subject, not the
+  // lesson, so they say nothing about whether a lesson has materials.
+  it('ignores rows whose material, video, audio and slides are all null', async () => {
     await getBatchContentCoverage('c1')
 
     const arg = vi.mocked(db.batchLessonContent.groupBy).mock.calls[0][0]!
@@ -47,8 +49,9 @@ describe('getBatchContentCoverage', () => {
       batch: { courseId: 'c1' },
       OR: [
         { materialUrl: { not: null } },
-        { recordingUrl: { not: null } },
         { videoUrl: { not: null } },
+        { audioUrl: { not: null } },
+        { pptUrl: { not: null } },
       ],
     })
   })

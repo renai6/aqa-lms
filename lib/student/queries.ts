@@ -297,9 +297,17 @@ export type StudentLesson = {
   description: string | null
   order: number
   materialUrl: string | null
-  recordingUrl: string | null
   videoUrl: string | null
+  audioUrl: string | null
+  pptUrl: string | null
   isCompleted: boolean
+}
+
+export type StudentRecording = {
+  id: string
+  url: string
+  date: Date
+  title: string | null
 }
 
 export type StudentAttemptSummary = {
@@ -328,6 +336,7 @@ export type StudentSubject = {
   schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
   lessons: StudentLesson[]
   assessments: StudentAssessment[]
+  recordings: StudentRecording[]
 }
 
 export async function getStudentSubject(
@@ -385,7 +394,7 @@ export async function getStudentSubject(
 
   const lessonIds = subject.lessons.map(l => l.id)
 
-  const [completions, batchContents] = await Promise.all([
+  const [completions, batchContents, recordings] = await Promise.all([
     lessonIds.length > 0
       ? db.lessonCompletion.findMany({
           where: { userId, lessonId: { in: lessonIds } },
@@ -395,7 +404,22 @@ export async function getStudentSubject(
     enrollment.batchId && lessonIds.length > 0
       ? db.batchLessonContent.findMany({
           where: { batchId: enrollment.batchId, lessonId: { in: lessonIds } },
-          select: { lessonId: true, materialUrl: true, recordingUrl: true, videoUrl: true },
+          select: {
+            lessonId: true,
+            materialUrl: true,
+            videoUrl: true,
+            audioUrl: true,
+            pptUrl: true,
+          },
+        })
+      : Promise.resolve([]),
+    // Recordings hang off the subject, not the lessons, so a subject with no
+    // lessons yet can still have sessions to watch.
+    enrollment.batchId
+      ? db.batchRecording.findMany({
+          where: { batchId: enrollment.batchId, subjectId: subject.id },
+          orderBy: { date: 'desc' },
+          select: { id: true, url: true, date: true, title: true },
         })
       : Promise.resolve([]),
   ])
@@ -415,8 +439,9 @@ export async function getStudentSubject(
       return {
         ...l,
         materialUrl: content?.materialUrl ?? null,
-        recordingUrl: content?.recordingUrl ?? null,
         videoUrl: content?.videoUrl ?? null,
+        audioUrl: content?.audioUrl ?? null,
+        pptUrl: content?.pptUrl ?? null,
         isCompleted: completedSet.has(l.id),
       }
     }),
@@ -434,6 +459,7 @@ export async function getStudentSubject(
           : null,
       }
     }),
+    recordings,
   }
 }
 
