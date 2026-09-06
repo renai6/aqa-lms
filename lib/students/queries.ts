@@ -43,19 +43,37 @@ export type StudentDetail = {
   }[]
 }
 
-export async function getStudents({
-  courseId,
-  gender,
-}: {
+export const STUDENTS_PAGE_SIZE = 50
+
+export type StudentFilters = {
   courseId?: string
   gender?: Gender
-} = {}): Promise<StudentRow[]> {
+}
+
+export type StudentsPage = {
+  students: StudentRow[]
+  total: number
+  // The page actually returned, which may differ from the one requested.
+  page: number
+  pageCount: number
+}
+
+function whereFor({ courseId, gender }: StudentFilters) {
+  return {
+    role: UserRole.STUDENT,
+    ...(gender ? { gender } : {}),
+    ...(courseId ? { enrollments: { some: { courseId } } } : {}),
+  }
+}
+
+// `range` omitted means every matching student; the spread leaves skip/take off
+// the query entirely rather than sending an undefined limit.
+async function findStudents(
+  filters: StudentFilters,
+  range?: { skip: number; take: number },
+): Promise<StudentRow[]> {
   const users = await db.user.findMany({
-    where: {
-      role: UserRole.STUDENT,
-      ...(gender ? { gender } : {}),
-      ...(courseId ? { enrollments: { some: { courseId } } } : {}),
-    },
+    where: whereFor(filters),
     select: {
       id: true,
       firstName: true,
@@ -78,7 +96,7 @@ export async function getStudents({
       },
     },
     orderBy: { createdAt: 'desc' },
-    take: 200,
+    ...range,
   })
 
   return users.map((u) => ({
@@ -91,6 +109,33 @@ export async function getStudents({
       removedAt: e.removedAt,
     })),
   }))
+}
+
+// One page of the admin students table. The count is awaited first so that an
+// out-of-range `?page=` clamps to a page that exists instead of rendering an
+// empty table for a filter that does match students.
+export async function getStudentsPage(
+  filters: StudentFilters,
+  page: number,
+): Promise<StudentsPage> {
+  const total = await db.user.count({ where: whereFor(filters) })
+  const pageCount = Math.max(1, Math.ceil(total / STUDENTS_PAGE_SIZE))
+  const safePage = Math.min(Math.max(Math.trunc(page) || 1, 1), pageCount)
+
+  const students = await findStudents(filters, {
+    skip: (safePage - 1) * STUDENTS_PAGE_SIZE,
+    take: STUDENTS_PAGE_SIZE,
+  })
+
+  return { students, total, page: safePage, pageCount }
+}
+
+// Deliberately unpaginated, for the CSV export: a capped export hands the admin
+// a partial roster that looks complete.
+export async function getAllStudents(
+  filters: StudentFilters,
+): Promise<StudentRow[]> {
+  return findStudents(filters)
 }
 
 export async function getStudentById(id: string): Promise<StudentDetail | null> {
