@@ -2,7 +2,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { type Gender } from '@prisma/client'
 import { verifySessionToken } from '@/lib/auth/jwt'
-import { getStudents } from '@/lib/students/queries'
+import { getAllStudents } from '@/lib/students/queries'
 import { formatEnrolledCourses } from '@/lib/students/format'
 
 // Quotes a value for CSV, escaping embedded quotes and neutralising anything a
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       ? (genderParam as Gender)
       : undefined
 
-  const students = await getStudents({ courseId: course, gender })
+  const students = await getAllStudents({ courseId: course, gender })
 
   const header =
     'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Enrolled Date,Status\r\n'

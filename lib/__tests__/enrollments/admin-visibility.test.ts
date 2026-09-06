@@ -5,7 +5,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import { db } from "@/lib/db";
-import { getStudents, getStudentById } from "@/lib/students/queries";
+import { getAllStudents, getStudentById } from "@/lib/students/queries";
 
 const enrollmentRow = {
   id: "e1",
@@ -25,7 +25,7 @@ const enrollmentRow = {
 describe("admin student queries expose removed enrollments", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("getStudents carries the enrollment id and removedAt through", async () => {
+  it("getAllStudents carries the enrollment id and removedAt through", async () => {
     vi.mocked(db.user.findMany).mockResolvedValue([
       {
         id: "s1",
@@ -42,7 +42,7 @@ describe("admin student queries expose removed enrollments", () => {
       },
     ] as never);
 
-    const [student] = await getStudents({ courseId: "c1" });
+    const [student] = await getAllStudents({ courseId: "c1" });
 
     expect(student.enrollments[0]).toMatchObject({
       id: "e1",
