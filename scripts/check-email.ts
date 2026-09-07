@@ -5,7 +5,7 @@
  *   pnpm check:email --to=me@you.com    # also send a real test email
  *
  * To check production, run it with production values in the environment:
- *   RESEND_API_KEY=... RESEND_FROM_EMAIL=... NEXT_PUBLIC_APP_URL=... pnpm check:email
+ *   RESEND_API_KEY=... RESEND_FROM_EMAIL=... APP_URL=... pnpm check:email
  */
 import 'dotenv/config'
 
@@ -35,7 +35,7 @@ async function main() {
 
   const apiKey = env('RESEND_API_KEY')
   const from = env('RESEND_FROM_EMAIL')
-  const appUrl = env('NEXT_PUBLIC_APP_URL')
+  const appUrl = env('APP_URL')
 
   console.log('Email configuration')
 
@@ -47,10 +47,10 @@ async function main() {
     fail(`RESEND_FROM_EMAIL is not a valid address: ${from}`)
   else pass(`RESEND_FROM_EMAIL is ${from}`)
 
-  if (!appUrl) fail('NEXT_PUBLIC_APP_URL is not set (email links would be broken)')
+  if (!appUrl) fail('APP_URL is not set (email links would be broken)')
   else if (/localhost|127\.0\.0\.1/.test(appUrl))
-    console.log(`  warn  NEXT_PUBLIC_APP_URL is ${appUrl} - fine locally, broken in production`)
-  else pass(`NEXT_PUBLIC_APP_URL is ${appUrl}`)
+    console.log(`  warn  APP_URL is ${appUrl} - fine locally, broken in production`)
+  else pass(`APP_URL is ${appUrl}`)
 
   if (!apiKey) return report()
 

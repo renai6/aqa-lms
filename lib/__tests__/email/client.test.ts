@@ -15,7 +15,7 @@ beforeEach(() => {
   sendMock.mockReset().mockResolvedValue({ data: { id: 'email-id' }, error: null })
   process.env.RESEND_API_KEY = 're_test_key'
   process.env.RESEND_FROM_EMAIL = 'noreply@test.com'
-  process.env.NEXT_PUBLIC_APP_URL = 'https://aqaedu.com'
+  process.env.APP_URL = 'https://aqaedu.com'
 })
 
 afterEach(() => {
@@ -70,13 +70,13 @@ describe('appUrl', () => {
   })
 
   it('does not double a trailing slash', async () => {
-    process.env.NEXT_PUBLIC_APP_URL = 'https://aqaedu.com/'
+    process.env.APP_URL = 'https://aqaedu.com/'
     const { appUrl } = await load()
     expect(appUrl('/login')).toBe('https://aqaedu.com/login')
   })
 
   it('throws rather than building an "undefined/..." link', async () => {
-    delete process.env.NEXT_PUBLIC_APP_URL
+    delete process.env.APP_URL
     const { appUrl, EmailConfigError } = await load()
     expect(() => appUrl('/login')).toThrow(EmailConfigError)
   })

@@ -38,7 +38,7 @@ export function escapeHtml(s: string): string {
 
 /** Absolute app URL for links in emails. Throws rather than emitting `undefined/...`. */
 export function appUrl(path = ''): string {
-  return requireEnv('NEXT_PUBLIC_APP_URL').replace(/\/+$/, '') + path
+  return requireEnv('APP_URL').replace(/\/+$/, '') + path
 }
 
 export async function sendEmail(params: {
