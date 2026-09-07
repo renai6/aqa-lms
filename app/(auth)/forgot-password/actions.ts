@@ -17,8 +17,10 @@ export async function forgotPasswordAction(_prev: ForgotState, formData: FormDat
     const token = await createVerificationToken(user.id, TokenType.PASSWORD_RESET)
     try {
       await sendPasswordResetEmail(email.trim().toLowerCase(), token)
-    } catch {
-      // Swallow so the response is always the same regardless of email existence or send failure
+    } catch (err) {
+      // The response must not vary with send failure (prevents email enumeration),
+      // but swallowing this silently is how a broken mailer goes unnoticed for months.
+      console.error('[forgotPassword] Email error:', err)
     }
   }
   // Always return the same state (prevents email enumeration)

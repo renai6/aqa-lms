@@ -1,10 +1,4 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+import { appUrl, escapeHtml, sendEmail } from "@/lib/email/client";
 
 export async function sendPurchaseConfirmationEmail(params: {
   to: string;
@@ -12,23 +6,19 @@ export async function sendPurchaseConfirmationEmail(params: {
   purchaseId: string;
   payLater: boolean;
 }): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/student/dashboard`;
+  const url = appUrl("/student/dashboard");
   const received = params.payLater
     ? "We have received your enrollment request. You chose to pay later, so nothing is due yet - our team will review your request shortly."
     : "We have received your course purchase and proof of payment. Our team will review it shortly.";
-  const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+  await sendEmail({
     to: params.to,
+    label: "purchase confirmation email",
     subject: "We received your course purchase - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>${received}</p>
 <p>You can track its status here: <a href="${url}">${url}</a></p>
 <p>Best regards,<br>Al-Qur'an Academy Team</p>`,
   });
-  if (error)
-    throw new Error(
-      `Failed to send purchase confirmation email: ${error.message}`,
-    );
 }
 
 export async function sendPurchaseApprovalEmail(params: {
@@ -36,13 +26,13 @@ export async function sendPurchaseApprovalEmail(params: {
   firstName: string;
   courseNames: string[];
 }): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/student/dashboard`;
+  const url = appUrl("/student/dashboard");
   const list = params.courseNames
     .map((c) => `<li>${escapeHtml(c)}</li>`)
     .join("");
-  const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+  await sendEmail({
     to: params.to,
+    label: "purchase approval email",
     subject: "Your course purchase is approved - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Your purchase has been approved. You now have access to:</p>
@@ -50,8 +40,6 @@ export async function sendPurchaseApprovalEmail(params: {
 <p>Log in to start learning: <a href="${url}">${url}</a></p>
 <p>Welcome to Al-Qur'an Academy!</p>`,
   });
-  if (error)
-    throw new Error(`Failed to send purchase approval email: ${error.message}`);
 }
 
 export async function sendPurchaseRejectionEmail(params: {
@@ -59,10 +47,10 @@ export async function sendPurchaseRejectionEmail(params: {
   firstName: string;
   reason: string;
 }): Promise<void> {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/student/courses`;
-  const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+  const url = appUrl("/student/courses");
+  await sendEmail({
     to: params.to,
+    label: "purchase rejection email",
     subject: "Update on your course purchase - Al-Qur'an Academy",
     html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
 <p>Unfortunately, your recent course purchase could not be approved.</p>
@@ -70,8 +58,4 @@ export async function sendPurchaseRejectionEmail(params: {
 <p>You're welcome to submit a new purchase here: <a href="${url}">${url}</a></p>
 <p>Best regards,<br>Al-Qur'an Academy Team</p>`,
   });
-  if (error)
-    throw new Error(
-      `Failed to send purchase rejection email: ${error.message}`,
-    );
 }
