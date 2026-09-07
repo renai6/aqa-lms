@@ -10,8 +10,9 @@ vi.mock('resend', () => {
 })
 
 beforeEach(() => {
+  process.env.RESEND_API_KEY = 're_test_key'
   process.env.RESEND_FROM_EMAIL = 'noreply@test.com'
-  process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000'
+  process.env.APP_URL = 'http://localhost:3000'
 })
 
 import { sendVerificationEmail, sendPasswordResetEmail } from '@/lib/auth/email'
