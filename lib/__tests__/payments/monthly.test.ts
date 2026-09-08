@@ -227,6 +227,58 @@ describe("buildMonthlyMatrix", () => {
     expect(matrix.rows[0].amountBehind).toBe(1500);
   });
 
+  it("gives a paid-ahead month its own column and shows the amount", () => {
+    // Both pickers offer the next month, so money can legitimately land in a
+    // month nobody owes yet. Without a column it would be in no cell and no
+    // unassigned total, which is to say nowhere at all.
+    const matrix = buildMonthlyMatrix(
+      [
+        enrollment({
+          id: "e1",
+          enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
+          payments: [
+            { amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
+            { amount: 1500, periodMonth: "2026-10", status: "APPROVED" },
+          ],
+        }),
+      ],
+      1500,
+      NOW,
+    );
+    expect(matrix.months).toEqual(["2026-09", "2026-10"]);
+    expect(matrix.rows[0].cells[1]).toEqual({
+      month: "2026-10",
+      owed: false,
+      paid: 1500,
+    });
+    // Not owed, so it settles nothing and skews no tally.
+    expect(matrix.rows[0].unassigned).toBe(0);
+    expect(matrix.rows[0].amountBehind).toBe(0);
+    expect(matrix.tallies[1]).toEqual({
+      month: "2026-10",
+      paid: 0,
+      partial: 0,
+      unpaid: 0,
+      unscored: 0,
+    });
+  });
+
+  it("leaves a not-owed month with no money as an empty cell", () => {
+    const matrix = buildMonthlyMatrix(
+      [
+        enrollment({ id: "early" }),
+        enrollment({
+          id: "late",
+          enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
+        }),
+      ],
+      1500,
+      NOW,
+    );
+    const late = matrix.rows.find((r) => r.enrollmentId === "late")!;
+    expect(late.cells[0]).toEqual({ month: "2026-06", owed: false, paid: 0 });
+  });
+
   it("counts nothing as behind when the course has no fee", () => {
     const matrix = buildMonthlyMatrix(
       [

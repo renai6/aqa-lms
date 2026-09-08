@@ -7,6 +7,18 @@ import { cn } from "@/lib/utils";
 // does not depend on telling a check from a cross.
 function CellMark({ cell }: { cell: MonthCell }) {
   if (!cell.owed) {
+    // Money can land in a month the student does not owe, because paying
+    // ahead is offered. Showing the amount is the only place it appears.
+    if (cell.paid > 0) {
+      return (
+        <span className="text-xs font-medium text-emerald-600">
+          <span className="sr-only">
+            {monthKeyLabel(cell.month)}: paid ahead,{" "}
+          </span>
+          {peso(cell.paid)}
+        </span>
+      );
+    }
     return (
       <span className="text-muted-foreground/40" aria-label="Not enrolled">
         ·

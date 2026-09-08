@@ -36,20 +36,21 @@ export type MonthStatus =
   // fee an admin simply has not filled in yet.
   | { kind: "unscored"; paid: number };
 
+// Integer centavos, for the reason ./balance.ts documents: summing floats
+// leaves residuals like 3.64e-12 that render as a permanent one-centavo
+// shortfall. Several payments per month is the normal case here, so the risk
+// is higher than it is for a single enrollment balance.
+function sumCentavos(amounts: number[]): number {
+  return amounts.reduce((sum, amount) => sum + Math.round(amount * 100), 0);
+}
+
 // `approvedAmounts` must already be filtered to APPROVED rows for one month.
 // Pending and rejected payments are not money received.
 export function monthStatus(
   monthlyFee: number | null,
   approvedAmounts: number[],
 ): MonthStatus {
-  // Integer centavos, for the reason ./balance.ts documents: summing floats
-  // leaves residuals like 3.64e-12 that render as a permanent one-centavo
-  // shortfall. Several payments per month is the normal case here, so the
-  // risk is higher than it is for a single enrollment balance.
-  const paidCentavos = approvedAmounts.reduce(
-    (sum, amount) => sum + Math.round(amount * 100),
-    0,
-  );
+  const paidCentavos = sumCentavos(approvedAmounts);
   const paid = paidCentavos / 100;
   if (monthlyFee === null) return { kind: "unscored", paid };
 
@@ -79,8 +80,13 @@ export type MatrixEnrollment = {
 // A cell is either outside this enrollment's owed range, or a verdict. The
 // distinction matters: a student who joined in August has no opinion about
 // June, and rendering that as "unpaid" would invent three months of arrears.
+//
+// A not-owed cell still carries `paid`, because a student may legitimately
+// pay into a month they do not owe yet: both the student picker and the admin
+// month select deliberately offer the next month. That money has to render
+// somewhere, and it is not "unassigned" - it names its month.
 export type MonthCell =
-  | { month: MonthKey; owed: false }
+  | { month: MonthKey; owed: false; paid: number }
   | { month: MonthKey; owed: true; status: MonthStatus; hasPending: boolean };
 
 export type MatrixRow = {
@@ -122,6 +128,16 @@ export function buildMonthlyMatrix(
     const owed = monthsOwed(e.enrolledAt, e.removedAt ?? e.completedAt, now);
     owedByEnrollment.set(e.id, new Set(owed));
     for (const m of owed) allMonths.add(m);
+    // A month somebody has paid into gets a column even when nobody owes it
+    // yet. `monthsOwed` stops at the current month while paying ahead is
+    // deliberately offered, so without this a payment approved for next month
+    // would sit in no cell and no unassigned total - invisible, and
+    // permanently so once the enrollment ends.
+    for (const p of e.payments) {
+      if (p.status === "APPROVED" && p.periodMonth !== null) {
+        allMonths.add(p.periodMonth);
+      }
+    }
   }
   // Keys are zero-padded, so a plain sort orders them chronologically.
   const months = [...allMonths].sort();
@@ -139,7 +155,7 @@ export function buildMonthlyMatrix(
       }
       if (p.status !== "APPROVED") continue;
       if (p.periodMonth === null) {
-        unassigned = (Math.round(unassigned * 100) + Math.round(p.amount * 100)) / 100;
+        unassigned = sumCentavos([unassigned, p.amount]) / 100;
         continue;
       }
       const bucket = approvedByMonth.get(p.periodMonth);
@@ -150,7 +166,13 @@ export function buildMonthlyMatrix(
     let monthsBehind = 0;
     let behindCentavos = 0;
     const cells: MonthCell[] = months.map((month) => {
-      if (!owed.has(month)) return { month, owed: false };
+      if (!owed.has(month)) {
+        return {
+          month,
+          owed: false,
+          paid: sumCentavos(approvedByMonth.get(month) ?? []) / 100,
+        };
+      }
       const status = monthStatus(monthlyFee, approvedByMonth.get(month) ?? []);
       if (status.kind === "unpaid") {
         monthsBehind += 1;
