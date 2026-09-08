@@ -228,8 +228,11 @@ export type AdminPaymentDetail = {
   // the stored `totalDue` is null.
   totalDue: number | null;
   approvedPaid: number;
-  // Non-null only when the enrollment has no total yet, in which case the
-  // approve form offers to start tracking it. `alreadyPaid` is itself
+  // Non-null only when the enrollment has no total yet AND the course is not
+  // billed monthly, in which case the approve form offers to start tracking
+  // it. A monthly enrollment has no single agreed total by design, so a
+  // lifetime ledger there would contradict the month matrix rather than
+  // complement it. `alreadyPaid` is itself
   // nullable: null means "do not render this field", which is the case when
   // an APPROVED CHECKOUT payment already exists for the enrollment - that
   // money is already in the ledger, so prefilling and re-submitting it would
@@ -307,8 +310,14 @@ export async function getAdminPaymentById(
   const hasCheckoutPayment = r.enrollment.payments.some(
     (p) => p.source === "CHECKOUT",
   );
+  const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
+  // Never offered on a monthly course. A monthly enrollment has no single
+  // agreed total - the spec's "No change to Enrollment.totalDue" - so a total
+  // typed here would create a lifetime ledger that never grows with monthly
+  // accrual, and the dashboard would read "fully paid" while the matrix reads
+  // months behind. The two ledgers must not be able to disagree.
   const catchUpPrefill =
-    r.enrollment.totalDue === null
+    r.enrollment.totalDue === null && !isMonthly
       ? {
           totalDue:
             r.enrollment.course.tuitionFee !== null &&
@@ -334,7 +343,6 @@ export async function getAdminPaymentById(
               : "",
         }
       : null;
-  const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
   const monthOptions = isMonthly
     ? payableMonths(
         {

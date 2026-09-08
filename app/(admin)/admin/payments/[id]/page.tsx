@@ -7,6 +7,7 @@ import { getAdminPaymentById } from "@/lib/payments/queries";
 import { peso } from "@/lib/payments/balance";
 import { monthKeyLabel } from "@/lib/time/manila";
 import { ApproveForm } from "./approve-form";
+import { AssignMonthForm } from "./assign-month-form";
 import { RejectForm } from "./reject-form";
 
 type Props = { params: Promise<{ id: string }> };
@@ -104,6 +105,16 @@ export default async function PaymentDetailPage({ params }: Props) {
         <p className="text-destructive text-sm">
           <strong>Rejection reason:</strong> {payment.adminRemarks}
         </p>
+      )}
+
+      {payment.status === "APPROVED" && payment.isMonthly && (
+        <div className="bg-card rounded-xl border p-4">
+          <AssignMonthForm
+            id={payment.id}
+            periodMonth={payment.periodMonth}
+            monthOptions={payment.monthOptions}
+          />
+        </div>
       )}
 
       {isPending && (

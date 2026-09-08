@@ -16,6 +16,7 @@ import {
 } from "@/lib/purchases/email";
 import { peso } from "@/lib/payments/balance";
 import { ensureActiveBatchId } from "@/lib/batches/ensure";
+import { toMonthKey, monthKeyToDate } from "@/lib/time/manila";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -57,7 +58,13 @@ export async function approvePurchaseAction(
       items: {
         select: {
           courseId: true,
-          course: { select: { title: true, archivedAt: true } },
+          course: {
+            select: {
+              title: true,
+              archivedAt: true,
+              paymentFrequency: true,
+            },
+          },
         },
       },
     },
@@ -111,6 +118,12 @@ export async function approvePurchaseAction(
   }
 
   const paymentStatus = paymentStatusFromType(purchase.paymentType);
+  // The month a monthly enrollment's checkout money covers. Attributed here
+  // rather than left null, because unattributed money is what the matrix
+  // parks in its Unassigned column: every monthly student would otherwise
+  // start life reading as behind, with an admin correction owed on day one.
+  // Manila, since that is the calendar the billing month is on.
+  const approvalMonth = monthKeyToDate(toMonthKey(new Date()));
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -208,6 +221,10 @@ export async function approvePurchaseAction(
               source: "CHECKOUT",
               reviewedById: auth.userId,
               reviewedAt: new Date(),
+              periodMonth:
+                item.course.paymentFrequency === "MONTHLY"
+                  ? approvalMonth
+                  : null,
             },
           });
         }

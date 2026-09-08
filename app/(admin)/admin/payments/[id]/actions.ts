@@ -10,7 +10,7 @@ import {
   sendPaymentApprovalEmail,
   sendPaymentRejectionEmail,
 } from "@/lib/payments/email";
-import { monthKeyToDate } from "@/lib/time/manila";
+import { monthKeyToDate, toMonthKey } from "@/lib/time/manila";
 import { payableMonths } from "@/lib/payments/monthly";
 
 type ActionState = { error: string | null; success?: boolean };
@@ -173,6 +173,12 @@ export async function approvePaymentAction(
             source: "CHECKOUT",
             reviewedById: auth.userId,
             reviewedAt: new Date(),
+            // Attributed to the Manila month of this approval rather than
+            // left null, for the reason approvePurchaseAction documents:
+            // unattributed money reads as arrears in the matrix.
+            periodMonth: isMonthly
+              ? monthKeyToDate(toMonthKey(new Date()))
+              : null,
           },
         });
       }
@@ -204,6 +210,89 @@ export async function approvePaymentAction(
   }
 
   redirect("/admin/payments");
+}
+
+// Attributing an already-approved payment to a month. Approval is a one-way
+// door - `approvePaymentAction` only touches PENDING rows - so without this
+// the month a payment covers could never be set or corrected after the fact,
+// and every historical row plus every checkout row written before this feature
+// would be stranded in the matrix's Unassigned column for good.
+//
+// It touches `periodMonth` and nothing else. The amount, the status and the
+// enrollment's ledger are settled facts of the approval and are not reopened.
+export async function assignPaymentMonthAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Invalid payment ID." };
+
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const payment = await db.payment.findUnique({
+    where: { id },
+    select: {
+      status: true,
+      enrollment: {
+        select: {
+          enrolledAt: true,
+          completedAt: true,
+          removedAt: true,
+          course: { select: { paymentFrequency: true } },
+        },
+      },
+    },
+  });
+  if (!payment) return { error: "Payment not found." };
+  if (payment.status !== "APPROVED") {
+    // A pending payment gets its month from the approve form, which sets it
+    // and the status together; a rejected one is not money received.
+    return { error: "Only an approved payment can be assigned a month." };
+  }
+  if (payment.enrollment.course.paymentFrequency !== "MONTHLY") {
+    return { error: "This course is not billed monthly." };
+  }
+
+  const rawMonth = formData.get("periodMonth");
+  const monthText = typeof rawMonth === "string" ? rawMonth.trim() : "";
+  // Clearing back to unassigned is how an admin undoes a wrong attribution
+  // without having to guess a different month to park it in.
+  const clearing = monthText === "";
+  if (!clearing && !/^\d{4}-(0[1-9]|1[0-2])$/.test(monthText)) {
+    return { error: "Select which month this payment covers." };
+  }
+  if (!clearing) {
+    // Same bounds check as the approve path: a format-valid month outside the
+    // enrollment's payable range would land in neither a matrix column nor
+    // Unassigned. `payableMonths` deliberately does not filter out settled
+    // months, so correcting onto one still passes.
+    const offered = payableMonths(
+      {
+        enrolledAt: payment.enrollment.enrolledAt,
+        completedAt: payment.enrollment.completedAt,
+        removedAt: payment.enrollment.removedAt,
+      },
+      new Date(),
+    );
+    if (!offered.includes(monthText)) {
+      return { error: "That month is outside this enrollment's range." };
+    }
+  }
+
+  try {
+    await db.payment.update({
+      where: { id },
+      data: { periodMonth: clearing ? null : monthKeyToDate(monthText) },
+    });
+  } catch (err) {
+    console.error("[assignPaymentMonth] DB error:", err);
+    return { error: "A database error occurred. Please try again." };
+  }
+
+  revalidatePath("/admin/payments");
+  revalidatePath(`/admin/payments/${id}`);
+  return { error: null, success: true };
 }
 
 export async function rejectPaymentAction(

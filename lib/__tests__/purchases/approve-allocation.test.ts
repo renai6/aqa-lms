@@ -49,8 +49,14 @@ const twoCoursePurchase = {
   paymentProofUrl: "purchase/p1/proof.jpg",
   user: { id: "u1", email: "s@example.com", firstName: "Sam" },
   items: [
-    { courseId: "c1", course: { title: "Marhala 1", archivedAt: null } },
-    { courseId: "c2", course: { title: "Marhala 2", archivedAt: null } },
+    {
+      courseId: "c1",
+      course: { title: "Marhala 1", archivedAt: null, paymentFrequency: null },
+    },
+    {
+      courseId: "c2",
+      course: { title: "Marhala 2", archivedAt: null, paymentFrequency: null },
+    },
   ],
 };
 
@@ -104,6 +110,37 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
     );
   });
 
+  it("attributes a monthly course's checkout money to the approval month", async () => {
+    // Left unattributed, this money lands in the matrix's Unassigned column
+    // and every monthly student reads as behind from the day they enroll.
+    vi.mocked(db.purchase.findUnique).mockResolvedValue({
+      ...twoCoursePurchase,
+      items: [
+        {
+          courseId: "c1",
+          course: {
+            title: "Marhala 1",
+            archivedAt: null,
+            paymentFrequency: "MONTHLY",
+          },
+        },
+      ],
+      amountPaid: { toNumber: () => 1500 },
+    } as never);
+
+    await expect(
+      approvePurchaseAction(
+        { error: null },
+        form({ id: "p1", totalDue_c1: "", applied_c1: "1500" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    const { data } = tx.payment.create.mock.calls[0][0];
+    expect(data.periodMonth).toBeInstanceOf(Date);
+    // The month anchor is the first of the month at UTC midnight.
+    expect(data.periodMonth.toISOString().slice(8)).toBe("01T00:00:00.000Z");
+  });
+
   it("creates one approved CHECKOUT payment per enrollment", async () => {
     await expect(
       approvePurchaseAction(
@@ -129,6 +166,8 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
         source: "CHECKOUT",
         reviewedById: "admin1",
         reviewedAt: expect.any(Date),
+        // Not billed monthly, so the row is attributed to no month.
+        periodMonth: null,
       },
     });
   });
