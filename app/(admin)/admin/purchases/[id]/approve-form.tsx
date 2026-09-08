@@ -95,31 +95,49 @@ export function ApproveForm({
         {courses.map((course, i) => (
           <div key={course.id} className="rounded-md border p-3">
             <p className="mb-2 text-sm font-medium">{course.title}</p>
-            {course.priorPaid !== null && course.priorPaid > 0 && (
-              <p className="text-muted-foreground mb-2 text-xs">
-                {peso(course.priorPaid)} is already recorded against this
-                student&apos;s earlier enrollment in this course. Approving
-                revives that enrollment and keeps those payments, so the total
-                below includes them. Lower it if that money should count toward
-                this term instead.
-              </p>
-            )}
+            {course.priorPaid !== null &&
+              course.priorPaid > 0 &&
+              (course.paymentFrequency === "MONTHLY" ? (
+                <p className="text-muted-foreground mb-2 text-xs">
+                  {peso(course.priorPaid)} is already recorded against this
+                  student&apos;s earlier enrollment in this course. Approving
+                  revives that enrollment and keeps those payments in its
+                  per-month ledger.
+                </p>
+              ) : (
+                <p className="text-muted-foreground mb-2 text-xs">
+                  {peso(course.priorPaid)} is already recorded against this
+                  student&apos;s earlier enrollment in this course. Approving
+                  revives that enrollment and keeps those payments, so the
+                  total below includes them. Lower it if that money should
+                  count toward this term instead.
+                </p>
+              ))}
             <div
               className={
                 nothingPaid ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"
               }
             >
-              <div>
-                <Label htmlFor={`totalDue_${course.id}`}>Total due (₱)</Label>
-                <Input
-                  id={`totalDue_${course.id}`}
-                  name={`totalDue_${course.id}`}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  defaultValue={prefillTotal(course)}
-                />
-              </div>
+              {course.paymentFrequency === "MONTHLY" ? (
+                <p className="text-muted-foreground text-sm">
+                  This course is billed monthly, so it has no total due -
+                  payment is tracked per month instead.
+                </p>
+              ) : (
+                <div>
+                  <Label htmlFor={`totalDue_${course.id}`}>
+                    Total due (₱)
+                  </Label>
+                  <Input
+                    id={`totalDue_${course.id}`}
+                    name={`totalDue_${course.id}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={prefillTotal(course)}
+                  />
+                </div>
+              )}
               {!nothingPaid && (
                 <div>
                   <Label htmlFor={`applied_${course.id}`}>

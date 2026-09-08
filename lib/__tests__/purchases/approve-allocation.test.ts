@@ -172,6 +172,40 @@ describe("approvePurchaseAction records totals and ledger rows", () => {
     });
   });
 
+  // A monthly enrollment has no single agreed total by design - the
+  // per-month matrix is its ledger instead. The form hides the field, but
+  // that is only advisory: this proves the server discards a totalDue a
+  // crafted POST supplies anyway, rather than trusting the form's own gate.
+  it("forces totalDue to null for a monthly course even when the form supplies one", async () => {
+    vi.mocked(db.purchase.findUnique).mockResolvedValue({
+      ...twoCoursePurchase,
+      items: [
+        {
+          courseId: "c1",
+          course: {
+            title: "Marhala 1",
+            archivedAt: null,
+            paymentFrequency: "MONTHLY",
+          },
+        },
+      ],
+      amountPaid: { toNumber: () => 1500 },
+    } as never);
+
+    await expect(
+      approvePurchaseAction(
+        { error: null },
+        form({ id: "p1", totalDue_c1: "10000", applied_c1: "1500" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(tx.enrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ courseId: "c1", totalDue: null }),
+      }),
+    );
+  });
+
   it("leaves totalDue null when the admin leaves the total blank", async () => {
     await expect(
       approvePurchaseAction(

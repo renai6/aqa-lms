@@ -74,14 +74,22 @@ export async function approvePurchaseAction(
   // The approve form submits one pair of fields per course. Blank totalDue is
   // meaningful: it means "do not track this enrollment's balance", which is
   // how every enrollment behaved before balances existed.
+  //
+  // The form is advisory; this is the gate. A monthly course's totalDue is
+  // forced to null here regardless of what the form submitted, because a
+  // monthly enrollment has no single agreed total by design - it accrues
+  // another month on a schedule, and the per-month matrix is its ledger
+  // instead. Validated against the course's own paymentFrequency, not a
+  // hidden form field, so a crafted POST cannot set it either.
   const entries = purchase.items.map((item) => {
+    const isMonthly = item.course.paymentFrequency === "MONTHLY";
     const rawTotal = formData.get(`totalDue_${item.courseId}`);
     const rawApplied = formData.get(`applied_${item.courseId}`);
     const total = typeof rawTotal === "string" ? rawTotal.trim() : "";
     const applied = typeof rawApplied === "string" ? rawApplied.trim() : "";
     return {
       courseId: item.courseId,
-      totalDue: total === "" ? null : Number(total),
+      totalDue: isMonthly || total === "" ? null : Number(total),
       applied: applied === "" ? 0 : Number(applied),
     };
   });
