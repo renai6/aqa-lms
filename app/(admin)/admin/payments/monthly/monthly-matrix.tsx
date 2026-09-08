@@ -160,7 +160,13 @@ export function MonthlyMatrixTable({
           ))}
         </tbody>
         <tfoot className="bg-muted/50 border-t">
-          {(["paid", "partial", "unpaid"] as const).map((kind) => (
+          {/* A course with no fee scores every month `unscored`, so the paid /
+              partial / unpaid rows would be three rows of zeros claiming
+              nothing is paid. Show the row that is actually counted. */}
+          {(monthlyFee === null
+            ? (["unscored"] as const)
+            : (["paid", "partial", "unpaid"] as const)
+          ).map((kind) => (
             <tr key={kind}>
               <th
                 scope="row"

@@ -130,11 +130,15 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
     approved: "APPROVED",
     rejected: "REJECTED",
   };
-  const status: EnrollmentStatus = STATUS_MAP[tab ?? ""] ?? "PENDING";
+  // `Object.hasOwn`, not `in` or a bare lookup: `?tab=toString` resolves
+  // through Object.prototype and would hand a FUNCTION to Prisma as the status
+  // filter, which throws a 500 on a URL anyone can type.
+  const status: EnrollmentStatus =
+    tab !== undefined && Object.hasOwn(STATUS_MAP, tab)
+      ? STATUS_MAP[tab]
+      : "PENDING";
   const activeTab =
-    tab && tab in { pending: 1, approved: 1, rejected: 1, monthly: 1 }
-      ? tab
-      : "pending";
+    tab !== undefined && TABS.some((t) => t.value === tab) ? tab : "pending";
 
   const [rows, countMap] = await Promise.all([
     getAdminPaymentsByStatus(status),
