@@ -55,6 +55,14 @@ describe("getCourseMonthlyMatrix", () => {
   it("returns null for a course that is not billed monthly", async () => {
     vi.mocked(db.course.findFirst).mockResolvedValue(null as never);
     expect(await getCourseMonthlyMatrix("c1")).toBeNull();
+    const call = vi.mocked(db.course.findFirst).mock.calls[0][0] as {
+      where: Record<string, unknown>;
+    };
+    expect(call.where).toEqual({
+      id: "c1",
+      paymentFrequency: "MONTHLY",
+      archivedAt: null,
+    });
   });
 
   it("selects only approved and pending payments", async () => {
@@ -102,5 +110,31 @@ describe("getCourseMonthlyMatrix", () => {
     );
     const cell = result!.matrix.rows[0].cells[0];
     expect(cell.owed && cell.status).toEqual({ kind: "paid", paid: 1500 });
+  });
+
+  it("assigns approved payments with null periodMonth to unassigned total", async () => {
+    // Payments without a period month are historical or unreconciled, and
+    // should not be placed in a specific month cell.
+    vi.mocked(db.enrollment.findMany).mockResolvedValue([
+      {
+        id: "e1",
+        enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
+        completedAt: null,
+        removedAt: null,
+        user: { firstName: "Aisha", lastName: "R", email: "a@x.c" },
+        payments: [
+          {
+            amount: decimal(750),
+            periodMonth: null,
+            status: "APPROVED",
+          },
+        ],
+      },
+    ] as never);
+    const result = await getCourseMonthlyMatrix(
+      "c1",
+      new Date("2026-09-08T10:00:00+08:00"),
+    );
+    expect(result!.matrix.rows[0].unassigned).toEqual(750);
   });
 });

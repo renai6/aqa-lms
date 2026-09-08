@@ -9,6 +9,7 @@ import {
   type MonthlyMatrix,
 } from "@/lib/payments/monthly";
 import { dateToMonthKey } from "@/lib/time/manila";
+import { ACTIVE_COURSE } from "@/lib/courses/archive";
 
 export type MonthlyCourse = {
   id: string;
@@ -21,7 +22,7 @@ export type MonthlyCourse = {
 // arrears.
 export async function getMonthlyCourses(): Promise<MonthlyCourse[]> {
   const rows = await db.course.findMany({
-    where: { paymentFrequency: "MONTHLY", archivedAt: null },
+    where: { paymentFrequency: "MONTHLY", ...ACTIVE_COURSE },
     orderBy: [{ groupName: "asc" }, { level: "asc" }, { title: "asc" }],
     select: { id: true, title: true, tuitionFee: true },
   });
@@ -37,7 +38,7 @@ export async function getCourseMonthlyMatrix(
   now: Date = new Date(),
 ): Promise<{ course: MonthlyCourse; matrix: MonthlyMatrix } | null> {
   const course = await db.course.findFirst({
-    where: { id: courseId, paymentFrequency: "MONTHLY", archivedAt: null },
+    where: { id: courseId, paymentFrequency: "MONTHLY", ...ACTIVE_COURSE },
     select: { id: true, title: true, tuitionFee: true },
   });
   if (!course) return null;
