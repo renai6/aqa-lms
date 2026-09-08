@@ -3,10 +3,20 @@ import { getSession } from "@/lib/auth/session";
 import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { canAddPayment } from "@/lib/payments/guards";
 import { describeBalance, peso } from "@/lib/payments/balance";
-import { selectableMonths } from "@/lib/payments/monthly";
+import { describeMonthlyStanding, selectableMonths } from "@/lib/payments/monthly";
 import { PaymentForm } from "./payment-form";
 
 export const metadata = { title: "Add Payment — AQA" };
+
+// Settled reads positive, outstanding (or nothing to score) reads amber -
+// the same convention `BalanceSummary` follows for the equivalent line on
+// the admin side.
+function monthlyTone(line: string | null): string {
+  if (line === null) return "text-muted-foreground";
+  if (line.startsWith("Paid up through")) return "text-green-700";
+  if (line === "Billed monthly") return "text-muted-foreground";
+  return "text-amber-600";
+}
 
 type Props = { params: Promise<{ enrollmentId: string }> };
 
@@ -26,6 +36,9 @@ export default async function AddPaymentPage({ params }: Props) {
   const months = isMonthly
     ? selectableMonths(enrollment, enrollment.payments, new Date())
     : [];
+  const monthlyLine = isMonthly
+    ? describeMonthlyStanding(enrollment, enrollment.payments, new Date())
+    : null;
 
   // Any failing condition sends the student back to where the button was.
   // The action re-checks all of this, so this redirect is convenience only.
@@ -49,10 +62,16 @@ export default async function AddPaymentPage({ params }: Props) {
       <p className="text-muted-foreground mt-1 text-sm">
         {enrollment.course.title}
       </p>
-      {enrollment.balance.kind === "tracked" && (
-        <p className="mt-2 text-sm font-medium text-amber-600">
-          {describeBalance(enrollment.balance)}
+      {isMonthly ? (
+        <p className={`mt-2 text-sm font-medium ${monthlyTone(monthlyLine)}`}>
+          {monthlyLine}
         </p>
+      ) : (
+        enrollment.balance.kind === "tracked" && (
+          <p className="mt-2 text-sm font-medium text-amber-600">
+            {describeBalance(enrollment.balance)}
+          </p>
+        )
       )}
       {months.length > 0 && (
         <div className="mt-4 rounded-lg border p-4">

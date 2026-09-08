@@ -10,6 +10,7 @@ import {
   monthKeyLabel,
   type MonthKey,
 } from "@/lib/time/manila";
+import { peso } from "@/lib/payments/balance";
 
 // A student owes every Manila month from the one they enrolled in through
 // the current one. Accrual stops at completion or removal.
@@ -330,4 +331,132 @@ export function selectableMonths(
       status: monthStatus(fee, approvedByMonth.get(key) ?? []),
     }))
     .filter((m) => m.status.kind !== "paid");
+}
+
+// The monthly counterpart to `describeBalance` in ./balance.ts: the one
+// place every admin and student surface reads a monthly billing line from,
+// so they cannot disagree about the wording. `Enrollment.totalDue` is
+// supposed to stay null for a monthly course, but a handful of rows predate
+// that rule and still carry one - callers must not gate on `totalDue` (or on
+// `Balance.kind`) to decide whether to use this. The course being MONTHLY is
+// the only question that matters.
+//
+// Two functions, not one with a mode flag: they answer genuinely different
+// questions with different inputs. `describeMonthlyPeriod` describes ONE
+// named month (a specific payment's `periodMonth`) from that month's own
+// paid/short figures. `describeMonthlyStanding` describes an ENROLLMENT'S
+// overall state across every month it owes, and has to decide which month(s)
+// to name itself. Folding both into one signature would force every caller
+// to pass fields the other does not need.
+
+// Both months share a year (`MonthKey` is "YYYY-MM", so this is a plain
+// string compare, not a date computation), so `monthKeyLabel(a)` would repeat
+// it. "August and September 2026" states the year once, on the later month.
+function joinMonthNames(a: MonthKey, b: MonthKey): string {
+  const labelB = monthKeyLabel(b);
+  if (a.slice(0, 4) === b.slice(0, 4)) {
+    const nameA = monthKeyLabel(a).split(" ")[0];
+    return `${nameA} and ${labelB}`;
+  }
+  return `${monthKeyLabel(a)} and ${labelB}`;
+}
+
+// Describes the billing state of one specific month - what a single payment
+// (or a specific cell of the matrix) covers. `month` is `Payment.periodMonth`
+// decoded; a historical payment predating that field carries none.
+export function describeMonthlyPeriod(
+  monthlyFee: number | null,
+  month: MonthKey | null,
+  approvedAmounts: number[],
+): string {
+  if (month === null) return "Not assigned to a month yet";
+  const status = monthStatus(monthlyFee, approvedAmounts);
+  switch (status.kind) {
+    case "unscored":
+      return "Billed monthly";
+    case "paid":
+      return `${peso(status.paid)} paid for ${monthKeyLabel(month)}`;
+    case "partial":
+      return `${peso(status.paid)} paid for ${monthKeyLabel(month)} · ${peso(status.short)} still due`;
+    case "unpaid":
+      // `monthStatus` only returns "unpaid" when `monthlyFee` is not null -
+      // a null fee returns "unscored" above, before this is reached.
+      return `${peso(monthlyFee as number)} due for ${monthKeyLabel(month)}`;
+  }
+}
+
+// Describes an enrollment's overall monthly standing: every month it owes,
+// from enrollment through today (or through completion/removal), collapsed
+// to one line naming the oldest month(s) still outstanding. Mirrors
+// `selectableMonths`' signature, which already answers a related question
+// from the same shape of inputs.
+export function describeMonthlyStanding(
+  enrollment: {
+    enrolledAt: Date;
+    completedAt: Date | null;
+    removedAt: Date | null;
+    course: { tuitionFee: number | null };
+  },
+  payments: MatrixPayment[],
+  now: Date,
+): string {
+  const fee = enrollment.course.tuitionFee;
+  if (fee === null) return "Billed monthly";
+
+  const owed = monthsOwed(
+    enrollment.enrolledAt,
+    enrollment.removedAt ?? enrollment.completedAt,
+    now,
+  );
+  // Only reachable for an enrollment dated after `now`, which real callers
+  // never pass. Nothing to state either way.
+  if (owed.length === 0) return "Billed monthly";
+
+  const approvedByMonth = new Map<MonthKey, number[]>();
+  for (const p of payments) {
+    if (p.status !== "APPROVED" || p.periodMonth === null) continue;
+    const bucket = approvedByMonth.get(p.periodMonth);
+    if (bucket) bucket.push(p.amount);
+    else approvedByMonth.set(p.periodMonth, [p.amount]);
+  }
+
+  const outstanding = owed
+    .map((month) => ({
+      month,
+      status: monthStatus(fee, approvedByMonth.get(month) ?? []),
+    }))
+    .filter(
+      (
+        m,
+      ): m is {
+        month: MonthKey;
+        status: Extract<MonthStatus, { kind: "unpaid" | "partial" }>;
+      } => m.status.kind === "unpaid" || m.status.kind === "partial",
+    );
+
+  if (outstanding.length === 0) {
+    // Every owed month is paid, so the last owed month - the most recent one
+    // - is the latest one actually settled.
+    return `Paid up through ${monthKeyLabel(owed[owed.length - 1])}`;
+  }
+
+  if (outstanding.length === 1) {
+    const { month, status } = outstanding[0];
+    if (status.kind === "partial") {
+      return `${peso(status.paid)} paid for ${monthKeyLabel(month)} · ${peso(status.short)} still due`;
+    }
+    return `${peso(fee)} due for ${monthKeyLabel(month)}`;
+  }
+
+  const dueCentavos = outstanding.reduce((sum, { status }) => {
+    const short = status.kind === "partial" ? status.short : fee;
+    return sum + Math.round(short * 100);
+  }, 0);
+  const amountDue = dueCentavos / 100;
+
+  if (outstanding.length === 2) {
+    return `${peso(amountDue)} due for ${joinMonthNames(outstanding[0].month, outstanding[1].month)}`;
+  }
+
+  return `${peso(amountDue)} due for ${outstanding.length} months`;
 }

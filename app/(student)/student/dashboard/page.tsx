@@ -10,28 +10,38 @@ import {
 import {
   getEnrollmentPaymentStates,
   getEnrollmentBalances,
+  type EnrollmentBalanceInfo,
 } from "@/lib/payments/queries";
-import { describeBalance, peso, type Balance } from "@/lib/payments/balance";
+import { describeBalance } from "@/lib/payments/balance";
 import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
 function balanceLine(
-  balance: Balance | undefined,
+  info: EnrollmentBalanceInfo | undefined,
   course: DashboardEnrollment["course"],
 ): string {
-  if (balance && balance.kind === "tracked") return describeBalance(balance);
-  // A monthly enrollment has no lifetime total by design, so `computeBalance`
-  // has nothing to say about it and asserting an outstanding balance would be
-  // a permanent, unfounded accusation. What is settled is decided per month,
-  // and the payment page one click away lists those months.
+  // MONTHLY is decided first, regardless of `balance.kind`: a handful of
+  // legacy monthly enrollments still carry a lifetime `totalDue` (a bug
+  // elsewhere, not fixed by hiding its symptom here), which made `balance`
+  // read "tracked" and this branch unreachable for exactly the enrollments
+  // that most needed the month-based line.
   if (course.paymentFrequency === "MONTHLY") {
-    return course.tuitionFee !== null
-      ? `Billed monthly · ${peso(course.tuitionFee)} / month`
-      : "Billed monthly";
+    return info?.monthlyLine ?? "Billed monthly";
   }
+  if (info && info.balance.kind === "tracked") return describeBalance(info.balance);
   return "Partial payment - balance outstanding";
+}
+
+// Settled reads positive, outstanding (or nothing to score) reads amber -
+// the same convention `BalanceSummary` follows for the equivalent line on
+// the admin side.
+function monthlyTone(line: string | null): string {
+  if (line === null) return "text-muted-foreground";
+  if (line.startsWith("Paid up through")) return "text-green-700";
+  if (line === "Billed monthly") return "text-muted-foreground";
+  return "text-amber-600";
 }
 
 function formatTime(t: string): string {
@@ -88,7 +98,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     (e) =>
       !isSettled({
         paymentStatus: e.paymentStatus,
-        balance: balances[e.id] ?? { kind: "untracked" },
+        balance: balances[e.id]?.balance ?? { kind: "untracked" },
         paymentFrequency: e.course.paymentFrequency,
       }),
   );
@@ -364,13 +374,12 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           <div className="space-y-2">
             {unsettledEnrollments.map((e) => {
               const state = paymentStates[e.id] ?? { kind: "idle" as const };
-              const balance = balances[e.id];
+              const info = balances[e.id];
               // A monthly enrollment settles a month at a time, so a payment
               // under review for July must not block submitting August. The
               // guard already allows it; hiding the button was the only thing
               // stopping a student catching up.
               const isMonthly = e.course.paymentFrequency === "MONTHLY";
-              const untrackedMonthly = isMonthly && balance?.kind !== "tracked";
               return (
                 <div
                   key={e.id}
@@ -381,13 +390,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                       {e.course.title}
                     </p>
                     <p
-                      className={
-                        untrackedMonthly
-                          ? "text-muted-foreground mt-0.5 text-xs"
-                          : "mt-0.5 text-xs text-amber-600"
-                      }
+                      className={`mt-0.5 text-xs ${
+                        isMonthly
+                          ? monthlyTone(info?.monthlyLine ?? null)
+                          : "text-amber-600"
+                      }`}
                     >
-                      {balanceLine(balance, e.course)}
+                      {balanceLine(info, e.course)}
                     </p>
                     {state.kind === "rejected" && (
                       <p className="text-destructive mt-1 text-xs">

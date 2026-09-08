@@ -223,7 +223,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
                   <td className="px-4 py-2">{r.courseTitle}</td>
                   <td className="px-4 py-2">{peso(r.amount)}</td>
                   <td className="text-muted-foreground px-4 py-2">
-                    {describeBalance(r.balance)}
+                    {r.monthlyLine ?? describeBalance(r.balance)}
                   </td>
                   <td className="text-muted-foreground px-4 py-2">
                     {dateFormatter.format(r.createdAt)}

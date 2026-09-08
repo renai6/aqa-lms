@@ -48,7 +48,41 @@ describe("admin payment queue", () => {
         createdAt: new Date(),
         enrollment: {
           totalDue: { toNumber: () => 20000 },
-          payments: [{ amount: { toNumber: () => 3000 } }],
+          payments: [
+            { status: "APPROVED", periodMonth: null, amount: { toNumber: () => 3000 } },
+          ],
+          user: { firstName: "Sam", lastName: "Lee", email: "s@example.com" },
+          course: { title: "Marhala 1" },
+        },
+      },
+    ] as never);
+
+    const rows = await getAdminPaymentsByStatus("PENDING");
+    expect(rows[0].balance).toEqual({
+      kind: "tracked",
+      totalDue: 20000,
+      paid: 3000,
+      remaining: 17000,
+    });
+  });
+
+  // Guards the app-level equivalent of the old DB-level `where`: fetching
+  // every status (needed for the monthly line) must not let a
+  // pending/rejected row inflate the lifetime balance either.
+  it("counts only APPROVED payments toward the enrollment balance", async () => {
+    vi.mocked(db.payment.findMany).mockResolvedValue([
+      {
+        id: "pay1",
+        status: "PENDING",
+        amount: { toNumber: () => 5000 },
+        createdAt: new Date(),
+        enrollment: {
+          totalDue: { toNumber: () => 20000 },
+          payments: [
+            { status: "APPROVED", periodMonth: null, amount: { toNumber: () => 3000 } },
+            { status: "PENDING", periodMonth: null, amount: { toNumber: () => 9000 } },
+            { status: "REJECTED", periodMonth: null, amount: { toNumber: () => 9000 } },
+          ],
           user: { firstName: "Sam", lastName: "Lee", email: "s@example.com" },
           course: { title: "Marhala 1" },
         },
@@ -84,17 +118,27 @@ describe("admin payment queue", () => {
     expect(rows[0].balance).toEqual({ kind: "untracked" });
   });
 
-  // Guards the single invariant the whole feature rests on: deleting
-  // `where: { status: "APPROVED" }` from the nested payments select would
-  // let pending/rejected rows inflate the balance, and no test asserting
-  // only the top-level `where` would catch it.
-  it("selects only APPROVED payments for the enrollment balance", async () => {
+  // The nested payments select now fetches every status, not just APPROVED:
+  // the monthly line needs PENDING and REJECTED rows too (to spot a clash
+  // and to know what not to count), so filtering moved from the DB `where`
+  // into the mapper. "counts only APPROVED payments toward the enrollment
+  // balance" above is what now guards the invariant this test used to guard
+  // via the `where` clause - it would fail if that in-app filter were lost.
+  it("selects every payment status, filtering happens in the mapper", async () => {
     await getAdminPaymentsByStatus("APPROVED");
     const call = vi.mocked(db.payment.findMany).mock.calls[0]![0] as {
-      select: { enrollment: { select: { payments: { where: unknown } } } };
+      select: {
+        enrollment: {
+          select: { payments: { where?: unknown; select: Record<string, boolean> } };
+        };
+      };
     };
-    expect(call.select.enrollment.select.payments.where).toEqual({
-      status: "APPROVED",
+    const paymentsSelect = call.select.enrollment.select.payments;
+    expect(paymentsSelect.where).toBeUndefined();
+    expect(paymentsSelect.select).toMatchObject({
+      status: true,
+      amount: true,
+      periodMonth: true,
     });
   });
 

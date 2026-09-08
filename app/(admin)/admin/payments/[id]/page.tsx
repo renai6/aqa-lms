@@ -90,7 +90,19 @@ export default async function PaymentDetailPage({ params }: Props) {
           </span>
         </div>
         <div className="space-y-1 border-t pt-2">
-          <BalanceSummary balance={payment.balance} label="Balance now" />
+          <BalanceSummary
+            balance={payment.balance}
+            label="Balance now"
+            monthly={
+              payment.isMonthly
+                ? {
+                    fee: payment.monthlyFee,
+                    month: payment.periodMonth,
+                    approvedAmounts: payment.monthApprovedAmounts,
+                  }
+                : null
+            }
+          />
         </div>
       </div>
 
