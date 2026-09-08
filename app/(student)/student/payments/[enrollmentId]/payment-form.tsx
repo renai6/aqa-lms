@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import type { SelectableMonth } from "@/lib/payments/monthly";
+import { peso } from "@/lib/payments/balance";
 
-export function PaymentForm({ enrollmentId }: { enrollmentId: string }) {
+export function PaymentForm({
+  enrollmentId,
+  months,
+}: {
+  enrollmentId: string;
+  months: SelectableMonth[];
+}) {
   const [state, formAction, isPending] = useActionState(createPaymentAction, {
     error: null,
   });
@@ -18,6 +26,31 @@ export function PaymentForm({ enrollmentId }: { enrollmentId: string }) {
       <input type="hidden" name="enrollmentId" value={enrollmentId} />
 
       <PaymentInstructions />
+
+      {months.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="periodMonth">Paying For</Label>
+          <select
+            id="periodMonth"
+            name="periodMonth"
+            required
+            defaultValue={months[0].key}
+            className="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            {months.map((m) => (
+              <option key={m.key} value={m.key}>
+                {m.label}
+                {m.status.kind === "partial"
+                  ? ` (${peso(m.status.short)} remaining)`
+                  : ""}
+              </option>
+            ))}
+          </select>
+          <p className="text-muted-foreground text-xs">
+            This course is billed monthly. Pick the month this payment covers.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="amount">Amount Paying Now (₱)</Label>

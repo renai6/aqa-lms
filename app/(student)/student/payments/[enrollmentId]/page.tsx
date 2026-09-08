@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { canAddPayment } from "@/lib/payments/guards";
 import { describeBalance } from "@/lib/payments/balance";
+import { selectableMonths } from "@/lib/payments/monthly";
 import { PaymentForm } from "./payment-form";
 
 export const metadata = { title: "Add Payment — AQA" };
@@ -24,6 +25,11 @@ export default async function AddPaymentPage({ params }: Props) {
   const allowed = canAddPayment(enrollment, enrollment?.payments ?? []);
   if (!allowed.ok || !enrollment) redirect("/student/dashboard");
 
+  const months =
+    enrollment.course.paymentFrequency === "MONTHLY"
+      ? selectableMonths(enrollment, enrollment.payments, new Date())
+      : [];
+
   return (
     <div className="mx-auto max-w-xl px-6 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Add Payment</h1>
@@ -36,7 +42,7 @@ export default async function AddPaymentPage({ params }: Props) {
         </p>
       )}
       <div className="mt-6">
-        <PaymentForm enrollmentId={enrollment.id} />
+        <PaymentForm enrollmentId={enrollment.id} months={months} />
       </div>
     </div>
   );

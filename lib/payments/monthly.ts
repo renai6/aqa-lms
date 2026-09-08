@@ -6,6 +6,8 @@
 import {
   toMonthKey,
   monthKeysBetween,
+  nextMonthKey,
+  monthKeyLabel,
   type MonthKey,
 } from "@/lib/time/manila";
 
@@ -202,4 +204,77 @@ export function buildMonthlyMatrix(
   });
 
   return { months, rows, tallies };
+}
+
+export type SelectableMonth = {
+  key: MonthKey;
+  label: string;
+  status: MonthStatus;
+};
+
+export type PayableEnrollment = {
+  enrolledAt: Date;
+  completedAt: Date | null;
+  removedAt: Date | null;
+};
+
+// Every month a payment may legitimately be filed against: the owed months
+// plus one look-ahead so a student can pay next month early. Paying ahead is
+// only offered while the enrollment is still accruing - a removed or
+// completed student has no next month to pay for.
+//
+// This is the bounds check, and it is deliberately separate from
+// `selectableMonths` below, which FILTERS this list down to what is still
+// outstanding. Using the filtering version as a bounds check rejects every
+// submission on a course whose fee is zero, because a zero fee makes every
+// month read as already paid.
+export function payableMonths(
+  enrollment: PayableEnrollment,
+  now: Date,
+): MonthKey[] {
+  const owed = monthsOwed(
+    enrollment.enrolledAt,
+    enrollment.removedAt ?? enrollment.completedAt,
+    now,
+  );
+  const last = owed[owed.length - 1];
+  if (
+    last === undefined ||
+    enrollment.removedAt !== null ||
+    enrollment.completedAt !== null
+  ) {
+    return owed;
+  }
+  return [...owed, nextMonthKey(last)];
+}
+
+// The options in the student's "Paying for" picker: every payable month that
+// is not fully settled, oldest first. Oldest first because a student catching
+// up almost always means the oldest one, and it is what the form defaults to.
+export function selectableMonths(
+  enrollment: {
+    enrolledAt: Date;
+    completedAt: Date | null;
+    removedAt: Date | null;
+    course: { tuitionFee: number | null };
+  },
+  payments: MatrixPayment[],
+  now: Date,
+): SelectableMonth[] {
+  const approvedByMonth = new Map<MonthKey, number[]>();
+  for (const p of payments) {
+    if (p.status !== "APPROVED" || p.periodMonth === null) continue;
+    const bucket = approvedByMonth.get(p.periodMonth);
+    if (bucket) bucket.push(p.amount);
+    else approvedByMonth.set(p.periodMonth, [p.amount]);
+  }
+
+  const fee = enrollment.course.tuitionFee;
+  return payableMonths(enrollment, now)
+    .map((key) => ({
+      key,
+      label: monthKeyLabel(key),
+      status: monthStatus(fee, approvedByMonth.get(key) ?? []),
+    }))
+    .filter((m) => m.status.kind !== "paid");
 }
