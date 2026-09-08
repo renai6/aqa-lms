@@ -434,6 +434,16 @@ model Payment {
   proofUrl     String
   status       EnrollmentStatus @default(PENDING)
   source       PaymentSource    @default(SUBMITTED)
+  // The Manila calendar month this payment covers, stored as that month's
+  // first day. @db.Date rather than a timestamp for the reason
+  // BatchRecording.date carries the same annotation: Vercel runs in UTC and
+  // the academy runs on Philippine time, so a month anchor with a clock on it
+  // can fall on either side of the boundary and land in the wrong month.
+  //
+  // Null means the payment is not attributed to a month, which is true of
+  // every row predating this field and of every payment on a course that is
+  // not billed MONTHLY.
+  periodMonth  DateTime?        @db.Date
   // Which purchase this money arrived with, when it arrived with one. Null for
   // student submissions and for enrollments created without a purchase.
   purchaseId   String?
@@ -449,6 +459,7 @@ model Payment {
   @@index([status])
   @@index([purchaseId])
   @@index([source, status])
+  @@index([enrollmentId, periodMonth])
 }
 
 //
