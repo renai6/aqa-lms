@@ -1,54 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
-  describeMonthlyPeriod,
   describeMonthlyStanding,
   type MatrixPayment,
 } from "@/lib/payments/monthly";
 
 const NOW = new Date("2026-09-08T10:00:00+08:00");
-
-describe("describeMonthlyPeriod", () => {
-  it("reads settled when the month's fee is fully covered", () => {
-    expect(describeMonthlyPeriod(1500, "2026-09", [1500])).toBe(
-      "₱1,500.00 paid for September 2026",
-    );
-  });
-
-  it("reads part paid, naming what is still due", () => {
-    expect(describeMonthlyPeriod(1500, "2026-09", [800])).toBe(
-      "₱800.00 paid for September 2026 · ₱700.00 still due",
-    );
-  });
-
-  it("reads due in full when nothing has been paid", () => {
-    expect(describeMonthlyPeriod(1500, "2026-09", [])).toBe(
-      "₱1,500.00 due for September 2026",
-    );
-  });
-
-  it("has nothing to state when the course has no tuitionFee", () => {
-    expect(describeMonthlyPeriod(null, "2026-09", [])).toBe("Billed monthly");
-    // Even money already on the month does not make up a fee to compare it
-    // against - the verdict is unknown, not "paid" or "due".
-    expect(describeMonthlyPeriod(null, "2026-09", [800])).toBe(
-      "Billed monthly",
-    );
-  });
-
-  it("reads not-yet-attributed when the payment has no month", () => {
-    expect(describeMonthlyPeriod(1500, null, [])).toBe(
-      "Not assigned to a month yet",
-    );
-  });
-
-  it("reads not-yet-attributed even when the course has no tuitionFee", () => {
-    // A missing month is the more fundamental gap: there is nothing to price
-    // against regardless of whether a fee is set.
-    expect(describeMonthlyPeriod(null, null, [])).toBe(
-      "Not assigned to a month yet",
-    );
-  });
-});
 
 describe("describeMonthlyStanding", () => {
   const enrollment = (

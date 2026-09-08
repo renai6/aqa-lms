@@ -252,4 +252,39 @@ describe("getAdminPaymentById", () => {
     const result = await getAdminPaymentById("pay1");
     expect(result!.catchUpPrefill).toBeNull();
   });
+
+  it("leaves monthlyLine null for a non-MONTHLY course", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue(baseRow() as never);
+    const result = await getAdminPaymentById("pay1");
+    expect(result!.monthlyLine).toBeNull();
+  });
+
+  // The enrollment's overall standing, from `describeMonthlyStanding` - not
+  // this payment's own month, and never the lifetime `balance` (Correction 2
+  // in the wording report: the approve form's preview once leaked the
+  // lifetime wording here because this field did not exist). `enrolledAt` is
+  // pinned two months back from whenever the suite runs, so "this month plus
+  // the two before it, all unpaid" collapses to the same three-month count
+  // regardless of the date - the same wording `describeMonthlyStanding` is
+  // unit-tested for directly in monthly-describe.test.ts.
+  it("computes the enrollment's monthly standing for a MONTHLY course", async () => {
+    const now = new Date();
+    const enrolledAt = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    vi.mocked(db.payment.findUnique).mockResolvedValue(
+      baseRow({
+        enrolledAt,
+        completedAt: null,
+        removedAt: null,
+        payments: [],
+        course: {
+          id: "c1",
+          title: "Marhala 1",
+          tuitionFee: { toNumber: () => 1500 },
+          paymentFrequency: "MONTHLY",
+        },
+      }) as never,
+    );
+    const result = await getAdminPaymentById("pay1");
+    expect(result!.monthlyLine).toBe("₱4,500.00 due for 3 months");
+  });
 });

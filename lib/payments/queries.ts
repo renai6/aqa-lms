@@ -310,12 +310,12 @@ export type AdminPaymentDetail = {
   isMonthly: boolean;
   periodMonth: MonthKey | null;
   monthOptions: { key: MonthKey; label: string }[];
-  // The course's monthly fee, and the APPROVED amounts already on
-  // `periodMonth` specifically (not the enrollment-wide `approvedPaid`).
-  // Together they let the detail page describe *that month's* standing
-  // rather than a lifetime total a monthly course does not have.
-  monthlyFee: number | null;
-  monthApprovedAmounts: number[];
+  // Set only on a MONTHLY course: the enrollment's overall monthly standing
+  // from `describeMonthlyStanding`, the same line the payments list and
+  // dashboard render. This - not `balance` - is what "Balance now" renders,
+  // and what the approve form's preview falls back to describing, since a
+  // monthly course has no single lifetime total to summarize.
+  monthlyLine: string | null;
 };
 
 export async function getAdminPaymentById(
@@ -426,11 +426,27 @@ export async function getAdminPaymentById(
       ).map((key) => ({ key, label: monthKeyLabel(key) }))
     : [];
   const periodMonth = r.periodMonth ? dateToMonthKey(r.periodMonth) : null;
-  const monthApprovedAmounts = r.enrollment.payments
-    .filter(
-      (p) => p.periodMonth != null && dateToMonthKey(p.periodMonth) === periodMonth,
-    )
-    .map((p) => p.amount.toNumber());
+  // The enrollment's overall standing, not this payment's own month - reuses
+  // the exact same function the payments list and dashboard call, from data
+  // already fetched above for `approvedAmounts`. The nested payments select
+  // is already `where: { status: "APPROVED" }`, so every row here is
+  // APPROVED by construction.
+  const monthlyLine = isMonthly
+    ? describeMonthlyStanding(
+        {
+          enrolledAt: r.enrollment.enrolledAt,
+          completedAt: r.enrollment.completedAt,
+          removedAt: r.enrollment.removedAt,
+          course: { tuitionFee: r.enrollment.course.tuitionFee?.toNumber() ?? null },
+        },
+        r.enrollment.payments.map((p) => ({
+          amount: p.amount.toNumber(),
+          periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+          status: "APPROVED" as const,
+        })),
+        new Date(),
+      )
+    : null;
   return {
     id: r.id,
     status: r.status,
@@ -448,7 +464,6 @@ export async function getAdminPaymentById(
     isMonthly,
     periodMonth,
     monthOptions,
-    monthlyFee: r.enrollment.course.tuitionFee?.toNumber() ?? null,
-    monthApprovedAmounts,
+    monthlyLine,
   };
 }

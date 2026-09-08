@@ -341,13 +341,11 @@ export function selectableMonths(
 // `Balance.kind`) to decide whether to use this. The course being MONTHLY is
 // the only question that matters.
 //
-// Two functions, not one with a mode flag: they answer genuinely different
-// questions with different inputs. `describeMonthlyPeriod` describes ONE
-// named month (a specific payment's `periodMonth`) from that month's own
-// paid/short figures. `describeMonthlyStanding` describes an ENROLLMENT'S
-// overall state across every month it owes, and has to decide which month(s)
-// to name itself. Folding both into one signature would force every caller
-// to pass fields the other does not need.
+// One function, describing the ENROLLMENT'S overall state across every month
+// it owes - never a single payment's month in isolation. A row that wants to
+// name which month one particular payment covers (the admin detail page's
+// "Covers" row) reads `Payment.periodMonth` directly; it does not need a
+// billing verdict of its own.
 
 // Both months share a year (`MonthKey` is "YYYY-MM", so this is a plain
 // string compare, not a date computation), so `monthKeyLabel(a)` would repeat
@@ -359,30 +357,6 @@ function joinMonthNames(a: MonthKey, b: MonthKey): string {
     return `${nameA} and ${labelB}`;
   }
   return `${monthKeyLabel(a)} and ${labelB}`;
-}
-
-// Describes the billing state of one specific month - what a single payment
-// (or a specific cell of the matrix) covers. `month` is `Payment.periodMonth`
-// decoded; a historical payment predating that field carries none.
-export function describeMonthlyPeriod(
-  monthlyFee: number | null,
-  month: MonthKey | null,
-  approvedAmounts: number[],
-): string {
-  if (month === null) return "Not assigned to a month yet";
-  const status = monthStatus(monthlyFee, approvedAmounts);
-  switch (status.kind) {
-    case "unscored":
-      return "Billed monthly";
-    case "paid":
-      return `${peso(status.paid)} paid for ${monthKeyLabel(month)}`;
-    case "partial":
-      return `${peso(status.paid)} paid for ${monthKeyLabel(month)} · ${peso(status.short)} still due`;
-    case "unpaid":
-      // `monthStatus` only returns "unpaid" when `monthlyFee` is not null -
-      // a null fee returns "unscored" above, before this is reached.
-      return `${peso(monthlyFee as number)} due for ${monthKeyLabel(month)}`;
-  }
 }
 
 // Describes an enrollment's overall monthly standing: every month it owes,

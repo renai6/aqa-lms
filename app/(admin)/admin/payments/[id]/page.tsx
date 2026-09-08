@@ -93,15 +93,7 @@ export default async function PaymentDetailPage({ params }: Props) {
           <BalanceSummary
             balance={payment.balance}
             label="Balance now"
-            monthly={
-              payment.isMonthly
-                ? {
-                    fee: payment.monthlyFee,
-                    month: payment.periodMonth,
-                    approvedAmounts: payment.monthApprovedAmounts,
-                  }
-                : null
-            }
+            monthly={payment.monthlyLine}
           />
         </div>
       </div>
@@ -141,6 +133,7 @@ export default async function PaymentDetailPage({ params }: Props) {
             isMonthly={payment.isMonthly}
             periodMonth={payment.periodMonth}
             monthOptions={payment.monthOptions}
+            monthlyLine={payment.monthlyLine}
           />
           <div className="border-t pt-4">
             <RejectForm id={payment.id} />
