@@ -5,19 +5,32 @@ import { getSession } from "@/lib/auth/session";
 import {
   getStudentDashboard,
   getStudentRecentResults,
+  type DashboardEnrollment,
 } from "@/lib/student/queries";
 import {
   getEnrollmentPaymentStates,
   getEnrollmentBalances,
 } from "@/lib/payments/queries";
-import { describeBalance, type Balance } from "@/lib/payments/balance";
+import { describeBalance, peso, type Balance } from "@/lib/payments/balance";
 import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
-function balanceLine(balance: Balance | undefined): string {
+function balanceLine(
+  balance: Balance | undefined,
+  course: DashboardEnrollment["course"],
+): string {
   if (balance && balance.kind === "tracked") return describeBalance(balance);
+  // A monthly enrollment has no lifetime total by design, so `computeBalance`
+  // has nothing to say about it and asserting an outstanding balance would be
+  // a permanent, unfounded accusation. What is settled is decided per month,
+  // and the payment page one click away lists those months.
+  if (course.paymentFrequency === "MONTHLY") {
+    return course.tuitionFee !== null
+      ? `Billed monthly · ${peso(course.tuitionFee)} / month`
+      : "Billed monthly";
+  }
   return "Partial payment - balance outstanding";
 }
 
@@ -351,6 +364,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           <div className="space-y-2">
             {unsettledEnrollments.map((e) => {
               const state = paymentStates[e.id] ?? { kind: "idle" as const };
+              const balance = balances[e.id];
+              // A monthly enrollment settles a month at a time, so a payment
+              // under review for July must not block submitting August. The
+              // guard already allows it; hiding the button was the only thing
+              // stopping a student catching up.
+              const isMonthly = e.course.paymentFrequency === "MONTHLY";
+              const untrackedMonthly = isMonthly && balance?.kind !== "tracked";
               return (
                 <div
                   key={e.id}
@@ -360,8 +380,14 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                     <p className="text-foreground text-sm font-semibold">
                       {e.course.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-amber-600">
-                      {balanceLine(balances[e.id])}
+                    <p
+                      className={
+                        untrackedMonthly
+                          ? "text-muted-foreground mt-0.5 text-xs"
+                          : "mt-0.5 text-xs text-amber-600"
+                      }
+                    >
+                      {balanceLine(balance, e.course)}
                     </p>
                     {state.kind === "rejected" && (
                       <p className="text-destructive mt-1 text-xs">
@@ -370,17 +396,20 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                       </p>
                     )}
                   </div>
-                  {state.kind === "pending" ? (
-                    <span className="shrink-0 text-xs font-medium text-amber-600">
-                      Payment under review
-                    </span>
-                  ) : (
-                    <Button asChild size="sm" className="shrink-0">
-                      <Link href={"/student/payments/" + e.id}>
-                        Add payment
-                      </Link>
-                    </Button>
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {state.kind === "pending" && (
+                      <span className="text-xs font-medium text-amber-600">
+                        Payment under review
+                      </span>
+                    )}
+                    {(state.kind !== "pending" || isMonthly) && (
+                      <Button asChild size="sm">
+                        <Link href={"/student/payments/" + e.id}>
+                          Add payment
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })}
