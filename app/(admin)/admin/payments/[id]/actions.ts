@@ -68,14 +68,23 @@ export async function approvePaymentAction(
   });
   if (!payment) return { error: "Payment not found." };
 
+  // The form is advisory; this is the gate. Validated against the course's
+  // own paymentFrequency, not a hidden form field.
+  const isMonthly = payment.enrollment.course.paymentFrequency === "MONTHLY";
+
   // Setting totalDue and writing a catch-up row are independent decisions.
-  // Setting totalDue is only offered when the enrollment has no total yet.
+  // Setting totalDue is only offered when the enrollment has no total yet AND
+  // the course is not monthly - a monthly enrollment has no single agreed
+  // total by design (it accrues another month on a schedule), so a lifetime
+  // total there would create a second ledger that never grows with accrual
+  // while the matrix keeps reading the real per-month state. catchUpPrefill
+  // hides the field for exactly this reason, but the form is only advisory:
+  // this check is the actual gate against a crafted POST that supplies
+  // totalDue anyway.
   // Writing a catch-up CHECKOUT row is only correct when the enrollment's
   // checkout money is not already in the ledger - which is NOT the same
   // question as whether totalDue is null (a MONTHLY/YEARLY course, or one an
   // admin cleared, can be untracked while its checkout row already exists).
-  // The form is advisory; this check is the guard, since the form's
-  // catchUpPrefill is only computed at render time.
   const isUntracked = payment.enrollment.totalDue === null;
   const hasCheckoutPayment = payment.enrollment.payments.length > 0;
   const rawTotal = formData.get("totalDue");
@@ -85,7 +94,7 @@ export async function approvePaymentAction(
     typeof rawAlreadyPaid === "string" ? rawAlreadyPaid.trim() : "";
 
   const newTotalDue =
-    isUntracked && totalText !== "" ? Number(totalText) : null;
+    isUntracked && !isMonthly && totalText !== "" ? Number(totalText) : null;
   const catchUpAmount =
     !hasCheckoutPayment && alreadyPaidText !== ""
       ? Number(alreadyPaidText)
@@ -104,9 +113,6 @@ export async function approvePaymentAction(
   // ledger row. Setting totalDue still works on its own either way.
   const writeCatchUp = catchUpAmount !== null && catchUpAmount > 0;
 
-  // The form is advisory; this is the gate. Validated against the course's
-  // own paymentFrequency, not a hidden form field.
-  const isMonthly = payment.enrollment.course.paymentFrequency === "MONTHLY";
   const rawMonth = formData.get("periodMonth");
   const monthText = typeof rawMonth === "string" ? rawMonth.trim() : "";
   if (isMonthly && !/^\d{4}-(0[1-9]|1[0-2])$/.test(monthText)) {

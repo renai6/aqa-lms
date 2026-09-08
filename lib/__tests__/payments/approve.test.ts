@@ -334,6 +334,53 @@ describe("approvePaymentAction starting to track an untracked enrollment", () =>
     });
     expect(tx.payment.create).not.toHaveBeenCalled();
   });
+
+  // Finding 5a: a MONTHLY enrollment always has totalDue === null by design
+  // (it has no single agreed total), which is exactly the condition
+  // catchUpPrefill keys off. The form hides the "start tracking this
+  // balance" fields for a monthly course, but the form is only advisory - a
+  // crafted POST supplying totalDue must not be able to create a lifetime
+  // ledger that never grows with monthly accrual and contradicts the matrix.
+  it("never sets totalDue for a monthly enrollment, even if a crafted POST supplies one", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      enrollmentId: "e1",
+      enrollment: {
+        totalDue: null,
+        purchaseId: "p1",
+        purchase: { paymentProofUrl: "purchase/p1/proof.jpg" },
+        enrolledAt: new Date("2024-01-05T09:00:00+08:00"),
+        completedAt: null,
+        removedAt: null,
+        payments: [],
+        course: { title: "Tajweed Basics", paymentFrequency: "MONTHLY" },
+        user: { email: "s@example.com", firstName: "Sam" },
+      },
+    } as never);
+    tx.payment.updateMany.mockResolvedValue({ count: 1 });
+    tx.enrollment.update.mockResolvedValue({});
+
+    const NOW_MONTH = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+    })
+      .format(new Date())
+      .slice(0, 7);
+
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("periodMonth", NOW_MONTH);
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "5000");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID" },
+    });
+  });
 });
 
 describe("approvePaymentAction guards against double-counting checkout money", () => {
