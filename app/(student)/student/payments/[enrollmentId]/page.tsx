@@ -20,15 +20,28 @@ export default async function AddPaymentPage({ params }: Props) {
     enrollmentId,
   );
 
+  if (!enrollment) redirect("/student/dashboard");
+
+  const isMonthly = enrollment.course.paymentFrequency === "MONTHLY";
+  const months = isMonthly
+    ? selectableMonths(enrollment, enrollment.payments, new Date())
+    : [];
+
   // Any failing condition sends the student back to where the button was.
   // The action re-checks all of this, so this redirect is convenience only.
-  const allowed = canAddPayment(enrollment, enrollment?.payments ?? []);
-  if (!allowed.ok || !enrollment) redirect("/student/dashboard");
-
-  const months =
-    enrollment.course.paymentFrequency === "MONTHLY"
-      ? selectableMonths(enrollment, enrollment.payments, new Date())
-      : [];
+  //
+  // The month passed here is the one the form defaults to, so the page gate
+  // and the action gate ask the same question. Defaulting it to null made the
+  // monthly clash test `p.periodMonth === null`, which a legacy pending
+  // payment carrying no month matched: the student was bounced back to the
+  // dashboard with no explanation, on a submission the action would have
+  // accepted.
+  const allowed = canAddPayment(
+    enrollment,
+    enrollment.payments,
+    months[0]?.key ?? null,
+  );
+  if (!allowed.ok) redirect("/student/dashboard");
 
   return (
     <div className="mx-auto max-w-xl px-6 py-8">
@@ -65,7 +78,21 @@ export default async function AddPaymentPage({ params }: Props) {
         </div>
       )}
       <div className="mt-6">
-        <PaymentForm enrollmentId={enrollment.id} months={months} />
+        {isMonthly && months.length === 0 ? (
+          // Nothing left to pay for, so there is no month to pick and the
+          // action would reject the submission. Rendering the form here left
+          // the student staring at "Select which month this payment covers."
+          // with nothing on screen to select.
+          <div className="rounded-lg border p-4">
+            <p className="text-sm font-medium">You are paid up.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Every month owed on this course is settled. Come back when the
+              next one is due.
+            </p>
+          </div>
+        ) : (
+          <PaymentForm enrollmentId={enrollment.id} months={months} />
+        )}
       </div>
     </div>
   );
