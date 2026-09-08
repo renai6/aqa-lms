@@ -4,7 +4,7 @@ import { computeBalance } from "@/lib/payments/balance";
 
 const active = {
   paymentStatus: "PARTIALLY_PAID" as const,
-  course: { archivedAt: null },
+  course: { archivedAt: null, paymentFrequency: null },
   balance: { kind: "untracked" as const },
 };
 
@@ -14,13 +14,17 @@ describe("canAddPayment", () => {
   });
 
   it("allows a new payment after the last one was rejected", () => {
-    expect(canAddPayment(active, [{ status: "REJECTED" }])).toEqual({
+    expect(
+      canAddPayment(active, [{ status: "REJECTED", periodMonth: null }]),
+    ).toEqual({
       ok: true,
     });
   });
 
   it("allows a new payment after an earlier one was approved", () => {
-    expect(canAddPayment(active, [{ status: "APPROVED" }])).toEqual({
+    expect(
+      canAddPayment(active, [{ status: "APPROVED", periodMonth: null }]),
+    ).toEqual({
       ok: true,
     });
   });
@@ -72,7 +76,7 @@ describe("canAddPayment", () => {
 
   it("refuses when the course is archived", () => {
     const r = canAddPayment(
-      { ...active, course: { archivedAt: new Date() } },
+      { ...active, course: { archivedAt: new Date(), paymentFrequency: null } },
       [],
     );
     expect(r.ok).toBe(false);
@@ -81,8 +85,8 @@ describe("canAddPayment", () => {
 
   it("refuses when a payment is already awaiting review", () => {
     const r = canAddPayment(active, [
-      { status: "REJECTED" },
-      { status: "PENDING" },
+      { status: "REJECTED", periodMonth: null },
+      { status: "PENDING", periodMonth: null },
     ]);
     expect(r.ok).toBe(false);
     if (!r.ok)

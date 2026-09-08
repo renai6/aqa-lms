@@ -1,6 +1,6 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
-import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus } from '@prisma/client'
+import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus, PaymentFrequency } from '@prisma/client'
 import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
@@ -13,7 +13,7 @@ import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 export type DashboardEnrollment = {
   id: string
   courseId: string
-  course: { title: string; imageUrl: string | null; tuitionFee: number | null; meetLink: string | null }
+  course: { title: string; imageUrl: string | null; tuitionFee: number | null; meetLink: string | null; paymentFrequency: PaymentFrequency | null }
   paymentStatus: 'PARTIALLY_PAID' | 'FULLY_PAID'
   enrolledAt: Date
   totalLessons: number
@@ -69,6 +69,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
             imageUrl: true,
             tuitionFee: true,
             meetLink: true,
+            paymentFrequency: true,
             subjects: {
               // Only subjects this student may see count toward progress + schedule.
               where: subjectGenderFilter(userGender),
@@ -145,6 +146,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         imageUrl: e.course.imageUrl,
         tuitionFee: e.course.tuitionFee?.toNumber() ?? null,
         meetLink: e.course.meetLink,
+        paymentFrequency: e.course.paymentFrequency,
       },
       paymentStatus: e.paymentStatus,
       enrolledAt: e.enrolledAt,

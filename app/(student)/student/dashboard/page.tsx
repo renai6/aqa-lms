@@ -76,6 +76,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       !isSettled({
         paymentStatus: e.paymentStatus,
         balance: balances[e.id] ?? { kind: "untracked" },
+        paymentFrequency: e.course.paymentFrequency,
       }),
   );
 

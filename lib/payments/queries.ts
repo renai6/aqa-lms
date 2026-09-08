@@ -1,17 +1,29 @@
 import { db } from "@/lib/db";
-import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
+import type { EnrollmentStatus, PaymentFrequency, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
+import { dateToMonthKey, type MonthKey } from "@/lib/time/manila";
 
 export type PaymentEnrollment = {
   id: string;
   paymentStatus: PaymentStatus;
-  course: { title: string; archivedAt: Date | null };
-  // The guard asks whether one is PENDING; balance is computed from the
-  // APPROVED subset. The dashboard's richer per-enrollment state comes from
-  // getEnrollmentPaymentStates below.
-  payments: { status: EnrollmentStatus }[];
+  course: {
+    title: string;
+    archivedAt: Date | null;
+    paymentFrequency: PaymentFrequency | null;
+    tuitionFee: number | null;
+  };
+  enrolledAt: Date;
+  completedAt: Date | null;
+  removedAt: Date | null;
+  // `amount` is here for Task 5's month picker, which needs the approved
+  // total per month to know which months are still outstanding.
+  payments: {
+    status: EnrollmentStatus;
+    periodMonth: MonthKey | null;
+    amount: number;
+  }[];
   balance: Balance;
 };
 
@@ -27,16 +39,40 @@ export async function getEnrollmentForPayment(
       id: true,
       paymentStatus: true,
       totalDue: true,
-      course: { select: { title: true, archivedAt: true } },
-      payments: { select: { status: true, amount: true } },
+      enrolledAt: true,
+      completedAt: true,
+      removedAt: true,
+      course: {
+        select: {
+          title: true,
+          archivedAt: true,
+          paymentFrequency: true,
+          tuitionFee: true,
+        },
+      },
+      payments: {
+        select: { status: true, amount: true, periodMonth: true },
+      },
     },
   });
   if (!r) return null;
   return {
     id: r.id,
     paymentStatus: r.paymentStatus,
-    course: r.course,
-    payments: r.payments,
+    course: {
+      title: r.course.title,
+      archivedAt: r.course.archivedAt,
+      paymentFrequency: r.course.paymentFrequency,
+      tuitionFee: r.course.tuitionFee?.toNumber() ?? null,
+    },
+    enrolledAt: r.enrolledAt,
+    completedAt: r.completedAt,
+    removedAt: r.removedAt,
+    payments: r.payments.map((p) => ({
+      status: p.status,
+      periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+      amount: p.amount.toNumber(),
+    })),
     balance: computeBalance(
       r.totalDue?.toNumber() ?? null,
       r.payments
