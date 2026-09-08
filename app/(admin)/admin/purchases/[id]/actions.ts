@@ -16,6 +16,7 @@ import {
 } from "@/lib/purchases/email";
 import { peso } from "@/lib/payments/balance";
 import { ensureActiveBatchId } from "@/lib/batches/ensure";
+import { toMonthKey, monthKeyToDate } from "@/lib/time/manila";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -57,7 +58,13 @@ export async function approvePurchaseAction(
       items: {
         select: {
           courseId: true,
-          course: { select: { title: true, archivedAt: true } },
+          course: {
+            select: {
+              title: true,
+              archivedAt: true,
+              paymentFrequency: true,
+            },
+          },
         },
       },
     },
@@ -67,14 +74,22 @@ export async function approvePurchaseAction(
   // The approve form submits one pair of fields per course. Blank totalDue is
   // meaningful: it means "do not track this enrollment's balance", which is
   // how every enrollment behaved before balances existed.
+  //
+  // The form is advisory; this is the gate. A monthly course's totalDue is
+  // forced to null here regardless of what the form submitted, because a
+  // monthly enrollment has no single agreed total by design - it accrues
+  // another month on a schedule, and the per-month matrix is its ledger
+  // instead. Validated against the course's own paymentFrequency, not a
+  // hidden form field, so a crafted POST cannot set it either.
   const entries = purchase.items.map((item) => {
+    const isMonthly = item.course.paymentFrequency === "MONTHLY";
     const rawTotal = formData.get(`totalDue_${item.courseId}`);
     const rawApplied = formData.get(`applied_${item.courseId}`);
     const total = typeof rawTotal === "string" ? rawTotal.trim() : "";
     const applied = typeof rawApplied === "string" ? rawApplied.trim() : "";
     return {
       courseId: item.courseId,
-      totalDue: total === "" ? null : Number(total),
+      totalDue: isMonthly || total === "" ? null : Number(total),
       applied: applied === "" ? 0 : Number(applied),
     };
   });
@@ -111,6 +126,12 @@ export async function approvePurchaseAction(
   }
 
   const paymentStatus = paymentStatusFromType(purchase.paymentType);
+  // The month a monthly enrollment's checkout money covers. Attributed here
+  // rather than left null, because unattributed money is what the matrix
+  // parks in its Unassigned column: every monthly student would otherwise
+  // start life reading as behind, with an admin correction owed on day one.
+  // Manila, since that is the calendar the billing month is on.
+  const approvalMonth = monthKeyToDate(toMonthKey(new Date()));
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -208,6 +229,10 @@ export async function approvePurchaseAction(
               source: "CHECKOUT",
               reviewedById: auth.userId,
               reviewedAt: new Date(),
+              periodMonth:
+                item.course.paymentFrequency === "MONTHLY"
+                  ? approvalMonth
+                  : null,
             },
           });
         }

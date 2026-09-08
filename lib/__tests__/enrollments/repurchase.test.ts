@@ -123,6 +123,8 @@ describe("approving a purchase for a removed enrollment", () => {
         source: "CHECKOUT",
         reviewedById: "admin1",
         reviewedAt: expect.any(Date),
+        // Not billed monthly, so the row is attributed to no month.
+        periodMonth: null,
       },
     });
   });

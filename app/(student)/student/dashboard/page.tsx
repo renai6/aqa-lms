@@ -5,20 +5,43 @@ import { getSession } from "@/lib/auth/session";
 import {
   getStudentDashboard,
   getStudentRecentResults,
+  type DashboardEnrollment,
 } from "@/lib/student/queries";
 import {
   getEnrollmentPaymentStates,
   getEnrollmentBalances,
+  type EnrollmentBalanceInfo,
 } from "@/lib/payments/queries";
-import { describeBalance, type Balance } from "@/lib/payments/balance";
+import { describeBalance } from "@/lib/payments/balance";
 import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
-function balanceLine(balance: Balance | undefined): string {
-  if (balance && balance.kind === "tracked") return describeBalance(balance);
+function balanceLine(
+  info: EnrollmentBalanceInfo | undefined,
+  course: DashboardEnrollment["course"],
+): string {
+  // MONTHLY is decided first, regardless of `balance.kind`: a handful of
+  // legacy monthly enrollments still carry a lifetime `totalDue` (a bug
+  // elsewhere, not fixed by hiding its symptom here), which made `balance`
+  // read "tracked" and this branch unreachable for exactly the enrollments
+  // that most needed the month-based line.
+  if (course.paymentFrequency === "MONTHLY") {
+    return info?.monthlyLine ?? "Billed monthly";
+  }
+  if (info && info.balance.kind === "tracked") return describeBalance(info.balance);
   return "Partial payment - balance outstanding";
+}
+
+// Settled reads positive, outstanding (or nothing to score) reads amber -
+// the same convention `BalanceSummary` follows for the equivalent line on
+// the admin side.
+function monthlyTone(line: string | null): string {
+  if (line === null) return "text-muted-foreground";
+  if (line.startsWith("Paid up through")) return "text-green-700";
+  if (line === "Billed monthly") return "text-muted-foreground";
+  return "text-amber-600";
 }
 
 function formatTime(t: string): string {
@@ -75,7 +98,8 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
     (e) =>
       !isSettled({
         paymentStatus: e.paymentStatus,
-        balance: balances[e.id] ?? { kind: "untracked" },
+        balance: balances[e.id]?.balance ?? { kind: "untracked" },
+        paymentFrequency: e.course.paymentFrequency,
       }),
   );
 
@@ -350,6 +374,12 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           <div className="space-y-2">
             {unsettledEnrollments.map((e) => {
               const state = paymentStates[e.id] ?? { kind: "idle" as const };
+              const info = balances[e.id];
+              // A monthly enrollment settles a month at a time, so a payment
+              // under review for July must not block submitting August. The
+              // guard already allows it; hiding the button was the only thing
+              // stopping a student catching up.
+              const isMonthly = e.course.paymentFrequency === "MONTHLY";
               return (
                 <div
                   key={e.id}
@@ -359,8 +389,14 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                     <p className="text-foreground text-sm font-semibold">
                       {e.course.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-amber-600">
-                      {balanceLine(balances[e.id])}
+                    <p
+                      className={`mt-0.5 text-xs ${
+                        isMonthly
+                          ? monthlyTone(info?.monthlyLine ?? null)
+                          : "text-amber-600"
+                      }`}
+                    >
+                      {balanceLine(info, e.course)}
                     </p>
                     {state.kind === "rejected" && (
                       <p className="text-destructive mt-1 text-xs">
@@ -369,17 +405,20 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                       </p>
                     )}
                   </div>
-                  {state.kind === "pending" ? (
-                    <span className="shrink-0 text-xs font-medium text-amber-600">
-                      Payment under review
-                    </span>
-                  ) : (
-                    <Button asChild size="sm" className="shrink-0">
-                      <Link href={"/student/payments/" + e.id}>
-                        Add payment
-                      </Link>
-                    </Button>
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {state.kind === "pending" && (
+                      <span className="text-xs font-medium text-amber-600">
+                        Payment under review
+                      </span>
+                    )}
+                    {(state.kind !== "pending" || isMonthly) && (
+                      <Button asChild size="sm">
+                        <Link href={"/student/payments/" + e.id}>
+                          Add payment
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })}

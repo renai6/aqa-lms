@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
-    payment: { findUnique: vi.fn(), updateMany: vi.fn(), create: vi.fn() },
+    payment: {
+      findUnique: vi.fn(),
+      updateMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     enrollment: { update: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -27,6 +32,7 @@ import {
 } from "@/lib/payments/email";
 import {
   approvePaymentAction,
+  assignPaymentMonthAction,
   rejectPaymentAction,
 } from "@/app/(admin)/admin/payments/[id]/actions";
 
@@ -287,6 +293,8 @@ describe("approvePaymentAction starting to track an untracked enrollment", () =>
         source: "CHECKOUT",
         reviewedById: "admin1",
         reviewedAt: expect.any(Date),
+        // Not billed monthly, so the row is attributed to no month.
+        periodMonth: null,
       },
     });
   });
@@ -325,6 +333,53 @@ describe("approvePaymentAction starting to track an untracked enrollment", () =>
       data: { paymentStatus: "PARTIALLY_PAID", totalDue: 20000 },
     });
     expect(tx.payment.create).not.toHaveBeenCalled();
+  });
+
+  // Finding 5a: a MONTHLY enrollment always has totalDue === null by design
+  // (it has no single agreed total), which is exactly the condition
+  // catchUpPrefill keys off. The form hides the "start tracking this
+  // balance" fields for a monthly course, but the form is only advisory - a
+  // crafted POST supplying totalDue must not be able to create a lifetime
+  // ledger that never grows with monthly accrual and contradicts the matrix.
+  it("never sets totalDue for a monthly enrollment, even if a crafted POST supplies one", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      enrollmentId: "e1",
+      enrollment: {
+        totalDue: null,
+        purchaseId: "p1",
+        purchase: { paymentProofUrl: "purchase/p1/proof.jpg" },
+        enrolledAt: new Date("2024-01-05T09:00:00+08:00"),
+        completedAt: null,
+        removedAt: null,
+        payments: [],
+        course: { title: "Tajweed Basics", paymentFrequency: "MONTHLY" },
+        user: { email: "s@example.com", firstName: "Sam" },
+      },
+    } as never);
+    tx.payment.updateMany.mockResolvedValue({ count: 1 });
+    tx.enrollment.update.mockResolvedValue({});
+
+    const NOW_MONTH = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+    })
+      .format(new Date())
+      .slice(0, 7);
+
+    const f = approveForm("pay1", "PARTIALLY_PAID");
+    f.set("periodMonth", NOW_MONTH);
+    f.set("totalDue", "20000");
+    f.set("alreadyPaid", "5000");
+
+    await expect(approvePaymentAction({ error: null }, f)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+
+    expect(tx.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { paymentStatus: "PARTIALLY_PAID" },
+    });
   });
 });
 
@@ -417,7 +472,148 @@ describe("approvePaymentAction guards against double-counting checkout money", (
         source: "CHECKOUT",
         reviewedById: "admin1",
         reviewedAt: expect.any(Date),
+        // Not billed monthly, so the row is attributed to no month.
+        periodMonth: null,
       },
     });
+  });
+});
+
+// Approval is a one-way door, so this action is the only route by which an
+// already-approved payment - a historical row, a checkout row, or one an admin
+// filed against the wrong month - ever gets attributed.
+describe("assignPaymentMonthAction", () => {
+  const NOW_MONTH = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+  })
+    .format(new Date())
+    .slice(0, 7);
+
+  const approvedMonthly = {
+    status: "APPROVED",
+    enrollment: {
+      // Enrolled a few years back, so every month tested here is in range.
+      enrolledAt: new Date("2024-01-05T09:00:00+08:00"),
+      completedAt: null,
+      removedAt: null,
+      course: { paymentFrequency: "MONTHLY" },
+    },
+  };
+
+  function assignForm(id: string, periodMonth: string) {
+    const f = new FormData();
+    f.set("id", id);
+    f.set("periodMonth", periodMonth);
+    return f;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getSession).mockResolvedValue({
+      userId: "admin1",
+      role: "ADMIN",
+    } as never);
+    vi.mocked(db.payment.findUnique).mockResolvedValue(
+      approvedMonthly as never,
+    );
+    vi.mocked(db.payment.update).mockResolvedValue({} as never);
+  });
+
+  it("refuses a caller who is not an admin", async () => {
+    vi.mocked(getSession).mockResolvedValue({
+      userId: "u1",
+      role: "STUDENT",
+    } as never);
+
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", NOW_MONTH),
+    );
+
+    expect(result.error).toBe("Forbidden");
+    expect(db.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("writes only periodMonth, as the month's first day", async () => {
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", NOW_MONTH),
+    );
+
+    expect(result).toEqual({ error: null, success: true });
+    expect(db.payment.update).toHaveBeenCalledWith({
+      where: { id: "pay1" },
+      data: { periodMonth: new Date(`${NOW_MONTH}-01T00:00:00.000Z`) },
+    });
+  });
+
+  it("clears the month back to unassigned when none is chosen", async () => {
+    await assignPaymentMonthAction({ error: null }, assignForm("pay1", ""));
+
+    expect(db.payment.update).toHaveBeenCalledWith({
+      where: { id: "pay1" },
+      data: { periodMonth: null },
+    });
+  });
+
+  it("rejects a month outside the enrollment's payable range", async () => {
+    // Format-valid but years ahead: it would land in neither a matrix column
+    // nor the Unassigned total.
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", "2099-01"),
+    );
+
+    expect(result.error).toBe("That month is outside this enrollment's range.");
+    expect(db.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed month", async () => {
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", "2026-13"),
+    );
+
+    expect(result.error).toBe("Select which month this payment covers.");
+    expect(db.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a course that is not billed monthly", async () => {
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      ...approvedMonthly,
+      enrollment: {
+        ...approvedMonthly.enrollment,
+        course: { paymentFrequency: null },
+      },
+    } as never);
+
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", NOW_MONTH),
+    );
+
+    expect(result.error).toBe("This course is not billed monthly.");
+    expect(db.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a payment that is not approved", async () => {
+    // A pending payment gets its month from the approve form, which sets the
+    // month and the status together.
+    vi.mocked(db.payment.findUnique).mockResolvedValue({
+      ...approvedMonthly,
+      status: "PENDING",
+    } as never);
+
+    const result = await assignPaymentMonthAction(
+      { error: null },
+      assignForm("pay1", NOW_MONTH),
+    );
+
+    expect(result.error).toBe(
+      "Only an approved payment can be assigned a month.",
+    );
+    expect(db.payment.update).not.toHaveBeenCalled();
   });
 });

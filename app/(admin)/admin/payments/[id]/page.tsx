@@ -5,7 +5,9 @@ import { ProofImage } from "@/components/admin/proof-image";
 import { BalanceSummary } from "@/components/admin/balance-summary";
 import { getAdminPaymentById } from "@/lib/payments/queries";
 import { peso } from "@/lib/payments/balance";
+import { monthKeyLabel } from "@/lib/time/manila";
 import { ApproveForm } from "./approve-form";
+import { AssignMonthForm } from "./assign-month-form";
 import { RejectForm } from "./reject-form";
 
 type Props = { params: Promise<{ id: string }> };
@@ -65,6 +67,18 @@ export default async function PaymentDetailPage({ params }: Props) {
           <span className="text-muted-foreground">Amount</span>
           <span className="text-lg font-bold">{peso(payment.amount)}</span>
         </div>
+        {payment.isMonthly && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Covers</span>
+            <span className="font-medium">
+              {payment.periodMonth ? (
+                monthKeyLabel(payment.periodMonth)
+              ) : (
+                <span className="text-amber-600">Not assigned to a month</span>
+              )}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
             Current enrollment status
@@ -76,7 +90,11 @@ export default async function PaymentDetailPage({ params }: Props) {
           </span>
         </div>
         <div className="space-y-1 border-t pt-2">
-          <BalanceSummary balance={payment.balance} label="Balance now" />
+          <BalanceSummary
+            balance={payment.balance}
+            label="Balance now"
+            monthly={payment.monthlyLine}
+          />
         </div>
       </div>
 
@@ -93,6 +111,16 @@ export default async function PaymentDetailPage({ params }: Props) {
         </p>
       )}
 
+      {payment.status === "APPROVED" && payment.isMonthly && (
+        <div className="bg-card rounded-xl border p-4">
+          <AssignMonthForm
+            id={payment.id}
+            periodMonth={payment.periodMonth}
+            monthOptions={payment.monthOptions}
+          />
+        </div>
+      )}
+
       {isPending && (
         <div className="bg-card flex flex-col gap-4 rounded-xl border p-4">
           <ApproveForm
@@ -102,6 +130,10 @@ export default async function PaymentDetailPage({ params }: Props) {
             approvedPaid={payment.approvedPaid}
             fallbackStatus={payment.enrollmentPaymentStatus}
             catchUpPrefill={payment.catchUpPrefill}
+            isMonthly={payment.isMonthly}
+            periodMonth={payment.periodMonth}
+            monthOptions={payment.monthOptions}
+            monthlyLine={payment.monthlyLine}
           />
           <div className="border-t pt-4">
             <RejectForm id={payment.id} />

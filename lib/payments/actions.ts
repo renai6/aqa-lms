@@ -10,6 +10,8 @@ import { createPaymentSchema } from "@/lib/payments/schema";
 import { canAddPayment } from "@/lib/payments/guards";
 import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { sendPaymentConfirmationEmail } from "@/lib/payments/email";
+import { payableMonths } from "@/lib/payments/monthly";
+import { monthKeyToDate } from "@/lib/time/manila";
 
 type ActionState = { error: string | null };
 
@@ -35,10 +37,12 @@ export async function createPaymentAction(
   const result = createPaymentSchema.safeParse({
     enrollmentId: formData.get("enrollmentId"),
     amount: formData.get("amount"),
+    periodMonth: formData.get("periodMonth"),
   });
   if (!result.success)
     return { error: result.error.issues[0]?.message ?? "Validation failed." };
   const { enrollmentId, amount } = result.data;
+  const submittedMonth = result.data.periodMonth ?? null;
 
   // The page ran this same check, but that check is advisory: a stale tab can
   // post here long after the enrollment stopped qualifying.
@@ -46,7 +50,37 @@ export async function createPaymentAction(
     session.userId,
     enrollmentId,
   );
-  const allowed = canAddPayment(enrollment, enrollment?.payments ?? []);
+
+  const isMonthly = enrollment?.course.paymentFrequency === "MONTHLY";
+  if (!isMonthly && submittedMonth !== null) {
+    return { error: "This course is not billed monthly." };
+  }
+  if (isMonthly && enrollment) {
+    if (submittedMonth === null) {
+      return { error: "Select which month this payment covers." };
+    }
+    // Bounds only. `payableMonths` deliberately does not filter out settled
+    // months: paying a settled month again is an overpayment for the admin to
+    // judge, not a malformed request. A month outside the enrollment's range,
+    // or more than one ahead, is.
+    const offered = payableMonths(
+      {
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: enrollment.completedAt,
+        removedAt: enrollment.removedAt,
+      },
+      new Date(),
+    );
+    if (!offered.includes(submittedMonth)) {
+      return { error: "That month is not open for payment." };
+    }
+  }
+
+  const allowed = canAddPayment(
+    enrollment,
+    enrollment?.payments ?? [],
+    submittedMonth,
+  );
   if (!allowed.ok) return { error: allowed.reason };
   // Unreachable - the guard already returned for a null enrollment. Present so
   // the compiler narrows `enrollment` for the rest of the action.
@@ -67,7 +101,13 @@ export async function createPaymentAction(
         // so the re-check below is authoritative.
         await tx.$queryRaw`SELECT id FROM "Enrollment" WHERE id = ${enrollmentId} FOR UPDATE`;
         const pending = await tx.payment.findFirst({
-          where: { enrollmentId, status: "PENDING" },
+          where: isMonthly
+            ? {
+                enrollmentId,
+                status: "PENDING",
+                periodMonth: monthKeyToDate(submittedMonth!),
+              }
+            : { enrollmentId, status: "PENDING" },
           select: { id: true },
         });
         if (pending) throw new DuplicatePendingError();
@@ -76,6 +116,9 @@ export async function createPaymentAction(
           data: {
             enrollmentId,
             amount,
+            periodMonth: submittedMonth
+              ? monthKeyToDate(submittedMonth)
+              : null,
             proofUrl: "", // set after upload
           },
           select: { id: true },
@@ -85,7 +128,11 @@ export async function createPaymentAction(
     paymentId = payment.id;
   } catch (err) {
     if (err instanceof DuplicatePendingError) {
-      return { error: "You already have a payment awaiting review." };
+      return {
+        error: isMonthly
+          ? "You already have a payment for this month awaiting review."
+          : "You already have a payment awaiting review.",
+      };
     }
     console.error("[createPayment] DB error:", err);
     return { error: "A database error occurred. Please try again." };

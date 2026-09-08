@@ -1,17 +1,30 @@
 import { db } from "@/lib/db";
-import type { EnrollmentStatus, PaymentStatus } from "@prisma/client";
+import type { EnrollmentStatus, PaymentFrequency, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
+import { dateToMonthKey, monthKeyLabel, type MonthKey } from "@/lib/time/manila";
+import { payableMonths, describeMonthlyStanding } from "@/lib/payments/monthly";
 
 export type PaymentEnrollment = {
   id: string;
   paymentStatus: PaymentStatus;
-  course: { title: string; archivedAt: Date | null };
-  // The guard asks whether one is PENDING; balance is computed from the
-  // APPROVED subset. The dashboard's richer per-enrollment state comes from
-  // getEnrollmentPaymentStates below.
-  payments: { status: EnrollmentStatus }[];
+  course: {
+    title: string;
+    archivedAt: Date | null;
+    paymentFrequency: PaymentFrequency | null;
+    tuitionFee: number | null;
+  };
+  enrolledAt: Date;
+  completedAt: Date | null;
+  removedAt: Date | null;
+  // `amount` is here for Task 5's month picker, which needs the approved
+  // total per month to know which months are still outstanding.
+  payments: {
+    status: EnrollmentStatus;
+    periodMonth: MonthKey | null;
+    amount: number;
+  }[];
   balance: Balance;
 };
 
@@ -27,16 +40,40 @@ export async function getEnrollmentForPayment(
       id: true,
       paymentStatus: true,
       totalDue: true,
-      course: { select: { title: true, archivedAt: true } },
-      payments: { select: { status: true, amount: true } },
+      enrolledAt: true,
+      completedAt: true,
+      removedAt: true,
+      course: {
+        select: {
+          title: true,
+          archivedAt: true,
+          paymentFrequency: true,
+          tuitionFee: true,
+        },
+      },
+      payments: {
+        select: { status: true, amount: true, periodMonth: true },
+      },
     },
   });
   if (!r) return null;
   return {
     id: r.id,
     paymentStatus: r.paymentStatus,
-    course: r.course,
-    payments: r.payments,
+    course: {
+      title: r.course.title,
+      archivedAt: r.course.archivedAt,
+      paymentFrequency: r.course.paymentFrequency,
+      tuitionFee: r.course.tuitionFee?.toNumber() ?? null,
+    },
+    enrolledAt: r.enrolledAt,
+    completedAt: r.completedAt,
+    removedAt: r.removedAt,
+    payments: r.payments.map((p) => ({
+      status: p.status,
+      periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+      amount: p.amount.toNumber(),
+    })),
     balance: computeBalance(
       r.totalDue?.toNumber() ?? null,
       r.payments
@@ -77,29 +114,67 @@ export async function getEnrollmentPaymentStates(
   return states;
 }
 
+export type EnrollmentBalanceInfo = {
+  balance: Balance;
+  // Set only on a MONTHLY course. When set, this - not `balance` - is what
+  // the dashboard renders: `balance` may still carry a lifetime `totalDue`
+  // on a handful of legacy rows, and a monthly course never reads one
+  // regardless of what is stored.
+  monthlyLine: string | null;
+};
+
 // One balance per enrollment for the dashboard's Payment section, keyed by
 // enrollment id. Mirrors getEnrollmentPaymentStates, which the same section
 // already calls.
 export async function getEnrollmentBalances(
   userId: string,
-): Promise<Record<string, Balance>> {
+): Promise<Record<string, EnrollmentBalanceInfo>> {
   const rows = await db.enrollment.findMany({
     where: { userId, ...ACTIVE_ENROLLMENT },
     select: {
       id: true,
       totalDue: true,
-      payments: { where: { status: "APPROVED" }, select: { amount: true } },
+      enrolledAt: true,
+      completedAt: true,
+      removedAt: true,
+      // Every status, not just APPROVED: `describeMonthlyStanding` needs the
+      // full picture and excludes PENDING/REJECTED itself, the same way
+      // `selectableMonths` does. The lifetime `balance` below still sums
+      // APPROVED only.
+      payments: {
+        select: { status: true, amount: true, periodMonth: true },
+      },
+      course: { select: { tuitionFee: true, paymentFrequency: true } },
     },
   });
 
   return Object.fromEntries(
-    rows.map((r) => [
-      r.id,
-      computeBalance(
-        r.totalDue?.toNumber() ?? null,
-        r.payments.map((p) => p.amount.toNumber()),
-      ),
-    ]),
+    rows.map((r) => {
+      const isMonthly = r.course.paymentFrequency === "MONTHLY";
+      const approvedAmounts = r.payments
+        .filter((p) => p.status === "APPROVED")
+        .map((p) => p.amount.toNumber());
+      const info: EnrollmentBalanceInfo = {
+        balance: computeBalance(r.totalDue?.toNumber() ?? null, approvedAmounts),
+        monthlyLine: isMonthly
+          ? describeMonthlyStanding(
+              {
+                enrolledAt: r.enrolledAt,
+                completedAt: r.completedAt,
+                removedAt: r.removedAt,
+                course: { tuitionFee: r.course.tuitionFee?.toNumber() ?? null },
+              },
+              r.payments.map((p) => ({
+                periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+                amount: p.amount.toNumber(),
+                status: p.status,
+              })),
+              new Date(),
+            )
+          : null,
+      };
+      return [r.id, info];
+    }),
   );
 }
 
@@ -112,6 +187,11 @@ export type AdminPaymentRow = {
   studentEmail: string;
   courseTitle: string;
   balance: Balance;
+  // Set only on a MONTHLY course. When set, this - not `balance` - is what
+  // the Balance column renders: `balance` may still carry a lifetime
+  // `totalDue` on a handful of legacy rows, and a monthly course never reads
+  // one regardless of what is stored.
+  monthlyLine: string | null;
 };
 
 export async function getAdminPaymentsByStatus(
@@ -129,31 +209,54 @@ export async function getAdminPaymentsByStatus(
       enrollment: {
         select: {
           totalDue: true,
-          // Approved rows only: pending and rejected payments are not money
-          // received and must not move the balance.
+          enrolledAt: true,
+          completedAt: true,
+          removedAt: true,
+          // Every status, not just APPROVED: `describeMonthlyStanding` needs
+          // the full picture (it excludes PENDING/REJECTED itself, the same
+          // way `selectableMonths` does) while the lifetime `balance` below
+          // still sums APPROVED only.
           payments: {
-            where: { status: "APPROVED" },
-            select: { amount: true },
+            select: { status: true, amount: true, periodMonth: true },
           },
           user: { select: { firstName: true, lastName: true, email: true } },
-          course: { select: { title: true } },
+          course: { select: { title: true, tuitionFee: true, paymentFrequency: true } },
         },
       },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status,
-    amount: r.amount.toNumber(),
-    createdAt: r.createdAt,
-    studentName: `${r.enrollment.user.firstName} ${r.enrollment.user.lastName}`,
-    studentEmail: r.enrollment.user.email,
-    courseTitle: r.enrollment.course.title,
-    balance: computeBalance(
-      r.enrollment.totalDue?.toNumber() ?? null,
-      r.enrollment.payments.map((p) => p.amount.toNumber()),
-    ),
-  }));
+  return rows.map((r) => {
+    const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
+    const approvedAmounts = r.enrollment.payments
+      .filter((p) => p.status === "APPROVED")
+      .map((p) => p.amount.toNumber());
+    return {
+      id: r.id,
+      status: r.status,
+      amount: r.amount.toNumber(),
+      createdAt: r.createdAt,
+      studentName: `${r.enrollment.user.firstName} ${r.enrollment.user.lastName}`,
+      studentEmail: r.enrollment.user.email,
+      courseTitle: r.enrollment.course.title,
+      balance: computeBalance(r.enrollment.totalDue?.toNumber() ?? null, approvedAmounts),
+      monthlyLine: isMonthly
+        ? describeMonthlyStanding(
+            {
+              enrolledAt: r.enrollment.enrolledAt,
+              completedAt: r.enrollment.completedAt,
+              removedAt: r.enrollment.removedAt,
+              course: { tuitionFee: r.enrollment.course.tuitionFee?.toNumber() ?? null },
+            },
+            r.enrollment.payments.map((p) => ({
+              periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+              amount: p.amount.toNumber(),
+              status: p.status,
+            })),
+            new Date(),
+          )
+        : null,
+    };
+  });
 }
 
 export async function getPaymentStatusCounts(): Promise<
@@ -191,13 +294,28 @@ export type AdminPaymentDetail = {
   // the stored `totalDue` is null.
   totalDue: number | null;
   approvedPaid: number;
-  // Non-null only when the enrollment has no total yet, in which case the
-  // approve form offers to start tracking it. `alreadyPaid` is itself
+  // Non-null only when the enrollment has no total yet AND the course is not
+  // billed monthly, in which case the approve form offers to start tracking
+  // it. A monthly enrollment has no single agreed total by design, so a
+  // lifetime ledger there would contradict the month matrix rather than
+  // complement it. `alreadyPaid` is itself
   // nullable: null means "do not render this field", which is the case when
   // an APPROVED CHECKOUT payment already exists for the enrollment - that
   // money is already in the ledger, so prefilling and re-submitting it would
   // double-count it.
   catchUpPrefill: { totalDue: string; alreadyPaid: string | null } | null;
+  // Monthly courses only. `periodMonth` is what the student picked, null for
+  // a historical row predating the field; `monthOptions` is what the admin
+  // may change it to.
+  isMonthly: boolean;
+  periodMonth: MonthKey | null;
+  monthOptions: { key: MonthKey; label: string }[];
+  // Set only on a MONTHLY course: the enrollment's overall monthly standing
+  // from `describeMonthlyStanding`, the same line the payments list and
+  // dashboard render. This - not `balance` - is what "Balance now" renders,
+  // and what the approve form's preview falls back to describing, since a
+  // monthly course has no single lifetime total to summarize.
+  monthlyLine: string | null;
 };
 
 export async function getAdminPaymentById(
@@ -211,13 +329,17 @@ export async function getAdminPaymentById(
       amount: true,
       adminRemarks: true,
       createdAt: true,
+      periodMonth: true,
       enrollment: {
         select: {
           paymentStatus: true,
           totalDue: true,
+          enrolledAt: true,
+          completedAt: true,
+          removedAt: true,
           payments: {
             where: { status: "APPROVED" },
-            select: { amount: true, source: true },
+            select: { amount: true, source: true, periodMonth: true },
           },
           user: {
             select: {
@@ -260,8 +382,14 @@ export async function getAdminPaymentById(
   const hasCheckoutPayment = r.enrollment.payments.some(
     (p) => p.source === "CHECKOUT",
   );
+  const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
+  // Never offered on a monthly course. A monthly enrollment has no single
+  // agreed total - the spec's "No change to Enrollment.totalDue" - so a total
+  // typed here would create a lifetime ledger that never grows with monthly
+  // accrual, and the dashboard would read "fully paid" while the matrix reads
+  // months behind. The two ledgers must not be able to disagree.
   const catchUpPrefill =
-    r.enrollment.totalDue === null
+    r.enrollment.totalDue === null && !isMonthly
       ? {
           totalDue:
             r.enrollment.course.tuitionFee !== null &&
@@ -287,6 +415,38 @@ export async function getAdminPaymentById(
               : "",
         }
       : null;
+  const monthOptions = isMonthly
+    ? payableMonths(
+        {
+          enrolledAt: r.enrollment.enrolledAt,
+          completedAt: r.enrollment.completedAt,
+          removedAt: r.enrollment.removedAt,
+        },
+        new Date(),
+      ).map((key) => ({ key, label: monthKeyLabel(key) }))
+    : [];
+  const periodMonth = r.periodMonth ? dateToMonthKey(r.periodMonth) : null;
+  // The enrollment's overall standing, not this payment's own month - reuses
+  // the exact same function the payments list and dashboard call, from data
+  // already fetched above for `approvedAmounts`. The nested payments select
+  // is already `where: { status: "APPROVED" }`, so every row here is
+  // APPROVED by construction.
+  const monthlyLine = isMonthly
+    ? describeMonthlyStanding(
+        {
+          enrolledAt: r.enrollment.enrolledAt,
+          completedAt: r.enrollment.completedAt,
+          removedAt: r.enrollment.removedAt,
+          course: { tuitionFee: r.enrollment.course.tuitionFee?.toNumber() ?? null },
+        },
+        r.enrollment.payments.map((p) => ({
+          amount: p.amount.toNumber(),
+          periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+          status: "APPROVED" as const,
+        })),
+        new Date(),
+      )
+    : null;
   return {
     id: r.id,
     status: r.status,
@@ -301,5 +461,9 @@ export async function getAdminPaymentById(
     approvedPaid:
       approvedAmounts.reduce((sum, a) => sum + Math.round(a * 100), 0) / 100,
     catchUpPrefill,
+    isMonthly,
+    periodMonth,
+    monthOptions,
+    monthlyLine,
   };
 }
