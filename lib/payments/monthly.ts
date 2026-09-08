@@ -74,7 +74,11 @@ export type MatrixEnrollment = {
   completedAt: Date | null;
   removedAt: Date | null;
   student: { firstName: string; lastName: string; email: string };
-  payments: MatrixPayment[];
+  // The matrix links a cell to the payment(s) behind it (Finding 6), which
+  // needs an id `MatrixPayment` itself does not carry - `selectableMonths`
+  // below reuses `MatrixPayment` for the student picker, which has no use
+  // for one.
+  payments: (MatrixPayment & { id: string })[];
 };
 
 // A cell is either outside this enrollment's owed range, or a verdict. The
@@ -85,9 +89,21 @@ export type MatrixEnrollment = {
 // pay into a month they do not owe yet: both the student picker and the admin
 // month select deliberately offer the next month. That money has to render
 // somewhere, and it is not "unassigned" - it names its month.
+//
+// `paymentIds` is the APPROVED payments summed into this cell, in no
+// particular order. It exists so the matrix can link a cell that carries
+// money to the payment(s) behind it - a pending-only cell (owed, `unpaid`,
+// `hasPending`) carries no id here, since that payment is not yet approved
+// money and is already reachable through the Pending tab.
 export type MonthCell =
-  | { month: MonthKey; owed: false; paid: number }
-  | { month: MonthKey; owed: true; status: MonthStatus; hasPending: boolean };
+  | { month: MonthKey; owed: false; paid: number; paymentIds: string[] }
+  | {
+      month: MonthKey;
+      owed: true;
+      status: MonthStatus;
+      hasPending: boolean;
+      paymentIds: string[];
+    };
 
 export type MatrixRow = {
   enrollmentId: string;
@@ -98,6 +114,10 @@ export type MatrixRow = {
   // `amountBehind`: until someone says which month it covers, it settles
   // nothing.
   unassigned: number;
+  // The APPROVED, no-month payments summed into `unassigned`, so the matrix
+  // can link the figure to the payment(s) it represents rather than leaving
+  // it a dead end.
+  unassignedPaymentIds: string[];
   cells: MonthCell[];
   monthsBehind: number;
   amountBehind: number;
@@ -144,9 +164,10 @@ export function buildMonthlyMatrix(
 
   const rows: MatrixRow[] = enrollments.map((e) => {
     const owed = owedByEnrollment.get(e.id) ?? new Set<MonthKey>();
-    const approvedByMonth = new Map<MonthKey, number[]>();
+    const approvedByMonth = new Map<MonthKey, { amount: number; id: string }[]>();
     const pendingMonths = new Set<MonthKey>();
     let unassigned = 0;
+    const unassignedPaymentIds: string[] = [];
 
     for (const p of e.payments) {
       if (p.status === "PENDING") {
@@ -156,24 +177,32 @@ export function buildMonthlyMatrix(
       if (p.status !== "APPROVED") continue;
       if (p.periodMonth === null) {
         unassigned = sumCentavos([unassigned, p.amount]) / 100;
+        unassignedPaymentIds.push(p.id);
         continue;
       }
       const bucket = approvedByMonth.get(p.periodMonth);
-      if (bucket) bucket.push(p.amount);
-      else approvedByMonth.set(p.periodMonth, [p.amount]);
+      const entry = { amount: p.amount, id: p.id };
+      if (bucket) bucket.push(entry);
+      else approvedByMonth.set(p.periodMonth, [entry]);
     }
 
     let monthsBehind = 0;
     let behindCentavos = 0;
     const cells: MonthCell[] = months.map((month) => {
+      const bucket = approvedByMonth.get(month) ?? [];
+      const paymentIds = bucket.map((x) => x.id);
       if (!owed.has(month)) {
         return {
           month,
           owed: false,
-          paid: sumCentavos(approvedByMonth.get(month) ?? []) / 100,
+          paid: sumCentavos(bucket.map((x) => x.amount)) / 100,
+          paymentIds,
         };
       }
-      const status = monthStatus(monthlyFee, approvedByMonth.get(month) ?? []);
+      const status = monthStatus(
+        monthlyFee,
+        bucket.map((x) => x.amount),
+      );
       if (status.kind === "unpaid") {
         monthsBehind += 1;
         behindCentavos += Math.round((monthlyFee ?? 0) * 100);
@@ -186,6 +215,7 @@ export function buildMonthlyMatrix(
         owed: true,
         status,
         hasPending: pendingMonths.has(month),
+        paymentIds,
       };
     });
 
@@ -195,6 +225,7 @@ export function buildMonthlyMatrix(
       studentEmail: e.student.email,
       removedAt: e.removedAt,
       unassigned,
+      unassignedPaymentIds,
       cells,
       monthsBehind,
       amountBehind: behindCentavos / 100,

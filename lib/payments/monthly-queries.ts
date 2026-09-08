@@ -58,7 +58,7 @@ export async function getCourseMonthlyMatrix(
         // Rejected payments are neither money received nor awaiting review,
         // so they say nothing about a month.
         where: { status: { in: ["APPROVED", "PENDING"] } },
-        select: { amount: true, periodMonth: true, status: true },
+        select: { id: true, amount: true, periodMonth: true, status: true },
       },
     },
   });
@@ -70,6 +70,7 @@ export async function getCourseMonthlyMatrix(
     removedAt: r.removedAt,
     student: r.user,
     payments: r.payments.map((p) => ({
+      id: p.id,
       amount: p.amount.toNumber(),
       periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
       status: p.status,

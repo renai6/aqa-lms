@@ -77,6 +77,17 @@ describe("getCourseMonthlyMatrix", () => {
     });
   });
 
+  // Finding 6: the matrix links a cell (or the Unassigned figure) to the
+  // payment behind it. Dropping `id` from this select would silently make
+  // every such link point at `/admin/payments/undefined`.
+  it("selects payment id, so the matrix can link to it", async () => {
+    await getCourseMonthlyMatrix("c1");
+    const call = vi.mocked(db.enrollment.findMany).mock.calls[0][0] as {
+      select: { payments: { select: Record<string, unknown> } };
+    };
+    expect(call.select.payments.select).toMatchObject({ id: true });
+  });
+
   it("includes removed enrollments so their arrears stay visible", async () => {
     // Staff surfaces deliberately do not apply ACTIVE_ENROLLMENT: admins
     // still see removed rows so the history stays auditable.
@@ -97,6 +108,7 @@ describe("getCourseMonthlyMatrix", () => {
         user: { firstName: "Aisha", lastName: "R", email: "a@x.c" },
         payments: [
           {
+            id: "p1",
             amount: decimal(1500),
             periodMonth: new Date("2026-09-01T00:00:00.000Z"),
             status: "APPROVED",
@@ -124,6 +136,7 @@ describe("getCourseMonthlyMatrix", () => {
         user: { firstName: "Aisha", lastName: "R", email: "a@x.c" },
         payments: [
           {
+            id: "p1",
             amount: decimal(750),
             periodMonth: null,
             status: "APPROVED",

@@ -162,7 +162,7 @@ describe("buildMonthlyMatrix", () => {
           id: "e1",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           payments: [
-            { amount: 1500, periodMonth: "2026-09", status: "PENDING" },
+            { id: "p1", amount: 1500, periodMonth: "2026-09", status: "PENDING" },
           ],
         }),
       ],
@@ -171,6 +171,8 @@ describe("buildMonthlyMatrix", () => {
     );
     const cell = matrix.rows[0].cells[0];
     expect(cell.owed && cell.status).toEqual({ kind: "unpaid" });
+    // A pending payment is not approved money, so it produces no id to link.
+    expect(cell.owed && cell.paymentIds).toEqual([]);
   });
 
   it("flags a month with a pending payment so nobody chases that student", () => {
@@ -180,7 +182,7 @@ describe("buildMonthlyMatrix", () => {
           id: "e1",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           payments: [
-            { amount: 1500, periodMonth: "2026-09", status: "PENDING" },
+            { id: "p1", amount: 1500, periodMonth: "2026-09", status: "PENDING" },
           ],
         }),
       ],
@@ -198,7 +200,7 @@ describe("buildMonthlyMatrix", () => {
           id: "e1",
           enrolledAt: new Date("2026-08-01T09:00:00+08:00"),
           payments: [
-            { amount: 800, periodMonth: "2026-08", status: "APPROVED" },
+            { id: "p1", amount: 800, periodMonth: "2026-08", status: "APPROVED" },
           ],
         }),
       ],
@@ -216,7 +218,9 @@ describe("buildMonthlyMatrix", () => {
         enrollment({
           id: "e1",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
-          payments: [{ amount: 1500, periodMonth: null, status: "APPROVED" }],
+          payments: [
+            { id: "p1", amount: 1500, periodMonth: null, status: "APPROVED" },
+          ],
         }),
       ],
       1500,
@@ -225,6 +229,8 @@ describe("buildMonthlyMatrix", () => {
     expect(matrix.rows[0].unassigned).toBe(1500);
     // Until someone says which month it covers, it settles nothing.
     expect(matrix.rows[0].amountBehind).toBe(1500);
+    // Finding 6: the id behind the figure, so the matrix can link to it.
+    expect(matrix.rows[0].unassignedPaymentIds).toEqual(["p1"]);
   });
 
   it("gives a paid-ahead month its own column and shows the amount", () => {
@@ -237,8 +243,8 @@ describe("buildMonthlyMatrix", () => {
           id: "e1",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           payments: [
-            { amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
-            { amount: 1500, periodMonth: "2026-10", status: "APPROVED" },
+            { id: "p1", amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
+            { id: "p2", amount: 1500, periodMonth: "2026-10", status: "APPROVED" },
           ],
         }),
       ],
@@ -250,6 +256,7 @@ describe("buildMonthlyMatrix", () => {
       month: "2026-10",
       owed: false,
       paid: 1500,
+      paymentIds: ["p2"],
     });
     // Not owed, so it settles nothing and skews no tally.
     expect(matrix.rows[0].unassigned).toBe(0);
@@ -261,6 +268,27 @@ describe("buildMonthlyMatrix", () => {
       unpaid: 0,
       unscored: 0,
     });
+  });
+
+  it("carries the ids of every approved payment summed into a cell, for linking", () => {
+    // A month can be paid across more than one approved submission - both ids
+    // must survive into the cell, not just the last one written.
+    const matrix = buildMonthlyMatrix(
+      [
+        enrollment({
+          id: "e1",
+          enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
+          payments: [
+            { id: "p1", amount: 800, periodMonth: "2026-09", status: "APPROVED" },
+            { id: "p2", amount: 700, periodMonth: "2026-09", status: "APPROVED" },
+          ],
+        }),
+      ],
+      1500,
+      NOW,
+    );
+    const cell = matrix.rows[0].cells[0];
+    expect(cell.owed && cell.paymentIds).toEqual(["p1", "p2"]);
   });
 
   it("leaves a not-owed month with no money as an empty cell", () => {
@@ -276,7 +304,12 @@ describe("buildMonthlyMatrix", () => {
       NOW,
     );
     const late = matrix.rows.find((r) => r.enrollmentId === "late")!;
-    expect(late.cells[0]).toEqual({ month: "2026-06", owed: false, paid: 0 });
+    expect(late.cells[0]).toEqual({
+      month: "2026-06",
+      owed: false,
+      paid: 0,
+      paymentIds: [],
+    });
   });
 
   it("counts nothing as behind when the course has no fee", () => {
@@ -302,7 +335,7 @@ describe("buildMonthlyMatrix", () => {
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           student: { firstName: "Aisha", lastName: "R", email: "a@x.c" },
           payments: [
-            { amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
+            { id: "p1", amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
           ],
         }),
         enrollment({
@@ -327,14 +360,14 @@ describe("buildMonthlyMatrix", () => {
           id: "e1",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           payments: [
-            { amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
+            { id: "p1", amount: 1500, periodMonth: "2026-09", status: "APPROVED" },
           ],
         }),
         enrollment({
           id: "e2",
           enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
           payments: [
-            { amount: 800, periodMonth: "2026-09", status: "APPROVED" },
+            { id: "p2", amount: 800, periodMonth: "2026-09", status: "APPROVED" },
           ],
         }),
         enrollment({

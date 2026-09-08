@@ -1,7 +1,30 @@
+import Link from "next/link";
 import { peso } from "@/lib/payments/balance";
 import { monthKeyShort, monthKeyLabel } from "@/lib/time/manila";
 import type { MonthlyMatrix, MonthCell } from "@/lib/payments/monthly";
 import { cn } from "@/lib/utils";
+
+// Wraps a cell's mark in a link to the payment behind it, when there is one.
+// A cell can hold more than one approved payment (a month paid across two
+// submissions); the first is enough to reach the reattribution/edit action
+// any of them offers, which is the whole point - not enumerating every row.
+function PaymentLink({
+  ids,
+  children,
+}: {
+  ids: string[];
+  children: React.ReactNode;
+}) {
+  if (ids.length === 0) return <>{children}</>;
+  return (
+    <Link
+      href={`/admin/payments/${ids[0]}`}
+      className="rounded-sm hover:underline focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+    >
+      {children}
+    </Link>
+  );
+}
 
 // Status is carried in the cell's accessible name as well as its glyph, so it
 // does not depend on telling a check from a cross.
@@ -11,12 +34,14 @@ function CellMark({ cell }: { cell: MonthCell }) {
     // ahead is offered. Showing the amount is the only place it appears.
     if (cell.paid > 0) {
       return (
-        <span className="text-xs font-medium text-emerald-600">
-          <span className="sr-only">
-            {monthKeyLabel(cell.month)}: paid ahead,{" "}
+        <PaymentLink ids={cell.paymentIds}>
+          <span className="text-xs font-medium text-emerald-600">
+            <span className="sr-only">
+              {monthKeyLabel(cell.month)}: paid ahead,{" "}
+            </span>
+            {peso(cell.paid)}
           </span>
-          {peso(cell.paid)}
-        </span>
+        </PaymentLink>
       );
     }
     return (
@@ -30,34 +55,40 @@ function CellMark({ cell }: { cell: MonthCell }) {
   const label = `${monthKeyLabel(cell.month)}: `;
   if (status.kind === "paid") {
     return (
-      <span className="font-semibold text-emerald-600" title={peso(status.paid)}>
-        <span className="sr-only">{label}paid{pending}</span>
-        <span aria-hidden="true">✓</span>
-      </span>
+      <PaymentLink ids={cell.paymentIds}>
+        <span className="font-semibold text-emerald-600" title={peso(status.paid)}>
+          <span className="sr-only">{label}paid{pending}</span>
+          <span aria-hidden="true">✓</span>
+        </span>
+      </PaymentLink>
     );
   }
   if (status.kind === "partial") {
     return (
-      <span
-        className="font-semibold text-amber-600"
-        title={`${peso(status.paid)} paid, ${peso(status.short)} short`}
-      >
-        <span className="sr-only">
-          {label}partial, {peso(status.short)} short{pending}
+      <PaymentLink ids={cell.paymentIds}>
+        <span
+          className="font-semibold text-amber-600"
+          title={`${peso(status.paid)} paid, ${peso(status.short)} short`}
+        >
+          <span className="sr-only">
+            {label}partial, {peso(status.short)} short{pending}
+          </span>
+          <span aria-hidden="true">◐</span>
         </span>
-        <span aria-hidden="true">◐</span>
-      </span>
+      </PaymentLink>
     );
   }
   if (status.kind === "unscored") {
     return (
-      <span className="text-muted-foreground" title={peso(status.paid)}>
-        <span className="sr-only">
-          {label}
-          {peso(status.paid)} received, course has no fee set
+      <PaymentLink ids={cell.paymentIds}>
+        <span className="text-muted-foreground" title={peso(status.paid)}>
+          <span className="sr-only">
+            {label}
+            {peso(status.paid)} received, course has no fee set
+          </span>
+          <span aria-hidden="true">{status.paid > 0 ? "•" : "·"}</span>
         </span>
-        <span aria-hidden="true">{status.paid > 0 ? "•" : "·"}</span>
-      </span>
+      </PaymentLink>
     );
   }
   return (
@@ -139,7 +170,16 @@ export function MonthlyMatrixTable({
                 <p className="text-muted-foreground text-xs">{row.studentEmail}</p>
               </th>
               <td className="text-muted-foreground px-3 py-2 text-right text-xs">
-                {row.unassigned > 0 ? peso(row.unassigned) : "—"}
+                {row.unassigned > 0 ? (
+                  <Link
+                    href={`/admin/payments/${row.unassignedPaymentIds[0]}`}
+                    className="rounded-sm hover:underline focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    {peso(row.unassigned)}
+                  </Link>
+                ) : (
+                  "—"
+                )}
               </td>
               {row.cells.map((cell) => (
                 <td key={cell.month} className="px-3 py-2 text-center">
