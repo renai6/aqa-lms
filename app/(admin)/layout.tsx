@@ -139,7 +139,12 @@ export default async function AdminLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto flex flex-col min-w-0">
+      {/* `relative` is load-bearing: this is the scroll container, and an
+          absolutely positioned descendant (every `sr-only` element is one)
+          is only clipped by it if it establishes a containing block. Without
+          it, an sr-only label below the fold escapes to the document and adds
+          a second, outer scrollbar. */}
+      <main className="flex-1 overflow-auto flex flex-col min-w-0 relative">
         <TopBar />
         <div className="flex-1">{children}</div>
       </main>
