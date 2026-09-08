@@ -19,7 +19,7 @@ function PaymentLink({
   return (
     <Link
       href={`/admin/payments/${ids[0]}`}
-      className="rounded-sm hover:underline focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+      className="rounded-sm underline decoration-dotted underline-offset-2 hover:decoration-solid focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
     >
       {children}
     </Link>
@@ -124,7 +124,7 @@ export function MonthlyMatrixTable({
           <tr>
             <th
               scope="col"
-              className="bg-muted text-muted-foreground sticky left-0 z-10 px-4 py-2 text-left text-xs font-medium tracking-wide uppercase"
+              className="bg-muted text-muted-foreground sticky left-0 z-10 px-4 py-2 text-left text-xs font-medium tracking-wide uppercase shadow-[1px_0_0_0_var(--border)]"
             >
               Student
             </th>
@@ -157,7 +157,7 @@ export function MonthlyMatrixTable({
             <tr key={row.enrollmentId} className="hover:bg-muted/50 transition-colors">
               <th
                 scope="row"
-                className="bg-background sticky left-0 z-10 px-4 py-2 text-left font-normal"
+                className="bg-background sticky left-0 z-10 px-4 py-2 text-left font-normal shadow-[1px_0_0_0_var(--border)]"
               >
                 <p className="font-medium">
                   {row.studentName}
@@ -173,7 +173,7 @@ export function MonthlyMatrixTable({
                 {row.unassigned > 0 ? (
                   <Link
                     href={`/admin/payments/${row.unassignedPaymentIds[0]}`}
-                    className="rounded-sm hover:underline focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-foreground rounded-sm underline decoration-dotted underline-offset-2 hover:decoration-solid focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {peso(row.unassigned)}
                   </Link>
@@ -210,7 +210,7 @@ export function MonthlyMatrixTable({
             <tr key={kind}>
               <th
                 scope="row"
-                className="bg-muted/50 text-muted-foreground sticky left-0 z-10 px-4 py-1.5 text-left text-xs font-medium capitalize"
+                className="bg-[color-mix(in_oklab,var(--muted)_50%,var(--background))] text-muted-foreground sticky left-0 z-10 px-4 py-1.5 text-left text-xs font-medium capitalize shadow-[1px_0_0_0_var(--border)]"
               >
                 {kind}
               </th>
