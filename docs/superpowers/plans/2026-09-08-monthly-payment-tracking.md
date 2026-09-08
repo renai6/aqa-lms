@@ -1300,7 +1300,7 @@ enrollment an admin marked FULLY_PAID as permanently closed."
 
 **Interfaces:**
 - Consumes: `monthsOwed`, `monthStatus` from `lib/payments/monthly`; `toMonthKey`, `nextMonthKey`, `monthKeyLabel`, `monthKeyToDate` from `lib/time/manila`; `PaymentEnrollment` from `lib/payments/queries`.
-- Produces, exported from `lib/payments/monthly.ts`: `type SelectableMonth = { key: MonthKey; label: string; status: MonthStatus }` and
+- Produces, exported from `lib/payments/monthly.ts`: `type SelectableMonth = { key: MonthKey; label: string; status: MonthStatus }`, `type PayableEnrollment = { enrolledAt: Date; completedAt: Date | null; removedAt: Date | null }`, `payableMonths(enrollment: PayableEnrollment, now: Date): MonthKey[]`, and
 
 ```ts
 selectableMonths(
@@ -1321,7 +1321,7 @@ Create `lib/__tests__/payments/monthly-submit.test.ts`:
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { selectableMonths } from "@/lib/payments/monthly";
+import { selectableMonths, payableMonths } from "@/lib/payments/monthly";
 
 const NOW = new Date("2026-09-08T10:00:00+08:00");
 
@@ -1378,6 +1378,35 @@ describe("selectableMonths", () => {
     expect(selectableMonths(enrollment, [], NOW)[0].label).toBe("July 2026");
   });
 
+  it("still offers every month when the course fee is zero", () => {
+    // A zero fee makes every month read as already paid, so the filtering
+    // version returns nothing. `payableMonths` is what the action's bounds
+    // check uses precisely so a zero-fee course does not reject everything.
+    expect(
+      payableMonths(
+        {
+          enrolledAt: new Date("2026-08-01T09:00:00+08:00"),
+          completedAt: null,
+          removedAt: null,
+        },
+        NOW,
+      ),
+    ).toEqual(["2026-08", "2026-09", "2026-10"]);
+  });
+
+  it("offers no look-ahead month for a removed enrollment", () => {
+    expect(
+      payableMonths(
+        {
+          enrolledAt: new Date("2026-08-01T09:00:00+08:00"),
+          completedAt: null,
+          removedAt: new Date("2026-09-02T09:00:00+08:00"),
+        },
+        NOW,
+      ),
+    ).toEqual(["2026-08", "2026-09"]);
+  });
+
   it("offers only next month once everything owed is settled", () => {
     const months = selectableMonths(
       enrollment,
@@ -1409,10 +1438,45 @@ export type SelectableMonth = {
   status: MonthStatus;
 };
 
-// The options in the student's "Paying for" picker: every owed month that is
-// not fully settled, oldest first, plus the following month so a student can
-// pay ahead. Oldest first because a student catching up almost always means
-// the oldest one, and it is what the form defaults to.
+export type PayableEnrollment = {
+  enrolledAt: Date;
+  completedAt: Date | null;
+  removedAt: Date | null;
+};
+
+// Every month a payment may legitimately be filed against: the owed months
+// plus one look-ahead so a student can pay next month early. Paying ahead is
+// only offered while the enrollment is still accruing - a removed or
+// completed student has no next month to pay for.
+//
+// This is the bounds check, and it is deliberately separate from
+// `selectableMonths` below, which FILTERS this list down to what is still
+// outstanding. Using the filtering version as a bounds check rejects every
+// submission on a course whose fee is zero, because a zero fee makes every
+// month read as already paid.
+export function payableMonths(
+  enrollment: PayableEnrollment,
+  now: Date,
+): MonthKey[] {
+  const owed = monthsOwed(
+    enrollment.enrolledAt,
+    enrollment.removedAt ?? enrollment.completedAt,
+    now,
+  );
+  const last = owed[owed.length - 1];
+  if (
+    last === undefined ||
+    enrollment.removedAt !== null ||
+    enrollment.completedAt !== null
+  ) {
+    return owed;
+  }
+  return [...owed, nextMonthKey(last)];
+}
+
+// The options in the student's "Paying for" picker: every payable month that
+// is not fully settled, oldest first. Oldest first because a student catching
+// up almost always means the oldest one, and it is what the form defaults to.
 export function selectableMonths(
   enrollment: {
     enrolledAt: Date;
@@ -1432,40 +1496,20 @@ export function selectableMonths(
   }
 
   const fee = enrollment.course.tuitionFee;
-  const owed = monthsOwed(
-    enrollment.enrolledAt,
-    enrollment.removedAt ?? enrollment.completedAt,
-    now,
-  );
-
-  const unsettled = owed
+  return payableMonths(enrollment, now)
     .map((key) => ({
       key,
       label: monthKeyLabel(key),
       status: monthStatus(fee, approvedByMonth.get(key) ?? []),
     }))
     .filter((m) => m.status.kind !== "paid");
-
-  // Paying ahead. Only offered while the enrollment is still accruing: a
-  // removed or completed student has no next month to pay for.
-  const last = owed[owed.length - 1];
-  if (last !== undefined && enrollment.removedAt === null && enrollment.completedAt === null) {
-    const ahead = nextMonthKey(last);
-    unsettled.push({
-      key: ahead,
-      label: monthKeyLabel(ahead),
-      status: monthStatus(fee, approvedByMonth.get(ahead) ?? []),
-    });
-  }
-
-  return unsettled;
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm vitest run lib/__tests__/payments/monthly-submit.test.ts`
-Expected: PASS, 5 tests.
+Expected: PASS, 7 tests.
 
 - [ ] **Step 5: Accept the month in the schema and action**
 
@@ -1514,20 +1558,18 @@ The form is advisory; this is the check that holds:
     if (submittedMonth === null) {
       return { error: "Select which month this payment covers." };
     }
-    const offered = selectableMonths(
+    // Bounds only. `payableMonths` deliberately does not filter out settled
+    // months: paying a settled month again is an overpayment for the admin to
+    // judge, not a malformed request. A month outside the enrollment's range,
+    // or more than one ahead, is.
+    const offered = payableMonths(
       {
         enrolledAt: enrollment.enrolledAt,
         completedAt: enrollment.completedAt,
         removedAt: enrollment.removedAt,
-        course: { tuitionFee: enrollment.course.tuitionFee },
       },
-      [],
       new Date(),
-    ).map((m) => m.key);
-    // Bounds only, computed from an empty payment list so an already-settled
-    // month is still accepted here. Paying a settled month again is an
-    // overpayment for the admin to judge, not a malformed request; a month
-    // outside the enrollment's range, or more than one ahead, is.
+    );
     if (!offered.includes(submittedMonth)) {
       return { error: "That month is not open for payment." };
     }
@@ -1586,7 +1628,7 @@ Update the `DuplicatePendingError` catch message to match the guard's wording:
     }
 ```
 
-Add the imports: `import { selectableMonths } from "@/lib/payments/monthly";` and `import { monthKeyToDate } from "@/lib/time/manila";`.
+Add the imports: `import { payableMonths } from "@/lib/payments/monthly";` and `import { monthKeyToDate } from "@/lib/time/manila";`.
 
 - [ ] **Step 6: Add the picker to the form**
 
@@ -1594,7 +1636,10 @@ In `app/(student)/student/payments/[enrollmentId]/page.tsx`, compute the options
 
 ```tsx
 import { selectableMonths } from "@/lib/payments/monthly";
+import { peso } from "@/lib/payments/balance";
 ```
+
+`peso` is imported here rather than in Task 9 because Task 9 renders amounts in this same file and the existing import line only brings in `describeBalance`.
 
 ```tsx
   const months =
@@ -2261,8 +2306,8 @@ git commit -m "feat: add monthly payment matrix to the admin payments page"
 - Modify: `lib/payments/queries.ts` (`AdminPaymentDetail`, `getAdminPaymentById`)
 
 **Interfaces:**
-- Consumes: `selectableMonths` from `lib/payments/monthly`; `monthKeyToDate`, `dateToMonthKey`, `monthKeyLabel` from `lib/time/manila`.
-- Produces: `AdminPaymentDetail` gains `isMonthly: boolean`, `periodMonth: MonthKey | null`, and `monthOptions: SelectableMonth[]`.
+- Consumes: `payableMonths` from `lib/payments/monthly`; `monthKeyToDate`, `dateToMonthKey`, `monthKeyLabel` from `lib/time/manila`.
+- Produces: `AdminPaymentDetail` gains `isMonthly: boolean`, `periodMonth: MonthKey | null`, and `monthOptions: { key: MonthKey; label: string }[]`.
 
 This is what makes the Unassigned column actionable, and it is how an admin corrects a student who picked the wrong month.
 
@@ -2276,10 +2321,12 @@ In `lib/payments/queries.ts`, add to `AdminPaymentDetail`:
   // may change it to.
   isMonthly: boolean;
   periodMonth: MonthKey | null;
-  monthOptions: SelectableMonth[];
+  monthOptions: { key: MonthKey; label: string }[];
 ```
 
-Add the imports `selectableMonths` and `type SelectableMonth` from `@/lib/payments/monthly` to `lib/payments/queries.ts`, which already imports `dateToMonthKey` and `MonthKey` from `@/lib/time/manila` after Task 4.
+`monthOptions` carries no status: the approve form renders labels only, and the admin needs every payable month here, including ones already settled, so a wrong attribution can be corrected onto them.
+
+Add `import { payableMonths } from "@/lib/payments/monthly";` and `monthKeyLabel` to the existing `@/lib/time/manila` import in `lib/payments/queries.ts`.
 
 In `getAdminPaymentById`, add `periodMonth: true` to the payment's top-level select, and add `enrolledAt`, `completedAt`, `removedAt` to the enrollment select.
 Then build the three fields:
@@ -2287,23 +2334,19 @@ Then build the three fields:
 ```ts
   const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
   const monthOptions = isMonthly
-    ? selectableMonths(
+    ? payableMonths(
         {
           enrolledAt: r.enrollment.enrolledAt,
           completedAt: r.enrollment.completedAt,
           removedAt: r.enrollment.removedAt,
-          course: {
-            tuitionFee: r.enrollment.course.tuitionFee?.toNumber() ?? null,
-          },
         },
-        [],
         new Date(),
-      )
+      ).map((key) => ({ key, label: monthKeyLabel(key) }))
     : [];
 ```
 
-Pass an empty payment list, as the action does: this is the range of months an admin may choose from, not the subset still outstanding.
-An admin correcting an attribution needs to be able to pick a month that is already settled.
+`payableMonths`, not `selectableMonths`: this is the range an admin may choose from, not the subset still outstanding.
+An admin correcting a wrong attribution needs to pick a month that is already settled.
 
 - [ ] **Step 2: Render the month on the detail page and in the approve form**
 
