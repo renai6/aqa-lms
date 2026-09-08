@@ -10,6 +10,7 @@ import {
   sendPaymentApprovalEmail,
   sendPaymentRejectionEmail,
 } from "@/lib/payments/email";
+import { monthKeyToDate } from "@/lib/time/manila";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -48,7 +49,7 @@ export async function approvePaymentAction(
           totalDue: true,
           purchaseId: true,
           purchase: { select: { paymentProofUrl: true } },
-          course: { select: { title: true } },
+          course: { select: { title: true, paymentFrequency: true } },
           user: { select: { email: true, firstName: true } },
           // Only whether an APPROVED CHECKOUT row already exists matters
           // here, so one row is enough to know.
@@ -99,6 +100,18 @@ export async function approvePaymentAction(
   // ledger row. Setting totalDue still works on its own either way.
   const writeCatchUp = catchUpAmount !== null && catchUpAmount > 0;
 
+  // The form is advisory; this is the gate. Validated against the course's
+  // own paymentFrequency, not a hidden form field.
+  const isMonthly = payment.enrollment.course.paymentFrequency === "MONTHLY";
+  const rawMonth = formData.get("periodMonth");
+  const monthText = typeof rawMonth === "string" ? rawMonth.trim() : "";
+  if (isMonthly && !/^\d{4}-(0[1-9]|1[0-2])$/.test(monthText)) {
+    return { error: "Select which month this payment covers." };
+  }
+  if (!isMonthly && monthText !== "") {
+    return { error: "This course is not billed monthly." };
+  }
+
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // updateMany + a PENDING filter is the concurrency guard: if another
@@ -109,6 +122,7 @@ export async function approvePaymentAction(
           status: "APPROVED",
           reviewedById: auth.userId,
           reviewedAt: new Date(),
+          ...(isMonthly ? { periodMonth: monthKeyToDate(monthText) } : {}),
         },
       });
       if (updated.count === 0) throw new Error("ALREADY_PROCESSED");

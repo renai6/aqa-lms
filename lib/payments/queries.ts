@@ -3,7 +3,8 @@ import type { EnrollmentStatus, PaymentFrequency, PaymentStatus } from "@prisma/
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
-import { dateToMonthKey, type MonthKey } from "@/lib/time/manila";
+import { dateToMonthKey, monthKeyLabel, type MonthKey } from "@/lib/time/manila";
+import { payableMonths } from "@/lib/payments/monthly";
 
 export type PaymentEnrollment = {
   id: string;
@@ -234,6 +235,12 @@ export type AdminPaymentDetail = {
   // money is already in the ledger, so prefilling and re-submitting it would
   // double-count it.
   catchUpPrefill: { totalDue: string; alreadyPaid: string | null } | null;
+  // Monthly courses only. `periodMonth` is what the student picked, null for
+  // a historical row predating the field; `monthOptions` is what the admin
+  // may change it to.
+  isMonthly: boolean;
+  periodMonth: MonthKey | null;
+  monthOptions: { key: MonthKey; label: string }[];
 };
 
 export async function getAdminPaymentById(
@@ -247,10 +254,14 @@ export async function getAdminPaymentById(
       amount: true,
       adminRemarks: true,
       createdAt: true,
+      periodMonth: true,
       enrollment: {
         select: {
           paymentStatus: true,
           totalDue: true,
+          enrolledAt: true,
+          completedAt: true,
+          removedAt: true,
           payments: {
             where: { status: "APPROVED" },
             select: { amount: true, source: true },
@@ -323,6 +334,17 @@ export async function getAdminPaymentById(
               : "",
         }
       : null;
+  const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
+  const monthOptions = isMonthly
+    ? payableMonths(
+        {
+          enrolledAt: r.enrollment.enrolledAt,
+          completedAt: r.enrollment.completedAt,
+          removedAt: r.enrollment.removedAt,
+        },
+        new Date(),
+      ).map((key) => ({ key, label: monthKeyLabel(key) }))
+    : [];
   return {
     id: r.id,
     status: r.status,
@@ -337,5 +359,8 @@ export async function getAdminPaymentById(
     approvedPaid:
       approvedAmounts.reduce((sum, a) => sum + Math.round(a * 100), 0) / 100,
     catchUpPrefill,
+    isMonthly,
+    periodMonth: r.periodMonth ? dateToMonthKey(r.periodMonth) : null,
+    monthOptions,
   };
 }

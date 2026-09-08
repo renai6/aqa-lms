@@ -24,6 +24,9 @@ export function ApproveForm({
   approvedPaid,
   fallbackStatus,
   catchUpPrefill,
+  isMonthly,
+  periodMonth,
+  monthOptions,
 }: {
   id: string;
   amount: number;
@@ -31,6 +34,9 @@ export function ApproveForm({
   approvedPaid: number;
   fallbackStatus: Status;
   catchUpPrefill?: { totalDue: string; alreadyPaid: string | null } | null;
+  isMonthly: boolean;
+  periodMonth: string | null;
+  monthOptions: { key: string; label: string }[];
 }) {
   const [state, action, isPending] = useActionState(approvePaymentAction, {
     error: null,
@@ -74,6 +80,32 @@ export function ApproveForm({
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={id} />
+
+      {isMonthly && (
+        <div className="space-y-2">
+          <Label htmlFor="periodMonth">Month this payment covers</Label>
+          <select
+            id="periodMonth"
+            name="periodMonth"
+            required
+            defaultValue={periodMonth ?? ""}
+            className="border-input bg-background h-10 w-full rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="" disabled>
+              Select a month
+            </option>
+            {monthOptions.map((m) => (
+              <option key={m.key} value={m.key}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-muted-foreground text-xs">
+            Correct this if the student picked the wrong month. Historical
+            payments have no month until you set one here.
+          </p>
+        </div>
+      )}
 
       {catchUpPrefill && (
         <div className="space-y-3 rounded-md border border-dashed p-3">
