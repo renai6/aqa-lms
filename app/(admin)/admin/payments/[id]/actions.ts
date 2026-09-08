@@ -11,6 +11,7 @@ import {
   sendPaymentRejectionEmail,
 } from "@/lib/payments/email";
 import { monthKeyToDate } from "@/lib/time/manila";
+import { payableMonths } from "@/lib/payments/monthly";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -48,6 +49,9 @@ export async function approvePaymentAction(
         select: {
           totalDue: true,
           purchaseId: true,
+          enrolledAt: true,
+          completedAt: true,
+          removedAt: true,
           purchase: { select: { paymentProofUrl: true } },
           course: { select: { title: true, paymentFrequency: true } },
           user: { select: { email: true, firstName: true } },
@@ -110,6 +114,25 @@ export async function approvePaymentAction(
   }
   if (!isMonthly && monthText !== "") {
     return { error: "This course is not billed monthly." };
+  }
+  if (isMonthly) {
+    // Format-valid is not enough: a month outside the enrollment's payable
+    // range would land in neither a matrix column nor Unassigned, since
+    // buildMonthlyMatrix only creates cells for owed months and only routes
+    // null periodMonth into Unassigned. Mirrors the guard in
+    // lib/payments/actions.ts on the student side. payableMonths deliberately
+    // does not filter out settled months, so correcting onto one still passes.
+    const offered = payableMonths(
+      {
+        enrolledAt: payment.enrollment.enrolledAt,
+        completedAt: payment.enrollment.completedAt,
+        removedAt: payment.enrollment.removedAt,
+      },
+      new Date(),
+    );
+    if (!offered.includes(monthText)) {
+      return { error: "That month is outside this enrollment's range." };
+    }
   }
 
   try {
