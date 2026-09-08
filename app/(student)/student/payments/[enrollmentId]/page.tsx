@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { canAddPayment } from "@/lib/payments/guards";
-import { describeBalance } from "@/lib/payments/balance";
+import { describeBalance, peso } from "@/lib/payments/balance";
 import { selectableMonths } from "@/lib/payments/monthly";
 import { PaymentForm } from "./payment-form";
 
@@ -40,6 +40,29 @@ export default async function AddPaymentPage({ params }: Props) {
         <p className="mt-2 text-sm font-medium text-amber-600">
           {describeBalance(enrollment.balance)}
         </p>
+      )}
+      {months.length > 0 && (
+        <div className="mt-4 rounded-lg border p-4">
+          <h2 className="text-sm font-semibold">Your monthly payments</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {months.map((m) => (
+              <li key={m.key} className="flex justify-between gap-4">
+                <span>{m.label}</span>
+                <span
+                  className={
+                    m.status.kind === "partial" ? "text-amber-600" : "text-muted-foreground"
+                  }
+                >
+                  {m.status.kind === "partial"
+                    ? `${peso(m.status.short)} remaining`
+                    : m.status.kind === "unscored"
+                      ? "—"
+                      : "Not yet paid"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       <div className="mt-6">
         <PaymentForm enrollmentId={enrollment.id} months={months} />
