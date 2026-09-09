@@ -1,12 +1,13 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
 import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus, PaymentFrequency } from '@prisma/client'
-import { pickRelevantAttempt } from '@/lib/assessments/grading'
+import { pickRelevantAttempt, pickBestAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { computeLockedLessons } from '@/lib/lessons/gating'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -293,18 +294,6 @@ export async function getStudentCourse(
 
 // ─── Subject page ─────────────────────────────────────────────────────────────
 
-export type StudentLesson = {
-  id: string
-  title: string
-  description: string | null
-  order: number
-  materialUrl: string | null
-  videoUrl: string | null
-  audioUrl: string | null
-  pptUrl: string | null
-  isCompleted: boolean
-}
-
 export type StudentRecording = {
   id: string
   url: string
@@ -327,6 +316,25 @@ export type StudentAssessment = {
   questionCount: number
   // The student's single relevant attempt (in-progress or completed), if any.
   attempt: StudentAttemptSummary | null
+}
+
+export type StudentLesson = {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  materialUrl: string | null
+  videoUrl: string | null
+  audioUrl: string | null
+  pptUrl: string | null
+  isCompleted: boolean
+  // True when an earlier lesson's gate has not been passed. A locked lesson
+  // carries no media URLs and no assessment: the lock is a server-side content
+  // decision, and the UI only reflects it.
+  isLocked: boolean
+  lockedReason: string | null
+  // The gate for this lesson, if it has one. Null when the lesson is locked.
+  assessment: StudentAssessment | null
 }
 
 export type StudentSubject = {
@@ -353,7 +361,7 @@ export async function getStudentSubject(
       title: true,
       description: true,
       gender: true,
-      course: { select: { title: true } },
+      course: { select: { title: true, sequentialLessons: true } },
       schedules: { select: { day: true, startTime: true, endTime: true } },
       lessons: {
         orderBy: { order: 'asc' },
@@ -368,6 +376,7 @@ export async function getStudentSubject(
           type: true,
           durationMins: true,
           passingScore: true,
+          lessonId: true,
           _count: { select: { questions: true } },
           attempts: {
             where: { userId },
@@ -429,38 +438,82 @@ export async function getStudentSubject(
   const completedSet = new Set(completions.map(c => c.lessonId))
   const batchContentMap = new Map(batchContents.map(bc => [bc.lessonId, bc]))
 
+  const toStudentAssessment = (a: (typeof subject.assessments)[number]): StudentAssessment => {
+    const attempt = a.lessonId != null
+      ? pickBestAttempt(a.attempts)
+      : pickRelevantAttempt(a.attempts)
+    return {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      durationMins: a.durationMins,
+      passingScore: a.passingScore,
+      questionCount: a._count.questions,
+      attempt: attempt
+        ? { id: attempt.id, status: attempt.status, score: attempt.score }
+        : null,
+    }
+  }
+
+  const gateByLessonId = new Map(
+    subject.assessments.filter(a => a.lessonId != null).map(a => [a.lessonId!, a]),
+  )
+
+  const lockedLessons = computeLockedLessons(
+    subject.lessons.map(l => {
+      const gate = gateByLessonId.get(l.id)
+      return {
+        id: l.id,
+        order: l.order,
+        isCompleted: completedSet.has(l.id),
+        assessment: gate
+          ? {
+              // Only published gates reach here; the query filters on it.
+              isPublished: true,
+              passingScore: gate.passingScore,
+              attemptScores: gate.attempts.map(at => at.score),
+            }
+          : null,
+      }
+    }),
+    subject.course.sequentialLessons,
+  )
+
+  const lessonTitleById = new Map(subject.lessons.map(l => [l.id, l]))
+
   return {
     id: subject.id,
     courseId: subject.courseId,
     title: subject.title,
     description: subject.description,
-    course: subject.course,
+    course: { title: subject.course.title },
     schedules: subject.schedules,
     lessons: subject.lessons.map(l => {
-      const content = batchContentMap.get(l.id)
+      const blockingId = lockedLessons.get(l.id)
+      const isLocked = blockingId != null
+      const content = isLocked ? undefined : batchContentMap.get(l.id)
+      const gate = gateByLessonId.get(l.id)
+      const blocking = blockingId != null ? lessonTitleById.get(blockingId) : null
       return {
-        ...l,
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        order: l.order,
         materialUrl: content?.materialUrl ?? null,
         videoUrl: content?.videoUrl ?? null,
         audioUrl: content?.audioUrl ?? null,
         pptUrl: content?.pptUrl ?? null,
         isCompleted: completedSet.has(l.id),
-      }
-    }),
-    assessments: subject.assessments.map(a => {
-      const attempt = pickRelevantAttempt(a.attempts)
-      return {
-        id: a.id,
-        title: a.title,
-        type: a.type,
-        durationMins: a.durationMins,
-        passingScore: a.passingScore,
-        questionCount: a._count.questions,
-        attempt: attempt
-          ? { id: attempt.id, status: attempt.status, score: attempt.score }
+        isLocked,
+        lockedReason: blocking
+          ? 'Pass the Lesson ' + blocking.order + ' quiz to unlock.'
           : null,
+        assessment: isLocked || !gate ? null : toStudentAssessment(gate),
       }
     }),
+    // Gates render inside their lesson, so the flat list keeps subject-level
+    // quizzes and exams only.
+    assessments: subject.assessments.filter(a => a.lessonId == null).map(toStudentAssessment),
     recordings,
   }
 }
