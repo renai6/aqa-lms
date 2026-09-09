@@ -255,6 +255,8 @@ export async function publishAssessmentAction(
   const assessment = await db.assessment.findUnique({
     where: { id },
     select: {
+      lessonId: true,
+      passingScore: true,
       questions: {
         orderBy: { order: 'asc' },
         select: { type: true, options: { select: { isCorrect: true } } },
@@ -263,7 +265,10 @@ export async function publishAssessmentAction(
   })
   if (!assessment) return { error: 'Assessment not found.' }
 
-  const blockers = getPublishBlockers(assessment.questions)
+  const blockers = getPublishBlockers(assessment.questions, {
+    isGate: assessment.lessonId != null,
+    passingScore: assessment.passingScore,
+  })
   if (blockers.length > 0) return { error: blockers[0] }
 
   try {
