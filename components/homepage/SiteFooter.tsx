@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 const LINKS = [
-  { label: "Programs", href: "#programs" },
-  { label: "Faculty", href: "#core" },
-  { label: "Curriculum", href: "#core" },
+  { label: "Programs", href: "/#programs" },
+  { label: "Faculty", href: "/faculty" },
+  { label: "Curriculum", href: "/#core" },
   { label: "Home", href: "/" },
 ];
 

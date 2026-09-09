@@ -42,7 +42,7 @@ const CARDS = [
     /** The carousel tiles keep their own inset from the card edges. */
     pad: "px-5",
     cta: "Meet Faculty",
-    href: "/courses",
+    href: "/faculty",
   },
   {
     title: "Arabic at the Heart of Our Curriculum",
