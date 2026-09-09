@@ -14,6 +14,7 @@ import {
   VideoOff,
   ClipboardList,
   ChevronsRight,
+  Lock,
 } from "lucide-react";
 import { LessonDoneButton } from "./lesson-done-button";
 import type {
@@ -49,6 +50,34 @@ function assessmentStatus(a: StudentAssessment): {
     label: Math.round(a.attempt.score) + "%",
     className: "bg-emerald-100 text-emerald-700",
   };
+}
+
+// A gate's status differs from a subject assessment's: a failed gate must
+// invite a retake rather than showing a final score.
+function gateStatus(a: StudentAssessment): {
+  label: string;
+  className: string;
+} {
+  if (a.attempt == null) {
+    return { label: "Start Quiz", className: "bg-primary/10 text-primary" };
+  }
+  if (a.attempt.status === "IN_PROGRESS") {
+    return { label: "Resume", className: "bg-amber-100 text-amber-700" };
+  }
+  if (a.attempt.score == null) {
+    return { label: "Pending", className: "bg-amber-100 text-amber-700" };
+  }
+  const passed =
+    a.passingScore != null && a.attempt.score >= a.passingScore;
+  return passed
+    ? {
+        label: Math.round(a.attempt.score) + "%",
+        className: "bg-emerald-100 text-emerald-700",
+      }
+    : {
+        label: Math.round(a.attempt.score) + "% - Retake",
+        className: "bg-red-100 text-red-700",
+      };
 }
 
 type Tab = "lessons" | "recordings";
@@ -177,6 +206,44 @@ export function LessonPlayer({
           ) : (
             <ul className="divide-y divide-border">
               {lessons.map((lesson, index) => {
+                // A locked lesson arrives with every media URL and its
+                // assessment stripped server-side, so there is nothing left
+                // to gate here - this row only reflects that decision. It
+                // is not a button and does not toggle: there is nothing to
+                // expand into.
+                if (lesson.isLocked) {
+                  return (
+                    <li key={lesson.id}>
+                      <div
+                        aria-disabled="true"
+                        aria-label={
+                          lesson.title +
+                          ". Locked. " +
+                          (lesson.lockedReason ?? "")
+                        }
+                        className="w-full flex items-center gap-3 px-4 py-3 opacity-60"
+                      >
+                        <span className="flex-none w-5 h-5 rounded-full border border-muted-foreground flex items-center justify-center">
+                          <Lock
+                            className="w-3 h-3 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-medium text-muted-foreground line-clamp-2">
+                            {lesson.title}
+                          </span>
+                          {lesson.lockedReason && (
+                            <span className="block text-[11px] text-muted-foreground">
+                              {lesson.lockedReason}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                }
+
                 const isOpen = expandedId === lesson.id;
                 const videoKey = "lesson:" + lesson.id + ":video";
                 const audioKey = "lesson:" + lesson.id + ":audio";
@@ -239,7 +306,7 @@ export function LessonPlayer({
                         </span>
                       </button>
 
-                      {lesson.isCompleted && (
+                      {lesson.isCompleted && lesson.assessment == null && (
                         <LessonDoneButton
                           lessonId={lesson.id}
                           subjectId={subjectId}
@@ -266,6 +333,29 @@ export function LessonPlayer({
                     {isOpen && (
                       <div className="pt-1 flex flex-col gap-3 bg-muted/30 border-l-2 border-primary/20">
                         <div className="flex flex-col divide-y divide-border/60 border-border/60 bg-background/40 overflow-hidden border">
+                          {lesson.assessment && (
+                            <Link
+                              href={`/student/courses/${courseId}/subjects/${subjectId}/assessments/${lesson.assessment.id}`}
+                              className="flex items-center gap-2.5 px-3 py-5 text-xs font-semibold text-primary bg-primary/5 transition-colors hover:bg-primary/10"
+                            >
+                              <ClipboardList
+                                className="flex-none w-4 h-4"
+                                aria-hidden="true"
+                              />
+                              <span className="flex-1">
+                                {lesson.assessment.title}
+                              </span>
+                              <span
+                                className={
+                                  "flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold " +
+                                  gateStatus(lesson.assessment).className
+                                }
+                              >
+                                {gateStatus(lesson.assessment).label}
+                              </span>
+                            </Link>
+                          )}
+
                           {lesson.materialUrl && (
                             <a
                               href={lesson.materialUrl}
@@ -336,7 +426,7 @@ export function LessonPlayer({
                               Headphones,
                             )}
 
-                          {!lesson.isCompleted && (
+                          {!lesson.isCompleted && lesson.assessment == null && (
                             <div>
                               <LessonDoneButton
                                 lessonId={lesson.id}
@@ -350,7 +440,8 @@ export function LessonPlayer({
                           {!lesson.materialUrl &&
                             !lesson.pptUrl &&
                             !videoPreviewUrl &&
-                            !audioPreviewUrl && (
+                            !audioPreviewUrl &&
+                            !lesson.assessment && (
                               <p className="px-3 py-2 text-xs text-muted-foreground">
                                 No materials available.
                               </p>
