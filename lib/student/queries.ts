@@ -8,6 +8,7 @@ import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 import { computeLockedLessons } from '@/lib/lessons/gating'
+import { getLessonGateState } from '@/lib/lessons/queries'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -548,6 +549,7 @@ export async function getStudentAssessmentLaunch(
       durationMins: true,
       passingScore: true,
       subjectId: true,
+      lessonId: true,
       subject: { select: { title: true, courseId: true, gender: true } },
       _count: { select: { questions: true } },
       attempts: {
@@ -570,6 +572,12 @@ export async function getStudentAssessmentLaunch(
     select: { id: true },
   })
   if (!enrollment) return null
+
+  // The direct URL has to be closed as well as the sidebar link.
+  if (assessment.lessonId != null) {
+    const gateState = await getLessonGateState(userId, assessment.lessonId)
+    if (gateState?.isLocked) return null
+  }
 
   const attempt = pickRelevantAttempt(assessment.attempts)
 

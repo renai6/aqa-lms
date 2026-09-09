@@ -10,6 +10,7 @@ import { canSeeSubject } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { getLessonGateState } from '@/lib/lessons/queries'
 
 type ActionState = { error: string | null }
 
@@ -51,7 +52,12 @@ export async function startAttemptAction(
       subjectId,
       subject: { courseId, course: { ...ACTIVE_COURSE } },
     },
-    select: { id: true, subject: { select: { gender: true } } },
+    select: {
+      id: true,
+      lessonId: true,
+      passingScore: true,
+      subject: { select: { gender: true } },
+    },
   })
   if (!assessment) return { error: 'Assessment is not available.' }
 
@@ -71,15 +77,42 @@ export async function startAttemptAction(
   })
   if (!enrollment) return { error: 'Not enrolled in this course.' }
 
-  const existing = await db.assessmentAttempt.findFirst({
+  // A locked gate is closed even to a student who already holds a failed
+  // attempt on it - retaking a gate does not bypass the sequential order.
+  if (assessment.lessonId != null) {
+    const gateState = await getLessonGateState(session.userId, assessment.lessonId)
+    if (gateState?.isLocked) return { error: 'Assessment is not available.' }
+  }
+
+  const attempts = await db.assessmentAttempt.findMany({
     where: { assessmentId: aid, userId: session.userId },
     orderBy: { startedAt: 'desc' },
-    select: { id: true, status: true },
+    select: { id: true, status: true, score: true },
   })
 
-  // Resume an in-progress attempt, or route to the review of a completed one.
-  if (existing) {
-    redirect(attemptPath(courseId, subjectId, aid, existing.id))
+  // Resume an in-progress attempt.
+  const inProgress = attempts.find(a => a.status === 'IN_PROGRESS')
+  if (inProgress) {
+    redirect(attemptPath(courseId, subjectId, aid, inProgress.id))
+    return { error: null }
+  }
+
+  const completed = attempts.filter(a => a.status !== 'IN_PROGRESS')
+  if (completed.length > 0) {
+    // Subject-level assessments keep the one-attempt rule. Only lesson gates
+    // retake, because a gate that cannot be retaken locks a student out of the
+    // rest of the subject permanently.
+    if (assessment.lessonId == null) {
+      redirect(attemptPath(courseId, subjectId, aid, completed[0].id))
+      return { error: null }
+    }
+    const passed =
+      assessment.passingScore != null &&
+      completed.find(a => a.score != null && a.score >= assessment.passingScore!)
+    if (passed) {
+      redirect(attemptPath(courseId, subjectId, aid, passed.id))
+      return { error: null }
+    }
   }
 
   const created = await db.assessmentAttempt.create({
@@ -88,6 +121,7 @@ export async function startAttemptAction(
   })
 
   redirect(attemptPath(courseId, subjectId, aid, created.id))
+  return { error: null }
 }
 
 // Submits an in-progress attempt: persists answers, auto-scores objective
