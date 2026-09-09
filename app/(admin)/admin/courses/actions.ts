@@ -83,6 +83,7 @@ const courseSchema = z.object({
       .min(1, "Level must be at least 1.")
       .optional(),
   ),
+  sequentialLessons: z.boolean().default(false),
 });
 
 export async function createCourseAction(
@@ -107,6 +108,7 @@ export async function createCourseAction(
     groupName: formData.get("groupName"),
     level: formData.get("level"),
     courseAlias: formData.get("courseAlias"),
+    sequentialLessons: formData.get("sequentialLessons") === "on",
   };
 
   const result = courseSchema.safeParse(raw);
@@ -127,6 +129,7 @@ export async function createCourseAction(
     groupName,
     level,
     courseAlias,
+    sequentialLessons,
   } = result.data;
 
   let newCourse: { id: string };
@@ -145,6 +148,7 @@ export async function createCourseAction(
         groupName: groupName || null,
         level: level ?? null,
         courseAlias: courseAlias ?? null,
+        sequentialLessons,
       },
       select: { id: true },
     });
@@ -182,6 +186,7 @@ export async function updateCourseAction(
     groupName: formData.get("groupName"),
     level: formData.get("level"),
     courseAlias: formData.get("courseAlias"),
+    sequentialLessons: formData.get("sequentialLessons") === "on",
   };
 
   const result = courseSchema.safeParse(raw);
@@ -202,6 +207,7 @@ export async function updateCourseAction(
     groupName,
     level,
     courseAlias,
+    sequentialLessons,
   } = result.data;
 
   try {
@@ -220,6 +226,7 @@ export async function updateCourseAction(
         groupName: groupName || null,
         level: level ?? null,
         courseAlias: courseAlias ?? null,
+        sequentialLessons,
       },
     });
   } catch (err) {

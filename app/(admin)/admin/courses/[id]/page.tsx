@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCourseById } from '@/lib/courses/queries'
 import { getActiveBatch, batchLabel } from '@/lib/batches/queries'
+import { countStudentsAffectedByGating } from '@/lib/lessons/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +33,7 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!course) notFound()
 
   const activeBatch = await getActiveBatch(course.id)
+  const affectedCount = await countStudentsAffectedByGating(course.id)
 
   return (
     <div className="p-6 space-y-6">
@@ -50,7 +52,7 @@ export default async function CourseDetailPage({ params }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <EditCourseForm course={course} />
+          <EditCourseForm course={course} affectedCount={affectedCount} />
         </div>
         <div className="space-y-4">
           <Card>

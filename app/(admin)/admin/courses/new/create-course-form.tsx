@@ -159,6 +159,22 @@ export function CreateCourseForm() {
               defaultValue="75"
             />
           </div>
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="sequentialLessons"
+                className="mt-0.5 accent-primary"
+              />
+              <span>
+                <span className="font-medium">Sequential lessons</span>
+                <span className="block text-xs text-muted-foreground">
+                  Students must pass each lesson&apos;s assessment before the next lesson
+                  opens. Turn this on only once the lesson assessments are published.
+                </span>
+              </span>
+            </label>
+          </div>
           {state.error && (
             <p className="text-destructive text-sm">{state.error}</p>
           )}

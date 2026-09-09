@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { updateCourseAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CourseDetail } from "@/lib/courses/queries";
 
-type Props = { course: CourseDetail };
+type Props = { course: CourseDetail; affectedCount: number };
 
-export function EditCourseForm({ course }: Props) {
+export function EditCourseForm({ course, affectedCount }: Props) {
   const [state, formAction, isPending] = useActionState(updateCourseAction, {
     error: null,
   });
+  const [turningOn, setTurningOn] = useState(false);
   return (
     <Card>
       <CardHeader>
@@ -168,6 +169,33 @@ export function EditCourseForm({ course }: Props) {
               step="0.1"
               defaultValue={String(course.passingGrade)}
             />
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="sequentialLessons"
+                defaultChecked={course.sequentialLessons}
+                onChange={(e) =>
+                  setTurningOn(!course.sequentialLessons && e.target.checked)
+                }
+                className="mt-0.5 accent-primary"
+              />
+              <span>
+                <span className="font-medium">Sequential lessons</span>
+                <span className="block text-xs text-muted-foreground">
+                  Students must pass each lesson&apos;s assessment before the next lesson
+                  opens. Turn this on only once the lesson assessments are published.
+                </span>
+              </span>
+            </label>
+            {turningOn && affectedCount > 0 && (
+              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {affectedCount} enrolled student{affectedCount === 1 ? "" : "s"} would have at
+                least one lesson locked immediately. Students who already completed a gated
+                lesson keep their access.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-tuitionFee">Tuition Fee (₱)</Label>
