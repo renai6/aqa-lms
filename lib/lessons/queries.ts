@@ -32,20 +32,19 @@ export async function getLessonGateState(
     },
   })
 
+  const assessmentIds = lessons.flatMap(l => (l.assessment ? [l.assessment.id] : []))
+
   const [completions, attempts] = await Promise.all([
     db.lessonCompletion.findMany({
       where: { userId, lessonId: { in: lessons.map(l => l.id) } },
       select: { lessonId: true },
     }),
-    db.assessmentAttempt.findMany({
-      where: {
-        userId,
-        assessmentId: {
-          in: lessons.flatMap(l => (l.assessment ? [l.assessment.id] : [])),
-        },
-      },
-      select: { assessmentId: true, score: true },
-    }),
+    assessmentIds.length > 0
+      ? db.assessmentAttempt.findMany({
+          where: { userId, assessmentId: { in: assessmentIds } },
+          select: { assessmentId: true, score: true },
+        })
+      : Promise.resolve([]),
   ])
 
   const completed = new Set(completions.map(c => c.lessonId))

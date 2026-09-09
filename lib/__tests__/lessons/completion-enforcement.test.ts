@@ -102,3 +102,80 @@ describe('manual completion is refused where a gate governs the lesson', () => {
     expect(db.lessonCompletion.deleteMany).not.toHaveBeenCalled()
   })
 })
+
+// The refusal tests above prove the guards block what they should. On their
+// own they cannot catch an inverted condition that blocks everything - a
+// suite of only-negative assertions passes just as well whether the guard is
+// correct or over-broad. These prove the ordinary, ungated path still works.
+describe('manual completion still succeeds where no gate governs the lesson', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getSession).mockResolvedValue({ userId: 'u1', role: 'STUDENT' } as never)
+    vi.mocked(isActiveStudent).mockResolvedValue(true)
+    vi.mocked(db.enrollment.findUnique).mockResolvedValue({ id: 'enr1' } as never)
+  })
+
+  it('marks an ungated lesson done on a non-sequential course', async () => {
+    vi.mocked(db.lesson.findFirst).mockResolvedValue({ id: 'l2' } as never)
+    vi.mocked(db.lesson.findUnique).mockResolvedValue({
+      subjectId: 'sub1',
+      assessment: null,
+      subject: { course: { sequentialLessons: false } },
+    } as never)
+    vi.mocked(db.lessonCompletion.upsert).mockResolvedValue({} as never)
+
+    const result = await markLessonDoneAction({ error: null }, lessonForm())
+
+    expect(result.error).toBeNull()
+    expect(db.lessonCompletion.upsert).toHaveBeenCalledWith({
+      where: { userId_lessonId: { userId: 'u1', lessonId: 'l2' } },
+      create: { userId: 'u1', lessonId: 'l2' },
+      update: {},
+    })
+  })
+
+  it('unmarks the same ungated lesson', async () => {
+    vi.mocked(db.lesson.findUnique).mockResolvedValue({
+      subjectId: 'sub1',
+      assessment: null,
+      subject: { course: { sequentialLessons: false } },
+    } as never)
+    vi.mocked(db.lessonCompletion.deleteMany).mockResolvedValue({ count: 1 } as never)
+
+    const result = await unmarkLessonDoneAction({ error: null }, lessonForm())
+
+    expect(result.error).toBeNull()
+    expect(db.lessonCompletion.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'u1', lessonId: 'l2' },
+    })
+  })
+
+  it('marks an ungated, unlocked lesson done on a sequential course', async () => {
+    vi.mocked(db.lesson.findFirst).mockResolvedValue({ id: 'l2' } as never)
+    // Sequential mode is on, but neither lesson in the subject carries a gate,
+    // so nothing is unsatisfied and nothing should end up locked.
+    vi.mocked(db.lesson.findUnique).mockResolvedValue({
+      subjectId: 'sub1',
+      assessment: null,
+      subject: { course: { sequentialLessons: true } },
+    } as never)
+    vi.mocked(db.lesson.findMany).mockResolvedValue([
+      { id: 'l1', order: 1, assessment: null },
+      { id: 'l2', order: 2, assessment: null },
+    ] as never)
+    vi.mocked(db.lessonCompletion.findMany).mockResolvedValue([] as never)
+    vi.mocked(db.lessonCompletion.upsert).mockResolvedValue({} as never)
+
+    const result = await markLessonDoneAction({ error: null }, lessonForm())
+
+    expect(result.error).toBeNull()
+    expect(db.lessonCompletion.upsert).toHaveBeenCalledWith({
+      where: { userId_lessonId: { userId: 'u1', lessonId: 'l2' } },
+      create: { userId: 'u1', lessonId: 'l2' },
+      update: {},
+    })
+    // No lesson in the subject has an assessment, so the query 2 fix's
+    // empty-array guard should skip this round-trip entirely.
+    expect(db.assessmentAttempt.findMany).not.toHaveBeenCalled()
+  })
+})
