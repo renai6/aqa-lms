@@ -1,16 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
+import MobileNav from "./MobileNav";
 
+// Root-relative hashes, so the homepage anchors still resolve from the
+// standalone pages that share this header.
 const NAV = [
-  { label: "Programs", href: "#programs" },
-  { label: "Faculty", href: "#core" },
+  { label: "Programs", href: "/#programs" },
+  { label: "Faculty", href: "/faculty" },
 ];
 
-const NAV_RIGHT = [{ label: "Curriculum", href: "#core" }];
+const NAV_RIGHT = [{ label: "Curriculum", href: "/#core" }];
 
 /**
  * Marketing header for the public homepage: nav links either side of a
- * centred mark, with the sign-in pill on the right.
+ * centred mark, with the sign-in pill on the right. Below `sm` the links
+ * collapse into `MobileNav` and the mark is centred against the bar.
  *
  * Separate from the shared `Navbar` used by the (public) course pages, which
  * keeps the original dark/gold treatment.
@@ -18,7 +22,9 @@ const NAV_RIGHT = [{ label: "Curriculum", href: "#core" }];
 export default function SiteHeader() {
   return (
     <header className="bg-brand-maroon fixed top-0 right-0 left-0 z-50">
-      <div className="mx-auto flex h-[60px] max-w-5xl items-center justify-center gap-6 px-6 sm:gap-10">
+      <div className="mx-auto flex h-[60px] max-w-5xl items-center justify-between px-6 sm:justify-center sm:gap-10">
+        <MobileNav items={[...NAV, ...NAV_RIGHT]} />
+
         <nav className="hidden items-center gap-8 sm:flex sm:gap-12">
           {NAV.map((item) => (
             <Link
@@ -31,7 +37,11 @@ export default function SiteHeader() {
           ))}
         </nav>
 
-        <Link href="/" className="shrink-0" aria-label="Al-Qur'an Academy">
+        <Link
+          href="/"
+          className="absolute top-1/2 left-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+          aria-label="Al-Qur'an Academy"
+        >
           <Image
             src="/aqa-logo.png"
             alt="Al-Qur'an Academy"
