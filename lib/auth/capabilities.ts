@@ -33,6 +33,13 @@ export async function assertCanManageSubject(
   }
 }
 
+// Gate authoring is admin-only: a teacher who could edit a gate's questions or
+// passing score could lock a whole batch out of a subject. Synchronous because
+// the role is already on the session.
+export function isAdmin(session: SessionLike | null): boolean {
+  return session?.role === 'SUPER_ADMIN' || session?.role === 'ADMIN'
+}
+
 // Is this session a student who is still allowed in?
 // Deactivation flips User.isActive, but sessions are stateless 7-day JWTs, so
 // every student entry point has to re-check the flag rather than trust the token.

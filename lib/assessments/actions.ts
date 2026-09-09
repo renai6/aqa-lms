@@ -3,11 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
-import { canManageSubject } from '@/lib/auth/capabilities'
+import { canManageSubject, isAdmin } from '@/lib/auth/capabilities'
 import { getPublishBlockers } from '@/lib/assessments/publish-validation'
 import { parseMedia } from '@/lib/assessments/media'
+import type { UserRole } from '@/lib/auth/types'
 
 // Neutral assessment + question authoring actions shared by the admin and
 // teacher route groups. Authorization is by capability (canManageSubject), and
@@ -16,6 +18,8 @@ import { parseMedia } from '@/lib/assessments/media'
 // `/teacher/subjects/<sid>`), so one implementation serves both surfaces.
 
 type ActionState = { error: string | null; success?: boolean }
+
+type SessionLike = { userId: string; role: UserRole }
 
 const assessmentSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
@@ -36,11 +40,12 @@ async function countAttempts(assessmentId: string): Promise<number> {
   return db.assessmentAttempt.count({ where: { assessmentId } })
 }
 
-// Resolve + authorize the subject the request targets. Returns the trimmed
-// subjectId and basePath, or an error string for the action to surface.
+// Resolve + authorize the subject the request targets. Returns the session
+// (so downstream actions can check the role), the trimmed subjectId and
+// basePath, or an error string for the action to surface.
 async function authorize(
   formData: FormData,
-): Promise<{ subjectId: string; basePath: string } | { error: string }> {
+): Promise<{ session: SessionLike; subjectId: string; basePath: string } | { error: string }> {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
 
@@ -55,7 +60,7 @@ async function authorize(
   if (!(await canManageSubject(session, subjectId)))
     return { error: 'Forbidden' }
 
-  return { subjectId, basePath }
+  return { session, subjectId, basePath }
 }
 
 type OptionRow = { label: string; value: string; isCorrect: boolean }
@@ -105,6 +110,24 @@ function parseOptions(type: string, formData: FormData): OptionRow[] | string {
   return 'Unknown question type.'
 }
 
+// Reads the optional "Gates lesson" field. Returns null for "no gate", or an
+// error string. The admin-only check lives here because both create and update
+// need exactly the same rule.
+function parseLessonId(
+  formData: FormData,
+  session: SessionLike,
+  alreadyGates: boolean,
+): string | null | { error: string } {
+  const raw = formData.get('lessonId')
+  const lessonId = typeof raw === 'string' && raw !== '' ? raw : null
+  // The second half matters as much as the first: without it a teacher could
+  // edit the questions or passing score of a gate an admin already created.
+  if ((lessonId != null || alreadyGates) && !isAdmin(session)) {
+    return { error: 'Only an admin can manage a lesson gate.' }
+  }
+  return lessonId
+}
+
 export async function createAssessmentAction(
   _prev: ActionState,
   formData: FormData,
@@ -127,6 +150,17 @@ export async function createAssessmentAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
+  const lessonId = parseLessonId(formData, auth.session, false)
+  if (lessonId != null && typeof lessonId === 'object') return lessonId
+
+  if (lessonId != null) {
+    const lesson = await db.lesson.findFirst({
+      where: { id: lessonId, subjectId },
+      select: { id: true },
+    })
+    if (!lesson) return { error: 'Invalid lesson.' }
+  }
+
   let created: { id: string }
   try {
     created = await db.assessment.create({
@@ -138,10 +172,14 @@ export async function createAssessmentAction(
         passingScore: result.data.passingScore ?? null,
         maxAttempts: result.data.maxAttempts ?? null,
         weight: result.data.weight,
+        lessonId,
       },
       select: { id: true },
     })
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return { error: 'That lesson already has an assessment.' }
+    }
     console.error('[createAssessment]', err)
     return { error: 'A database error occurred. Please try again.' }
   }
@@ -175,6 +213,40 @@ export async function updateAssessmentAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
+  const existing = await db.assessment.findUnique({
+    where: { id },
+    select: { lessonId: true, subjectId: true },
+  })
+  if (!existing) return { error: 'Assessment not found.' }
+
+  const lessonId = parseLessonId(formData, auth.session, existing.lessonId != null)
+  if (lessonId != null && typeof lessonId === 'object') return lessonId
+
+  if (lessonId != null) {
+    const lesson = await db.lesson.findFirst({
+      where: { id: lessonId, subjectId: existing.subjectId },
+      select: { id: true },
+    })
+    if (!lesson) return { error: 'Invalid lesson.' }
+
+    // Attaching a lesson to an assessment that already holds an essay would
+    // create a gate that cannot score without a teacher, so it is refused here
+    // rather than at publish time when the admin has forgotten why.
+    const essays = await db.question.findMany({
+      where: { assessmentId: id, type: 'ESSAY' },
+      orderBy: { order: 'asc' },
+      select: { order: true },
+    })
+    if (essays.length > 0) {
+      return {
+        error:
+          'Remove the essay question(s) at position ' +
+          essays.map((e) => e.order).join(', ') +
+          ' before this assessment can gate a lesson.',
+      }
+    }
+  }
+
   try {
     await db.assessment.update({
       where: { id },
@@ -185,9 +257,13 @@ export async function updateAssessmentAction(
         passingScore: result.data.passingScore ?? null,
         maxAttempts: result.data.maxAttempts ?? null,
         weight: result.data.weight,
+        lessonId,
       },
     })
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return { error: 'That lesson already has an assessment.' }
+    }
     console.error('[updateAssessment]', err)
     return { error: 'A database error occurred. Please try again.' }
   }
@@ -337,6 +413,19 @@ export async function createQuestionAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
+  if (result.data.type === 'ESSAY') {
+    const gate = await db.assessment.findUnique({
+      where: { id: assessmentId },
+      select: { lessonId: true },
+    })
+    if (gate?.lessonId != null) {
+      return {
+        error:
+          'A lesson gate cannot contain essay questions, because it must score instantly.',
+      }
+    }
+  }
+
   const optionsOrError = parseOptions(result.data.type, formData)
   if (typeof optionsOrError === 'string') return { error: optionsOrError }
 
@@ -410,6 +499,19 @@ export async function updateQuestionAction(
   const result = questionSchema.safeParse(raw)
   if (!result.success) {
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
+  }
+
+  if (result.data.type === 'ESSAY') {
+    const gate = await db.assessment.findUnique({
+      where: { id: assessmentId },
+      select: { lessonId: true },
+    })
+    if (gate?.lessonId != null) {
+      return {
+        error:
+          'A lesson gate cannot contain essay questions, because it must score instantly.',
+      }
+    }
   }
 
   const optionsOrError = parseOptions(result.data.type, formData)
