@@ -228,7 +228,11 @@ export async function getStudentCourse(
               select: { user: { select: { firstName: true, lastName: true } } },
             },
             assessments: {
-              where: { isPublished: true },
+              // Lesson gates are checkpoints, not graded work. Ten of them at
+              // the default weight would drown out the subject exam and shift
+              // every student's grade, course grade, GWA and certificate
+              // eligibility.
+              where: { isPublished: true, lessonId: null },
               select: {
                 id: true,
                 weight: true,
@@ -764,6 +768,9 @@ export async function getStudentRecentResults(
       status: { in: ['SUBMITTED', 'GRADED'] },
       assessment: {
         isPublished: true,
+        // Keep the dashboard about graded work rather than flooding it with
+        // lesson checkpoints.
+        lessonId: null,
         subject: { ...subjectGenderFilter(userGender), course: { ...ACTIVE_COURSE } },
       },
     },
