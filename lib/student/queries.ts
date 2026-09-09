@@ -607,7 +607,8 @@ export type AttemptOption = {
   id: string
   label: string
   value: string
-  isCorrect: boolean
+  // null means the key is withheld (failed gate) - see getStudentAttempt.
+  isCorrect: boolean | null
 }
 
 export type AttemptQuestion = {
@@ -639,6 +640,8 @@ export type StudentAttempt = {
   courseId: string
   subjectId: string
   subjectTitle: string
+  isGate: boolean
+  passed: boolean
   questions: AttemptQuestion[]
 }
 
@@ -668,6 +671,7 @@ export async function getStudentAttempt(
           durationMins: true,
           passingScore: true,
           subjectId: true,
+          lessonId: true,
           subject: { select: { title: true, courseId: true, gender: true } },
           questions: {
             orderBy: { order: 'asc' },
@@ -703,6 +707,15 @@ export async function getStudentAttempt(
   })
   if (!enrollment) return null
 
+  const isGate = attempt.assessment.lessonId != null
+  const passingScore = attempt.assessment.passingScore
+  const passed =
+    attempt.score != null && passingScore != null && attempt.score >= passingScore
+  // Hiding the key has to happen here, not in the page: the options are
+  // serialised into the payload either way. The student still learns which of
+  // their own answers were wrong, from StudentAnswer.isCorrect.
+  const revealKey = !isGate || passed
+
   const answerMap = new Map(attempt.answers.map(a => [a.questionId, a]))
   const questions = attempt.assessment.questions.map(q => {
     const a = answerMap.get(q.id)
@@ -714,7 +727,7 @@ export async function getStudentAttempt(
       order: q.order,
       mediaType: q.mediaType,
       mediaUrl: q.mediaUrl,
-      options: q.options,
+      options: revealKey ? q.options : q.options.map(o => ({ ...o, isCorrect: null })),
       answer: a?.answer ?? null,
       isCorrect: a?.isCorrect ?? null,
       pointsEarned: a?.pointsEarned ?? null,
@@ -735,6 +748,8 @@ export async function getStudentAttempt(
     courseId: attempt.assessment.subject.courseId,
     subjectId: attempt.assessment.subjectId,
     subjectTitle: attempt.assessment.subject.title,
+    isGate,
+    passed,
     questions,
   }
 }
