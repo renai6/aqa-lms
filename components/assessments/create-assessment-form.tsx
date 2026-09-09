@@ -69,7 +69,7 @@ export function CreateAssessmentForm({ subjectId, basePath, lessons, canManageGa
                 id="assess-lesson"
                 name="lessonId"
                 defaultValue=""
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+                className="flex h-8 w-full rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">None - subject-level assessment</option>
                 {lessons.map(l => (
