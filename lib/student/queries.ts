@@ -484,7 +484,10 @@ export async function getStudentSubject(
     subject.course.sequentialLessons,
   )
 
-  const lessonTitleById = new Map(subject.lessons.map(l => [l.id, l]))
+  // The sidebar numbers lessons by position, because Lesson.order is
+  // admin-entered and neither dense nor unique (10/20/30 is legal). The remedy
+  // label has to name the number the student can actually see in the list.
+  const lessonPositionById = new Map(subject.lessons.map((l, i) => [l.id, i + 1]))
 
   return {
     id: subject.id,
@@ -498,7 +501,8 @@ export async function getStudentSubject(
       const isLocked = blockingId != null
       const content = isLocked ? undefined : batchContentMap.get(l.id)
       const gate = gateByLessonId.get(l.id)
-      const blocking = blockingId != null ? lessonTitleById.get(blockingId) : null
+      const blockingPosition =
+        blockingId != null ? lessonPositionById.get(blockingId) : null
       return {
         id: l.id,
         title: l.title,
@@ -510,8 +514,8 @@ export async function getStudentSubject(
         pptUrl: content?.pptUrl ?? null,
         isCompleted: completedSet.has(l.id),
         isLocked,
-        lockedReason: blocking
-          ? 'Pass the Lesson ' + blocking.order + ' quiz to unlock.'
+        lockedReason: blockingPosition
+          ? 'Pass the Lesson ' + blockingPosition + ' quiz to unlock.'
           : null,
         assessment: isLocked || !gate ? null : toStudentAssessment(gate),
       }

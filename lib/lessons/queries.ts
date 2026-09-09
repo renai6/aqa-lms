@@ -99,6 +99,14 @@ export async function countStudentsAffectedByGating(courseId: string): Promise<n
   })
   if (!course) return 0
 
+  // Most courses have no gate at all, and gating cannot lock anyone without
+  // one. Bailing out here keeps every completion and attempt row for every
+  // enrolled student off the admin course page.
+  const hasPublishedGate = course.subjects.some(s =>
+    s.lessons.some(l => l.assessment?.isPublished === true),
+  )
+  if (!hasPublishedGate) return 0
+
   const enrollments = await db.enrollment.findMany({
     where: { courseId, ...ACTIVE_ENROLLMENT },
     select: { userId: true },

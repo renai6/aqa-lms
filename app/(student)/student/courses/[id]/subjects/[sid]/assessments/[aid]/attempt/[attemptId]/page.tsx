@@ -95,6 +95,13 @@ export default async function AttemptPage({ params }: Props) {
             {passed != null &&
               (passed ? (
                 <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Pass</Badge>
+              ) : attempt.isGate ? (
+                // A failed gate is a retake, not a verdict: a red Fail badge
+                // above the amber retake panel would make one screen say two
+                // different things.
+                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                  Not passed yet
+                </Badge>
               ) : (
                 <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Fail</Badge>
               ))}
@@ -116,7 +123,12 @@ export default async function AttemptPage({ params }: Props) {
         attempt.passed ? (
           <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4">
             <p className="text-sm font-semibold text-emerald-800">You passed.</p>
-            <p className="text-xs text-emerald-700">The next lesson is now open.</p>
+            {/* A gate on the last lesson of a subject opens nothing, and neither
+                does one in a course with sequential lessons off, so the copy
+                stays true of both rather than promising a next lesson. */}
+            <p className="text-xs text-emerald-700">
+              This lesson is marked complete. Any lessons it was blocking are now open.
+            </p>
             <Link
               href={backHref}
               className="mt-2 inline-block text-xs font-semibold text-emerald-800 underline"

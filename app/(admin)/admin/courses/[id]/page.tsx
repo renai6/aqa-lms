@@ -33,7 +33,11 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!course) notFound()
 
   const activeBatch = await getActiveBatch(course.id)
-  const affectedCount = await countStudentsAffectedByGating(course.id)
+  // The count only feeds the confirmation shown when gating is switched ON, so
+  // a course that already has it on never needs the scan.
+  const affectedCount = course.sequentialLessons
+    ? 0
+    : await countStudentsAffectedByGating(course.id)
 
   return (
     <div className="p-6 space-y-6">
