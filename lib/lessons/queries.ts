@@ -2,6 +2,77 @@ import { db } from '@/lib/db'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 import { computeLockedLessons, type GatingLesson } from '@/lib/lessons/gating'
 
+// Gate state for one lesson and one student, for server actions that do not
+// already have the subject loaded. getStudentSubject computes the same thing
+// from data it has already fetched rather than calling this.
+export async function getLessonGateState(
+  userId: string,
+  lessonId: string,
+): Promise<{ isLocked: boolean; hasGate: boolean } | null> {
+  const lesson = await db.lesson.findUnique({
+    where: { id: lessonId },
+    select: {
+      subjectId: true,
+      assessment: { select: { isPublished: true } },
+      subject: { select: { course: { select: { sequentialLessons: true } } } },
+    },
+  })
+  if (!lesson) return null
+
+  const hasGate = lesson.assessment?.isPublished === true
+  if (!lesson.subject.course.sequentialLessons) return { isLocked: false, hasGate }
+
+  const lessons = await db.lesson.findMany({
+    where: { subjectId: lesson.subjectId },
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      order: true,
+      assessment: { select: { id: true, isPublished: true, passingScore: true } },
+    },
+  })
+
+  const [completions, attempts] = await Promise.all([
+    db.lessonCompletion.findMany({
+      where: { userId, lessonId: { in: lessons.map(l => l.id) } },
+      select: { lessonId: true },
+    }),
+    db.assessmentAttempt.findMany({
+      where: {
+        userId,
+        assessmentId: {
+          in: lessons.flatMap(l => (l.assessment ? [l.assessment.id] : [])),
+        },
+      },
+      select: { assessmentId: true, score: true },
+    }),
+  ])
+
+  const completed = new Set(completions.map(c => c.lessonId))
+  const scoresBy = new Map<string, (number | null)[]>()
+  for (const a of attempts) {
+    scoresBy.set(a.assessmentId, [...(scoresBy.get(a.assessmentId) ?? []), a.score])
+  }
+
+  const locked = computeLockedLessons(
+    lessons.map(l => ({
+      id: l.id,
+      order: l.order,
+      isCompleted: completed.has(l.id),
+      assessment: l.assessment
+        ? {
+            isPublished: l.assessment.isPublished,
+            passingScore: l.assessment.passingScore,
+            attemptScores: scoresBy.get(l.assessment.id) ?? [],
+          }
+        : null,
+    })),
+    true,
+  )
+
+  return { isLocked: locked.has(lessonId), hasGate }
+}
+
 // How many currently enrolled students would have at least one lesson locked
 // if gating were switched on for this course right now. Shown in the admin
 // confirmation so the rollout failure mode - throwing a live batch back to
