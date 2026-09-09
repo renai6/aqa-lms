@@ -16,6 +16,12 @@ export function EditCourseForm({ course, affectedCount }: Props) {
     error: null,
   });
   const [turningOn, setTurningOn] = useState(false);
+  // Client-side guard rail only: this checkbox is deliberately uncontrolled by
+  // `name`, so it never reaches the server action. Resets whenever the toggle
+  // changes so a stale confirmation from a previous tick/untick can't silently
+  // re-enable submit.
+  const [confirmed, setConfirmed] = useState(false);
+  const requiresConfirmation = turningOn && affectedCount > 0;
   return (
     <Card>
       <CardHeader>
@@ -176,9 +182,10 @@ export function EditCourseForm({ course, affectedCount }: Props) {
                 type="checkbox"
                 name="sequentialLessons"
                 defaultChecked={course.sequentialLessons}
-                onChange={(e) =>
-                  setTurningOn(!course.sequentialLessons && e.target.checked)
-                }
+                onChange={(e) => {
+                  setTurningOn(!course.sequentialLessons && e.target.checked);
+                  setConfirmed(false);
+                }}
                 className="mt-0.5 accent-primary"
               />
               <span>
@@ -189,12 +196,26 @@ export function EditCourseForm({ course, affectedCount }: Props) {
                 </span>
               </span>
             </label>
-            {turningOn && affectedCount > 0 && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                {affectedCount} enrolled student{affectedCount === 1 ? "" : "s"} would have at
-                least one lesson locked immediately. Students who already completed a gated
-                lesson keep their access.
-              </p>
+            {requiresConfirmation && (
+              <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <p>
+                  {affectedCount} enrolled student{affectedCount === 1 ? "" : "s"} would have at
+                  least one lesson locked immediately. Students who already completed a gated
+                  lesson keep their access.
+                </p>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={(e) => setConfirmed(e.target.checked)}
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span>
+                    I understand {affectedCount} student{affectedCount === 1 ? "" : "s"} will be
+                    locked out of lessons they can currently open.
+                  </span>
+                </label>
+              </div>
             )}
           </div>
           <div className="space-y-2">
@@ -282,7 +303,10 @@ export function EditCourseForm({ course, affectedCount }: Props) {
           {state.success && !state.error && (
             <p className="text-sm text-green-600">Saved successfully.</p>
           )}
-          <Button type="submit" disabled={isPending}>
+          <Button
+            type="submit"
+            disabled={isPending || (requiresConfirmation && !confirmed)}
+          >
             {isPending ? "Saving..." : "Save Changes"}
           </Button>
         </form>
