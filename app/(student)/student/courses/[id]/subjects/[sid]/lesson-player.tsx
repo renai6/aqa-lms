@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  AudioLines,
   ChevronDown,
   ChevronRight,
   Download,
@@ -104,9 +105,10 @@ export function LessonPlayer({
         <Icon className="flex-none w-4 h-4 text-primary" aria-hidden="true" />
         <span className="flex-1">{isActive ? activeLabel : label}</span>
         {isActive && (
-          <span className="flex-none text-[10px] font-semibold uppercase tracking-wide text-primary">
-            Live
-          </span>
+          <AudioLines
+            className="flex-none w-4 h-4 text-primary animate-pulse"
+            aria-label="Now playing"
+          />
         )}
       </button>
     );
