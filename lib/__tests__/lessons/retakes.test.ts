@@ -132,4 +132,46 @@ describe('startAttemptAction retakes', () => {
     expect(db.assessmentAttempt.create).not.toHaveBeenCalled()
     expect(db.assessmentAttempt.findMany).not.toHaveBeenCalled()
   })
+
+  it('creates the first attempt at a lesson gate with no prior attempts', async () => {
+    vi.mocked(db.assessment.findFirst).mockResolvedValue({
+      id: 'a1',
+      lessonId: 'l1',
+      passingScore: 75,
+      subject: { gender: null },
+    } as never)
+    vi.mocked(getLessonGateState).mockResolvedValue({ isLocked: false, hasGate: true })
+    vi.mocked(db.assessmentAttempt.findMany).mockResolvedValue([] as never)
+
+    const result = await startAttemptAction({ error: null }, startForm())
+
+    expect(db.assessmentAttempt.create).toHaveBeenCalledWith({
+      data: { assessmentId: 'a1', userId: 'u1', status: 'IN_PROGRESS' },
+      select: { id: true },
+    })
+    expect(redirect).toHaveBeenCalledWith(attemptPath('new-attempt'))
+    expect(result.error).toBeNull()
+  })
+
+  it('creates the first attempt at a subject-level assessment with no prior attempts', async () => {
+    // The one-attempt rule blocks a SECOND attempt, not the first - a bug that
+    // moved the create() call inside `if (completed.length > 0)` would break
+    // every brand-new quiz and exam in the system, not just retakes.
+    vi.mocked(db.assessment.findFirst).mockResolvedValue({
+      id: 'a1',
+      lessonId: null,
+      passingScore: null,
+      subject: { gender: null },
+    } as never)
+    vi.mocked(db.assessmentAttempt.findMany).mockResolvedValue([] as never)
+
+    const result = await startAttemptAction({ error: null }, startForm())
+
+    expect(db.assessmentAttempt.create).toHaveBeenCalledWith({
+      data: { assessmentId: 'a1', userId: 'u1', status: 'IN_PROGRESS' },
+      select: { id: true },
+    })
+    expect(redirect).toHaveBeenCalledWith(attemptPath('new-attempt'))
+    expect(result.error).toBeNull()
+  })
 })
