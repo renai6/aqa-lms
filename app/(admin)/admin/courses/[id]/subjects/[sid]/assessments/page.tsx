@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSubjectById } from '@/lib/courses/queries'
-import { getSubjectAssessments } from '@/lib/assessments/queries'
+import { getSubjectAssessments, getGatableLessons } from '@/lib/assessments/queries'
 import { getSession } from '@/lib/auth/session'
 import { PageHeader } from '@/components/admin/page-header'
 import { Button } from '@/components/ui/button'
@@ -21,12 +21,15 @@ export default async function AssessmentsPage({ params }: Props) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [subject, assessments] = await Promise.all([
+  const [subject, assessments, gatableLessons] = await Promise.all([
     getSubjectById(sid),
     getSubjectAssessments(sid),
+    getGatableLessons(sid),
   ])
   if (!subject) notFound()
   if (subject.courseId !== id) notFound()
+
+  const lessonOrderById = new Map(gatableLessons.map(l => [l.id, l.order]))
 
   return (
     <div className="p-6 space-y-6">
@@ -70,7 +73,16 @@ export default async function AssessmentsPage({ params }: Props) {
             <tbody className="divide-y">
               {assessments.map(a => (
                 <tr key={a.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-medium">{a.title}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      {a.title}
+                      {a.lessonId != null && (
+                        <Badge variant="secondary">
+                          Gates lesson {lessonOrderById.get(a.lessonId) ?? '?'}
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">{a.type}</Badge>
                   </td>

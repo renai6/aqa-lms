@@ -24,9 +24,13 @@ function correctAnswerSummary(q: {
 export function AssessmentEditor({
   assessment,
   basePath,
+  lessons,
+  canManageGates,
 }: {
   assessment: AssessmentDetail
   basePath: string
+  lessons: Array<{ id: string; title: string; order: number; hasAssessment: boolean }>
+  canManageGates: boolean
 }) {
   const locked = assessment.attemptCount > 0
   const blockers = getPublishBlockers(assessment.questions)
@@ -37,7 +41,12 @@ export function AssessmentEditor({
     <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <EditAssessmentForm assessment={assessment} basePath={basePath} />
+          <EditAssessmentForm
+            assessment={assessment}
+            basePath={basePath}
+            lessons={lessons}
+            canManageGates={canManageGates}
+          />
         </div>
         <div className="space-y-4">
           <PublishPanel

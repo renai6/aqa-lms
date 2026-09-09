@@ -1,9 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSubjectById } from '@/lib/courses/queries'
+import { getGatableLessons } from '@/lib/assessments/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { BookOpen } from 'lucide-react'
 import { DeleteLessonButton } from '../delete-lesson-button'
 
@@ -23,6 +25,11 @@ export default async function LessonsPage({ params }: Props) {
   const subject = await getSubjectById(sid)
   if (!subject) notFound()
   if (subject.courseId !== id) notFound()
+
+  const gatableLessons = await getGatableLessons(sid)
+  const gatedLessonIds = new Set(
+    gatableLessons.filter(l => l.assessmentId != null).map(l => l.id),
+  )
 
   return (
     <div className="p-6 space-y-6">
@@ -61,7 +68,14 @@ export default async function LessonsPage({ params }: Props) {
               {subject.lessons.map((lesson) => (
                 <tr key={lesson.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">{lesson.order}</td>
-                  <td className="px-4 py-3 font-medium">{lesson.title}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      {lesson.title}
+                      {gatedLessonIds.has(lesson.id) && (
+                        <Badge variant="secondary">Gated</Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 flex items-center gap-2">
                     <Link
                       href={'/admin/courses/' + id + '/subjects/' + sid + '/lessons/' + lesson.id}

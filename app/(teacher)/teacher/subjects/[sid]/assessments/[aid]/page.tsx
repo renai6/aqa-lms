@@ -49,7 +49,12 @@ export default async function TeacherAssessmentPage({ params }: Props) {
         title={assessment.title}
       />
 
-      <AssessmentEditor assessment={assessment} basePath={base} />
+      <AssessmentEditor
+        assessment={assessment}
+        basePath={base}
+        lessons={[]}
+        canManageGates={false}
+      />
 
       <div className="space-y-4">
         <div>
