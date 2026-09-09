@@ -151,6 +151,8 @@ export async function submitAttemptAction(
         select: {
           isPublished: true,
           subjectId: true,
+          lessonId: true,
+          passingScore: true,
           subject: { select: { courseId: true, gender: true } },
           questions: {
             select: {
@@ -217,6 +219,25 @@ export async function submitAttemptAction(
           pointsEarned: a.pointsEarned,
         })),
       })
+
+      // Passing a gate is what marks the lesson done, so the same
+      // LessonCompletion row the manual button writes is written here. Keeping
+      // it in this transaction means a student is never scored as passing
+      // without the lesson opening. The upsert is idempotent, so the concurrent
+      // -submit guard above needs no change.
+      const { lessonId, passingScore } = attempt.assessment
+      if (
+        lessonId != null &&
+        passingScore != null &&
+        scored.score != null &&
+        scored.score >= passingScore
+      ) {
+        await tx.lessonCompletion.upsert({
+          where: { userId_lessonId: { userId: session.userId, lessonId } },
+          create: { userId: session.userId, lessonId },
+          update: {},
+        })
+      }
     })
   } catch (err) {
     if (err instanceof AlreadySubmittedError) {
@@ -229,6 +250,8 @@ export async function submitAttemptAction(
   const courseId = attempt.assessment.subject.courseId
   const subjectId = attempt.assessment.subjectId
   revalidatePath('/student/courses/' + courseId + '/subjects/' + subjectId)
+  revalidatePath('/student/courses/' + courseId)
   revalidatePath('/student/dashboard')
   redirect(attemptPath(courseId, subjectId, attempt.assessmentId, attempt.id))
+  return { error: null }
 }
