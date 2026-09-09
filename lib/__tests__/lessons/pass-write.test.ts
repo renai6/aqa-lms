@@ -51,6 +51,13 @@ const tx = {
   lessonCompletion: { upsert: vi.fn() },
 }
 
+// These mocks supply lessonId/passingScore directly on the stubbed
+// findFirst() result, so they cannot catch someone deleting
+// `lessonId: true, passingScore: true` from the real `select` in actions.ts.
+// The actual guard against that regression is tsc --noEmit: attempt.assessment
+// is Prisma's select-narrowed inferred type, so destructuring a field that
+// was not selected is a type error, not a silent undefined.
+
 function baseAttempt(assessmentOverrides: Record<string, unknown>) {
   return {
     id: 'att1',
@@ -149,6 +156,47 @@ describe('submitAttemptAction writes the pass', () => {
       earnedPoints: 0,
       score: null,
       status: 'SUBMITTED',
+    } as never)
+
+    await submitAttemptAction({ error: null }, submitForm())
+
+    expect(tx.lessonCompletion.upsert).not.toHaveBeenCalled()
+  })
+
+  it('does not write a completion when a gate has no passing score set', async () => {
+    // A gate with no threshold must never unlock anything, even on a perfect
+    // score - there is nothing to compare scored.score against.
+    vi.mocked(db.assessmentAttempt.findFirst).mockResolvedValue(
+      baseAttempt({ lessonId: 'l1', passingScore: null }) as never,
+    )
+    vi.mocked(scoreAttempt).mockReturnValue({
+      answers: [],
+      hasEssay: false,
+      totalPoints: 100,
+      earnedPoints: 100,
+      score: 100,
+      status: 'GRADED',
+    } as never)
+
+    await submitAttemptAction({ error: null }, submitForm())
+
+    expect(tx.lessonCompletion.upsert).not.toHaveBeenCalled()
+  })
+
+  it('does not write a completion for a subject-level assessment that happens to have a passing score', async () => {
+    // lessonId null with passingScore set is a normal subject-level exam
+    // (e.g. one that reports a pass/fail threshold) - there is no lesson to
+    // unlock, so no upsert should ever fire regardless of score.
+    vi.mocked(db.assessmentAttempt.findFirst).mockResolvedValue(
+      baseAttempt({ lessonId: null, passingScore: 75 }) as never,
+    )
+    vi.mocked(scoreAttempt).mockReturnValue({
+      answers: [],
+      hasEssay: false,
+      totalPoints: 100,
+      earnedPoints: 100,
+      score: 100,
+      status: 'GRADED',
     } as never)
 
     await submitAttemptAction({ error: null }, submitForm())
