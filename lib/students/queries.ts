@@ -1,5 +1,5 @@
 // lib/students/queries.ts
-import { Gender, PaymentStatus, UserRole } from '@prisma/client'
+import { type CourseType, Gender, PaymentStatus, UserRole } from '@prisma/client'
 import { db } from '@/lib/db'
 
 export type StudentRow = {
@@ -17,6 +17,7 @@ export type StudentRow = {
     id: string
     courseId: string
     courseTitle: string
+    courseType: CourseType
     enrolledAt: Date
     removedAt: Date | null
   }[]
@@ -91,7 +92,7 @@ async function findStudents(
           courseId: true,
           enrolledAt: true,
           removedAt: true,
-          course: { select: { title: true } },
+          course: { select: { title: true, courseType: true } },
         },
       },
     },
@@ -105,6 +106,7 @@ async function findStudents(
       id: e.id,
       courseId: e.courseId,
       courseTitle: e.course.title,
+      courseType: e.course.courseType,
       enrolledAt: e.enrolledAt,
       removedAt: e.removedAt,
     })),

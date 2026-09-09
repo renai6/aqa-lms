@@ -3,7 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { type Gender } from '@prisma/client'
 import { verifySessionToken } from '@/lib/auth/jwt'
 import { getAllStudents } from '@/lib/students/queries'
-import { formatEnrolledCourses } from '@/lib/students/format'
+import {
+  formatEnrolledCourses,
+  formatEnrolledCourseTypes,
+} from '@/lib/students/format'
 
 // Quotes a value for CSV, escaping embedded quotes and neutralising anything a
 // spreadsheet would treat as a formula.
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
   const students = await getAllStudents({ courseId: course, gender })
 
   const header =
-    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Enrolled Date,Status\r\n'
+    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Course Type,Enrolled Date,Status\r\n'
   const rows = students.map((s) => {
     const name = csvField(`${s.firstName} ${s.lastName}`)
     const email = csvField(s.email)
@@ -44,6 +47,7 @@ export async function GET(request: NextRequest) {
     const facebookLink = csvField(s.facebookLink ?? '')
     const genderLabel = s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : ''
     const courses = csvField(formatEnrolledCourses(s.enrollments))
+    const courseTypes = csvField(formatEnrolledCourseTypes(s.enrollments))
     const enrolledDate = s.enrollments[0]
       ? s.enrollments[0].enrolledAt.toISOString().slice(0, 10)
       : ''
@@ -56,6 +60,7 @@ export async function GET(request: NextRequest) {
       facebookLink,
       genderLabel,
       courses,
+      courseTypes,
       enrolledDate,
       status,
     ].join(',')
