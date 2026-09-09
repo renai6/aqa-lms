@@ -10,6 +10,7 @@ vi.mock('@/lib/db', () => ({
       update: vi.fn(),
     },
     question: { findMany: vi.fn() },
+    assessmentAttempt: { count: vi.fn() },
   },
 }))
 
@@ -102,7 +103,12 @@ describe('createAssessmentAction admin-only gate authoring', () => {
 })
 
 describe('updateAssessmentAction admin-only gate authoring', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // No attempts unless a test says otherwise, so the gate-change guard is
+    // out of the way of the authorization cases.
+    vi.mocked(db.assessmentAttempt.count).mockResolvedValue(0 as never)
+  })
 
   // The subtle hole: a teacher submits the edit form untouched (no lessonId
   // field at all) against an assessment an admin already gated. Without the
@@ -141,6 +147,65 @@ describe('updateAssessmentAction admin-only gate authoring', () => {
     expect(db.assessment.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ lessonId: 'lesson-1' }) }),
     )
+  })
+
+  // C7: the teacher route renders no gate selector, so an admin editing there
+  // submits no lessonId field at all. Treating that as "detach" would silently
+  // strip the gate; it must mean "no change".
+  it('keeps the existing gate when no lessonId field is submitted', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' } as never)
+    vi.mocked(db.assessment.findUnique).mockResolvedValue({
+      lessonId: 'lesson-1',
+      subjectId: 'sub-1',
+    } as never)
+    vi.mocked(db.lesson.findFirst).mockResolvedValue({ id: 'lesson-1' } as never)
+    vi.mocked(db.question.findMany).mockResolvedValue([] as never)
+    vi.mocked(db.assessment.update).mockResolvedValue({} as never)
+
+    const result = await updateAssessmentAction({ error: null }, updateForm())
+
+    expect(result.success).toBe(true)
+    expect(db.assessment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ lessonId: 'lesson-1' }) }),
+    )
+  })
+
+  // Attaching or detaching after students have been scored moves the
+  // assessment in or out of weightedSubjectGrade, shifting live grades.
+  it('rejects detaching a gate that has attempts, and never writes', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' } as never)
+    vi.mocked(db.assessment.findUnique).mockResolvedValue({
+      lessonId: 'lesson-1',
+      subjectId: 'sub-1',
+    } as never)
+    vi.mocked(db.assessmentAttempt.count).mockResolvedValue(2 as never)
+
+    const result = await updateAssessmentAction(
+      { error: null },
+      updateForm({ lessonId: '' }),
+    )
+
+    expect(result.error).toContain('has student attempts')
+    expect(db.assessment.update).not.toHaveBeenCalled()
+  })
+
+  it('still allows editing an assessment with attempts when the gate is unchanged', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' } as never)
+    vi.mocked(db.assessment.findUnique).mockResolvedValue({
+      lessonId: 'lesson-1',
+      subjectId: 'sub-1',
+    } as never)
+    vi.mocked(db.assessmentAttempt.count).mockResolvedValue(2 as never)
+    vi.mocked(db.lesson.findFirst).mockResolvedValue({ id: 'lesson-1' } as never)
+    vi.mocked(db.question.findMany).mockResolvedValue([] as never)
+    vi.mocked(db.assessment.update).mockResolvedValue({} as never)
+
+    const result = await updateAssessmentAction(
+      { error: null },
+      updateForm({ lessonId: 'lesson-1', title: 'Fixed title' }),
+    )
+
+    expect(result.success).toBe(true)
   })
 
   it('rejects attaching a lesson that belongs to a different subject, and never writes', async () => {
