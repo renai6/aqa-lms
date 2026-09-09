@@ -76,7 +76,7 @@ function gateStatus(a: StudentAssessment): {
       }
     : {
         label: Math.round(a.attempt.score) + "% - Retake",
-        className: "bg-red-100 text-red-700",
+        className: "bg-amber-100 text-amber-700",
       };
 }
 
