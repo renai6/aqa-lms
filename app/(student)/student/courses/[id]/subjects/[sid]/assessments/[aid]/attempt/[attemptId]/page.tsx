@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth/session'
 import { getStudentAttempt } from '@/lib/student/queries'
 import { Badge } from '@/components/ui/badge'
 import { AttemptForm } from './attempt-form'
+import { RetakeButton } from './retake-button'
 
 type Props = {
   params: Promise<{ id: string; sid: string; aid: string; attemptId: string }>
@@ -94,6 +95,13 @@ export default async function AttemptPage({ params }: Props) {
             {passed != null &&
               (passed ? (
                 <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Pass</Badge>
+              ) : attempt.isGate ? (
+                // A failed gate is a retake, not a verdict: a red Fail badge
+                // above the amber retake panel would make one screen say two
+                // different things.
+                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                  Not passed yet
+                </Badge>
               ) : (
                 <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Fail</Badge>
               ))}
@@ -110,10 +118,46 @@ export default async function AttemptPage({ params }: Props) {
         )}
       </div>
 
+      {/* Gate result panel */}
+      {attempt.isGate && (
+        attempt.passed ? (
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+            <p className="text-sm font-semibold text-emerald-800">You passed.</p>
+            {/* A gate on the last lesson of a subject opens nothing, and neither
+                does one in a course with sequential lessons off, so the copy
+                stays true of both rather than promising a next lesson. */}
+            <p className="text-xs text-emerald-700">
+              This lesson is marked complete. Any lessons it was blocking are now open.
+            </p>
+            <Link
+              href={backHref}
+              className="mt-2 inline-block text-xs font-semibold text-emerald-800 underline"
+            >
+              Back to {attempt.subjectTitle}
+            </Link>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">
+              Not passed yet - you need {attempt.passingScore}%.
+            </p>
+            <p className="text-xs text-amber-800">
+              You can retake this quiz as many times as you need.
+            </p>
+            <RetakeButton
+              assessmentId={attempt.assessmentId}
+              courseId={attempt.courseId}
+              subjectId={attempt.subjectId}
+            />
+          </div>
+        )
+      )}
+
       {/* Per-question breakdown */}
       <div className="space-y-4">
         {attempt.questions.map((q, i) => {
           const correctOption = q.options.find(o => o.isCorrect)
+          const keyWithheld = correctOption == null && q.options.some(o => o.isCorrect === null)
           const isEssay = q.type === 'ESSAY'
           return (
             <div key={q.id} className="rounded-xl border border-border bg-white p-5 space-y-3">
@@ -143,22 +187,29 @@ export default async function AttemptPage({ params }: Props) {
                 <ul className="space-y-1.5">
                   {q.options.map(o => {
                     const isChosen = o.value === q.answer
-                    const isRight = o.isCorrect
+                    const isRight = o.isCorrect === true
+                    // With the key withheld every o.isCorrect is null, so isRight
+                    // is always false here - only the student's own chosen option
+                    // gets coloured, using their answer's own correctness.
+                    const isWrong = keyWithheld
+                      ? isChosen && q.isCorrect === false
+                      : isChosen && !isRight
+                    const isRightChosen = keyWithheld ? isChosen && q.isCorrect === true : isRight
                     return (
                       <li
                         key={o.id}
                         className={
                           'flex items-center gap-2 rounded-md border px-3 py-2 text-sm ' +
-                          (isRight
+                          (isRightChosen
                             ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                            : isChosen
+                            : isWrong
                               ? 'border-red-300 bg-red-50 text-red-800'
                               : 'border-border text-muted-foreground')
                         }
                       >
-                        {isRight ? (
+                        {isRightChosen ? (
                           <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
-                        ) : isChosen ? (
+                        ) : isWrong ? (
                           <X className="w-4 h-4 shrink-0" aria-hidden="true" />
                         ) : (
                           <span className="w-4 h-4 shrink-0" />
@@ -175,7 +226,12 @@ export default async function AttemptPage({ params }: Props) {
                   {q.answer == null && (
                     <li className="text-xs text-muted-foreground px-1">No answer submitted.</li>
                   )}
-                  {correctOption == null && (
+                  {keyWithheld && (
+                    <li className="text-xs text-muted-foreground px-1">
+                      Correct answers are hidden until you pass. Review the lesson and try again.
+                    </li>
+                  )}
+                  {correctOption == null && !keyWithheld && (
                     <li className="text-xs text-muted-foreground px-1">No correct answer configured.</li>
                   )}
                 </ul>

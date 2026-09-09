@@ -186,14 +186,20 @@ model Course {
   // batch labels.
   courseAlias String?
 
-  courseType       CourseType        @default(ON_SITE)
-  isPublished      Boolean           @default(false)
-  passingGrade     Float             @default(75.0)
-  tuitionFee       Decimal?
-  meetLink         String?
-  courseDuration   CourseDuration?
-  paymentFrequency PaymentFrequency?
-  miscFeeNote      String?
+  courseType        CourseType        @default(ON_SITE)
+  isPublished       Boolean           @default(false)
+  passingGrade      Float             @default(75.0)
+  // Off by default. When on, lessons in this course lock behind the gating
+  // assessments on the lessons before them. The toggle exists so an admin can
+  // author every lesson quiz first and enable gating deliberately, instead of
+  // a single publish silently locking a live batch out of lessons it had
+  // already reached.
+  sequentialLessons Boolean           @default(false)
+  tuitionFee        Decimal?
+  meetLink          String?
+  courseDuration    CourseDuration?
+  paymentFrequency  PaymentFrequency?
+  miscFeeNote       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -332,6 +338,7 @@ model Lesson {
   updatedAt DateTime @updatedAt
 
   completions  LessonCompletion[]
+  assessment   Assessment?
   batchContent BatchLessonContent[]
 }
 
@@ -475,6 +482,14 @@ model Assessment {
   subjectId String
   subject   Subject @relation(fields: [subjectId], references: [id])
 
+  // Non-null makes this a lesson gate: the student must pass it before the
+  // lessons ordered after this one open. Null is a subject-level quiz or exam,
+  // which behaves exactly as it always has. Postgres treats NULLs as distinct,
+  // so @@unique here allows any number of subject-level assessments while
+  // holding a lesson to at most one gate.
+  lessonId String?
+  lesson   Lesson? @relation(fields: [lessonId], references: [id])
+
   isPublished  Boolean @default(false)
   durationMins Int?
   passingScore Float?
@@ -488,6 +503,8 @@ model Assessment {
 
   questions Question[]
   attempts  AssessmentAttempt[]
+
+  @@unique([lessonId])
 }
 
 model Question {

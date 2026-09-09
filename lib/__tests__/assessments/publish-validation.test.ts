@@ -88,3 +88,37 @@ describe('getPublishBlockers', () => {
     expect(blockers).toHaveLength(0)
   })
 })
+
+const mc = {
+  type: 'MULTIPLE_CHOICE',
+  options: [{ isCorrect: true }, { isCorrect: false }],
+}
+const essay = { type: 'ESSAY', options: [] }
+
+describe('getPublishBlockers gate rules', () => {
+  it('leaves non-gate assessments unchanged when the gate argument is omitted', () => {
+    expect(getPublishBlockers([mc, essay])).toEqual([])
+  })
+
+  it('blocks a gate with no passing score', () => {
+    const blockers = getPublishBlockers([mc], { isGate: true, passingScore: null })
+    expect(blockers).toContain('A lesson gate must have a passing score.')
+  })
+
+  it('blocks a gate containing an essay question, naming its position', () => {
+    const blockers = getPublishBlockers([mc, essay], { isGate: true, passingScore: 75 })
+    expect(blockers).toContain(
+      'Question 2: a lesson gate cannot contain essay questions, because it must score instantly.',
+    )
+  })
+
+  it('passes a valid gate', () => {
+    expect(getPublishBlockers([mc], { isGate: true, passingScore: 75 })).toEqual([])
+  })
+
+  it('still blocks an empty gate', () => {
+    expect(getPublishBlockers([], { isGate: true, passingScore: 75 })).toEqual([
+      'Assessment must have at least one question.',
+    ])
+  })
+})

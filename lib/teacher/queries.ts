@@ -421,6 +421,9 @@ export async function getSubjectGradebook(
       gender: true,
       course: { select: { passingGrade: true } },
       assessments: {
+        // Lesson gates are checkpoints, not graded work; keep them out of the
+        // final-grade suggestion (see weightedSubjectGrade).
+        where: { lessonId: null },
         orderBy: { createdAt: 'asc' },
         select: { id: true, title: true, weight: true },
       },

@@ -155,6 +155,7 @@ export type CourseDetail = {
   isPublished: boolean;
   courseType: CourseType;
   passingGrade: number;
+  sequentialLessons: boolean;
   tuitionFee: number | null;
   meetLink: string | null;
   courseDuration: CourseDuration | null;
@@ -271,6 +272,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       isPublished: true,
       courseType: true,
       passingGrade: true,
+      sequentialLessons: true,
       tuitionFee: true,
       meetLink: true,
       courseDuration: true,

@@ -13,6 +13,7 @@ export type AssessmentRow = {
   questionCount: number
   totalPoints: number
   attemptCount: number
+  lessonId: string | null
 }
 
 export async function getSubjectAssessments(subjectId: string): Promise<AssessmentRow[]> {
@@ -28,6 +29,7 @@ export async function getSubjectAssessments(subjectId: string): Promise<Assessme
       passingScore: true,
       maxAttempts: true,
       weight: true,
+      lessonId: true,
       questions: { select: { points: true } },
       _count: { select: { attempts: true } },
     },
@@ -44,6 +46,33 @@ export async function getSubjectAssessments(subjectId: string): Promise<Assessme
     questionCount: r.questions.length,
     totalPoints: r.questions.reduce((sum, q) => sum + q.points, 0),
     attemptCount: r._count.attempts,
+    lessonId: r.lessonId,
+  }))
+}
+
+export type GatableLesson = {
+  id: string
+  title: string
+  order: number
+  assessmentId: string | null
+}
+
+export async function getGatableLessons(subjectId: string): Promise<GatableLesson[]> {
+  const rows = await db.lesson.findMany({
+    where: { subjectId },
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      order: true,
+      assessment: { select: { id: true } },
+    },
+  })
+  return rows.map(l => ({
+    id: l.id,
+    title: l.title,
+    order: l.order,
+    assessmentId: l.assessment?.id ?? null,
   }))
 }
 
@@ -73,6 +102,7 @@ export type AssessmentDetail = {
   maxAttempts: number | null
   weight: number
   subjectId: string
+  lessonId: string | null
   subject: { id: string; title: string; courseId: string; course: { title: string } }
   questions: QuestionRow[]
   attemptCount: number
@@ -91,6 +121,7 @@ export async function getAssessmentById(aid: string): Promise<AssessmentDetail |
       maxAttempts: true,
       weight: true,
       subjectId: true,
+      lessonId: true,
       subject: {
         select: {
           id: true,

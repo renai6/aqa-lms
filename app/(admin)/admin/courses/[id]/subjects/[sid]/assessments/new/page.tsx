@@ -2,7 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getSubjectById } from '@/lib/courses/queries'
+import { getGatableLessons } from '@/lib/assessments/queries'
 import { getSession } from '@/lib/auth/session'
+import { isAdmin } from '@/lib/auth/capabilities'
 import { CreateAssessmentForm } from '@/components/assessments/create-assessment-form'
 
 type Props = { params: Promise<{ id: string; sid: string }> }
@@ -22,6 +24,14 @@ export default async function NewAssessmentPage({ params }: Props) {
   if (!subject) notFound()
   if (subject.courseId !== id) notFound()
 
+  const gatableLessons = await getGatableLessons(sid)
+  const lessons = gatableLessons.map(l => ({
+    id: l.id,
+    title: l.title,
+    order: l.order,
+    hasAssessment: l.assessmentId != null,
+  }))
+
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <Link
@@ -35,7 +45,12 @@ export default async function NewAssessmentPage({ params }: Props) {
         <h1 className="text-2xl font-semibold">New Assessment</h1>
         <p className="text-muted-foreground mt-1">{subject.course.title} › {subject.title}</p>
       </div>
-      <CreateAssessmentForm subjectId={sid} basePath={'/admin/courses/' + id + '/subjects/' + sid} />
+      <CreateAssessmentForm
+        subjectId={sid}
+        basePath={'/admin/courses/' + id + '/subjects/' + sid}
+        lessons={lessons}
+        canManageGates={isAdmin(session)}
+      />
     </div>
   )
 }

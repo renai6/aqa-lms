@@ -8,9 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AssessmentDetail } from '@/lib/assessments/queries'
 
-type Props = { assessment: AssessmentDetail; basePath: string }
+type Props = {
+  assessment: AssessmentDetail
+  basePath: string
+  lessons: Array<{ id: string; title: string; order: number; hasAssessment: boolean }>
+  canManageGates: boolean
+}
 
-export function EditAssessmentForm({ assessment, basePath }: Props) {
+export function EditAssessmentForm({ assessment, basePath, lessons, canManageGates }: Props) {
   const [state, formAction, isPending] = useActionState(
     updateAssessmentAction,
     { error: null },
@@ -59,6 +64,28 @@ export function EditAssessmentForm({ assessment, basePath }: Props) {
               </label>
             </div>
           </div>
+          {canManageGates && (
+            <div className="space-y-2">
+              <Label htmlFor="assess-lesson">Gates lesson</Label>
+              <select
+                id="assess-lesson"
+                name="lessonId"
+                defaultValue={assessment.lessonId ?? ''}
+                className="flex h-8 w-full rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">None - subject-level assessment</option>
+                {lessons.map(l => (
+                  <option key={l.id} value={l.id} disabled={l.hasAssessment}>
+                    {'Lesson ' + l.order + ': ' + l.title + (l.hasAssessment ? ' (already gated)' : '')}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Students must pass this assessment before the lessons after it open. Gates
+                cannot contain essay questions and need a passing score.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="assess-duration">Duration (mins)</Label>

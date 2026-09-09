@@ -1,12 +1,14 @@
 // lib/student/queries.ts
 import { db } from '@/lib/db'
 import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus, PaymentFrequency } from '@prisma/client'
-import { pickRelevantAttempt } from '@/lib/assessments/grading'
+import { pickRelevantAttempt, pickBestAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { computeLockedLessons } from '@/lib/lessons/gating'
+import { getLessonGateState } from '@/lib/lessons/queries'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -226,7 +228,11 @@ export async function getStudentCourse(
               select: { user: { select: { firstName: true, lastName: true } } },
             },
             assessments: {
-              where: { isPublished: true },
+              // Lesson gates are checkpoints, not graded work. Ten of them at
+              // the default weight would drown out the subject exam and shift
+              // every student's grade, course grade, GWA and certificate
+              // eligibility.
+              where: { isPublished: true, lessonId: null },
               select: {
                 id: true,
                 weight: true,
@@ -293,18 +299,6 @@ export async function getStudentCourse(
 
 // ─── Subject page ─────────────────────────────────────────────────────────────
 
-export type StudentLesson = {
-  id: string
-  title: string
-  description: string | null
-  order: number
-  materialUrl: string | null
-  videoUrl: string | null
-  audioUrl: string | null
-  pptUrl: string | null
-  isCompleted: boolean
-}
-
 export type StudentRecording = {
   id: string
   url: string
@@ -327,6 +321,25 @@ export type StudentAssessment = {
   questionCount: number
   // The student's single relevant attempt (in-progress or completed), if any.
   attempt: StudentAttemptSummary | null
+}
+
+export type StudentLesson = {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  materialUrl: string | null
+  videoUrl: string | null
+  audioUrl: string | null
+  pptUrl: string | null
+  isCompleted: boolean
+  // True when an earlier lesson's gate has not been passed. A locked lesson
+  // carries no media URLs and no assessment: the lock is a server-side content
+  // decision, and the UI only reflects it.
+  isLocked: boolean
+  lockedReason: string | null
+  // The gate for this lesson, if it has one. Null when the lesson is locked.
+  assessment: StudentAssessment | null
 }
 
 export type StudentSubject = {
@@ -353,7 +366,7 @@ export async function getStudentSubject(
       title: true,
       description: true,
       gender: true,
-      course: { select: { title: true } },
+      course: { select: { title: true, sequentialLessons: true } },
       schedules: { select: { day: true, startTime: true, endTime: true } },
       lessons: {
         orderBy: { order: 'asc' },
@@ -368,6 +381,7 @@ export async function getStudentSubject(
           type: true,
           durationMins: true,
           passingScore: true,
+          lessonId: true,
           _count: { select: { questions: true } },
           attempts: {
             where: { userId },
@@ -429,38 +443,86 @@ export async function getStudentSubject(
   const completedSet = new Set(completions.map(c => c.lessonId))
   const batchContentMap = new Map(batchContents.map(bc => [bc.lessonId, bc]))
 
+  const toStudentAssessment = (a: (typeof subject.assessments)[number]): StudentAssessment => {
+    const attempt = a.lessonId != null
+      ? pickBestAttempt(a.attempts)
+      : pickRelevantAttempt(a.attempts)
+    return {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      durationMins: a.durationMins,
+      passingScore: a.passingScore,
+      questionCount: a._count.questions,
+      attempt: attempt
+        ? { id: attempt.id, status: attempt.status, score: attempt.score }
+        : null,
+    }
+  }
+
+  const gateByLessonId = new Map(
+    subject.assessments.filter(a => a.lessonId != null).map(a => [a.lessonId!, a]),
+  )
+
+  const lockedLessons = computeLockedLessons(
+    subject.lessons.map(l => {
+      const gate = gateByLessonId.get(l.id)
+      return {
+        id: l.id,
+        order: l.order,
+        isCompleted: completedSet.has(l.id),
+        assessment: gate
+          ? {
+              // Only published gates reach here; the query filters on it.
+              isPublished: true,
+              passingScore: gate.passingScore,
+              attemptScores: gate.attempts.map(at => at.score),
+            }
+          : null,
+      }
+    }),
+    subject.course.sequentialLessons,
+  )
+
+  // The sidebar numbers lessons by position, because Lesson.order is
+  // admin-entered and neither dense nor unique (10/20/30 is legal). The remedy
+  // label has to name the number the student can actually see in the list.
+  const lessonPositionById = new Map(subject.lessons.map((l, i) => [l.id, i + 1]))
+
   return {
     id: subject.id,
     courseId: subject.courseId,
     title: subject.title,
     description: subject.description,
-    course: subject.course,
+    course: { title: subject.course.title },
     schedules: subject.schedules,
     lessons: subject.lessons.map(l => {
-      const content = batchContentMap.get(l.id)
+      const blockingId = lockedLessons.get(l.id)
+      const isLocked = blockingId != null
+      const content = isLocked ? undefined : batchContentMap.get(l.id)
+      const gate = gateByLessonId.get(l.id)
+      const blockingPosition =
+        blockingId != null ? lessonPositionById.get(blockingId) : null
       return {
-        ...l,
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        order: l.order,
         materialUrl: content?.materialUrl ?? null,
         videoUrl: content?.videoUrl ?? null,
         audioUrl: content?.audioUrl ?? null,
         pptUrl: content?.pptUrl ?? null,
         isCompleted: completedSet.has(l.id),
-      }
-    }),
-    assessments: subject.assessments.map(a => {
-      const attempt = pickRelevantAttempt(a.attempts)
-      return {
-        id: a.id,
-        title: a.title,
-        type: a.type,
-        durationMins: a.durationMins,
-        passingScore: a.passingScore,
-        questionCount: a._count.questions,
-        attempt: attempt
-          ? { id: attempt.id, status: attempt.status, score: attempt.score }
+        isLocked,
+        lockedReason: blockingPosition
+          ? 'Pass the Lesson ' + blockingPosition + ' quiz to unlock.'
           : null,
+        assessment: isLocked || !gate ? null : toStudentAssessment(gate),
       }
     }),
+    // Gates render inside their lesson, so the flat list keeps subject-level
+    // quizzes and exams only.
+    assessments: subject.assessments.filter(a => a.lessonId == null).map(toStudentAssessment),
     recordings,
   }
 }
@@ -495,6 +557,7 @@ export async function getStudentAssessmentLaunch(
       durationMins: true,
       passingScore: true,
       subjectId: true,
+      lessonId: true,
       subject: { select: { title: true, courseId: true, gender: true } },
       _count: { select: { questions: true } },
       attempts: {
@@ -517,6 +580,12 @@ export async function getStudentAssessmentLaunch(
     select: { id: true },
   })
   if (!enrollment) return null
+
+  // The direct URL has to be closed as well as the sidebar link.
+  if (assessment.lessonId != null) {
+    const gateState = await getLessonGateState(userId, assessment.lessonId)
+    if (gateState?.isLocked) return null
+  }
 
   const attempt = pickRelevantAttempt(assessment.attempts)
 
@@ -542,7 +611,8 @@ export type AttemptOption = {
   id: string
   label: string
   value: string
-  isCorrect: boolean
+  // null means the key is withheld (failed gate) - see getStudentAttempt.
+  isCorrect: boolean | null
 }
 
 export type AttemptQuestion = {
@@ -574,6 +644,8 @@ export type StudentAttempt = {
   courseId: string
   subjectId: string
   subjectTitle: string
+  isGate: boolean
+  passed: boolean
   questions: AttemptQuestion[]
 }
 
@@ -603,6 +675,7 @@ export async function getStudentAttempt(
           durationMins: true,
           passingScore: true,
           subjectId: true,
+          lessonId: true,
           subject: { select: { title: true, courseId: true, gender: true } },
           questions: {
             orderBy: { order: 'asc' },
@@ -638,6 +711,15 @@ export async function getStudentAttempt(
   })
   if (!enrollment) return null
 
+  const isGate = attempt.assessment.lessonId != null
+  const passingScore = attempt.assessment.passingScore
+  const passed =
+    attempt.score != null && passingScore != null && attempt.score >= passingScore
+  // Hiding the key has to happen here, not in the page: the options are
+  // serialised into the payload either way. The student still learns which of
+  // their own answers were wrong, from StudentAnswer.isCorrect.
+  const revealKey = !isGate || passed
+
   const answerMap = new Map(attempt.answers.map(a => [a.questionId, a]))
   const questions = attempt.assessment.questions.map(q => {
     const a = answerMap.get(q.id)
@@ -649,7 +731,7 @@ export async function getStudentAttempt(
       order: q.order,
       mediaType: q.mediaType,
       mediaUrl: q.mediaUrl,
-      options: q.options,
+      options: revealKey ? q.options : q.options.map(o => ({ ...o, isCorrect: null })),
       answer: a?.answer ?? null,
       isCorrect: a?.isCorrect ?? null,
       pointsEarned: a?.pointsEarned ?? null,
@@ -670,6 +752,8 @@ export async function getStudentAttempt(
     courseId: attempt.assessment.subject.courseId,
     subjectId: attempt.assessment.subjectId,
     subjectTitle: attempt.assessment.subject.title,
+    isGate,
+    passed,
     questions,
   }
 }
@@ -703,6 +787,9 @@ export async function getStudentRecentResults(
       status: { in: ['SUBMITTED', 'GRADED'] },
       assessment: {
         isPublished: true,
+        // Keep the dashboard about graded work rather than flooding it with
+        // lesson checkpoints.
+        lessonId: null,
         subject: { ...subjectGenderFilter(userGender), course: { ...ACTIVE_COURSE } },
       },
     },

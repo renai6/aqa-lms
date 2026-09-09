@@ -24,12 +24,22 @@ function correctAnswerSummary(q: {
 export function AssessmentEditor({
   assessment,
   basePath,
+  lessons,
+  canManageGates,
 }: {
   assessment: AssessmentDetail
   basePath: string
+  lessons: Array<{ id: string; title: string; order: number; hasAssessment: boolean }>
+  canManageGates: boolean
 }) {
   const locked = assessment.attemptCount > 0
-  const blockers = getPublishBlockers(assessment.questions)
+  // Without the gate context the panel would report a gate as ready to publish
+  // and the server would then reject it on submit, which is the surprise this
+  // shared validation exists to prevent.
+  const blockers = getPublishBlockers(assessment.questions, {
+    isGate: assessment.lessonId != null,
+    passingScore: assessment.passingScore,
+  })
   const totalPoints = assessment.questions.reduce((s, q) => s + q.points, 0)
   const assessmentBase = basePath + '/assessments/' + assessment.id
 
@@ -37,7 +47,12 @@ export function AssessmentEditor({
     <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <EditAssessmentForm assessment={assessment} basePath={basePath} />
+          <EditAssessmentForm
+            assessment={assessment}
+            basePath={basePath}
+            lessons={lessons}
+            canManageGates={canManageGates}
+          />
         </div>
         <div className="space-y-4">
           <PublishPanel

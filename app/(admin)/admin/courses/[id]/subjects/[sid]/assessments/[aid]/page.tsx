@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
-import { getAssessmentById } from '@/lib/assessments/queries'
+import { getAssessmentById, getGatableLessons } from '@/lib/assessments/queries'
 import { getSession } from '@/lib/auth/session'
+import { isAdmin } from '@/lib/auth/capabilities'
 import { PageHeader } from '@/components/admin/page-header'
 import { AssessmentEditor } from '@/components/assessments/assessment-editor'
 
@@ -24,6 +25,14 @@ export default async function AssessmentDetailPage({ params }: Props) {
 
   const basePath = '/admin/courses/' + id + '/subjects/' + sid
 
+  const gatableLessons = await getGatableLessons(sid)
+  const lessons = gatableLessons.map(l => ({
+    id: l.id,
+    title: l.title,
+    order: l.order,
+    hasAssessment: l.assessmentId != null && l.assessmentId !== assessment.id,
+  }))
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -37,7 +46,12 @@ export default async function AssessmentDetailPage({ params }: Props) {
         ]}
         title={assessment.title}
       />
-      <AssessmentEditor assessment={assessment} basePath={basePath} />
+      <AssessmentEditor
+        assessment={assessment}
+        basePath={basePath}
+        lessons={lessons}
+        canManageGates={isAdmin(session)}
+      />
     </div>
   )
 }

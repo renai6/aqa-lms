@@ -34,7 +34,12 @@ export default async function NewTeacherAssessmentPage({ params }: Props) {
           {subject.courseTitle} › {subject.title}
         </p>
       </div>
-      <CreateAssessmentForm subjectId={sid} basePath={base} />
+      <CreateAssessmentForm
+        subjectId={sid}
+        basePath={base}
+        lessons={[]}
+        canManageGates={false}
+      />
     </div>
   )
 }

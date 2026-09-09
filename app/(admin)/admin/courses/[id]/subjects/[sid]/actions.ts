@@ -125,6 +125,16 @@ export async function deleteLessonAction(
   const courseId = formData.get('courseId')
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
+  const lesson = await db.lesson.findUnique({
+    where: { id },
+    select: { assessment: { select: { id: true } } },
+  })
+  if (lesson?.assessment) {
+    return {
+      error: 'This lesson has an assessment attached. Delete or detach the assessment before deleting the lesson.',
+    }
+  }
+
   try {
     await db.lesson.delete({ where: { id } })
   } catch (err) {
