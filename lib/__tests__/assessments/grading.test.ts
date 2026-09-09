@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   pickRelevantAttempt,
   recomputeAttemptScore,
+  pickBestAttempt,
 } from '@/lib/assessments/grading'
 import type { AttemptStatus } from '@prisma/client'
 
@@ -64,5 +65,40 @@ describe('recomputeAttemptScore', () => {
 
   it('returns 0 when there are no points to earn', () => {
     expect(recomputeAttemptScore([], new Map())).toBe(0)
+  })
+})
+
+describe('pickBestAttempt', () => {
+  it('returns null with no attempts', () => {
+    expect(pickBestAttempt([])).toBeNull()
+  })
+
+  it('prefers the highest score, not the most recent', () => {
+    const attempts = [
+      { id: 'newest', status: 'GRADED' as const, score: 40 },
+      { id: 'older', status: 'GRADED' as const, score: 90 },
+    ]
+    expect(pickBestAttempt(attempts)?.id).toBe('older')
+  })
+
+  it('keeps the most recent on a tie, since input is most-recent-first', () => {
+    const attempts = [
+      { id: 'newest', status: 'GRADED' as const, score: 80 },
+      { id: 'older', status: 'GRADED' as const, score: 80 },
+    ]
+    expect(pickBestAttempt(attempts)?.id).toBe('newest')
+  })
+
+  it('ignores in-progress attempts when a scored one exists', () => {
+    const attempts = [
+      { id: 'live', status: 'IN_PROGRESS' as const, score: null },
+      { id: 'done', status: 'GRADED' as const, score: 55 },
+    ]
+    expect(pickBestAttempt(attempts)?.id).toBe('done')
+  })
+
+  it('falls back to the in-progress attempt when nothing is scored', () => {
+    const attempts = [{ id: 'live', status: 'IN_PROGRESS' as const, score: null }]
+    expect(pickBestAttempt(attempts)?.id).toBe('live')
   })
 })
