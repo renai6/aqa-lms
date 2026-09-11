@@ -1,4 +1,5 @@
 import { appUrl, escapeHtml, sendEmail } from "@/lib/email/client";
+import { button, note, p, renderEmail } from "@/lib/email/template";
 
 export async function sendPaymentConfirmationEmail(params: {
   to: string;
@@ -10,10 +11,16 @@ export async function sendPaymentConfirmationEmail(params: {
     to: params.to,
     label: "payment confirmation email",
     subject: "We received your payment — Al-Qur'an Academy",
-    html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
-<p>We have received your payment and proof of payment for <strong>${escapeHtml(params.courseTitle)}</strong>. Our team will review it shortly.</p>
-<p>You can track its status here: <a href="${url}">${url}</a></p>
-<p>Best regards,<br>Al-Qur'an Academy Team</p>`,
+    html: renderEmail({
+      heading: "We received your payment",
+      body:
+        p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        p(
+          `We have received your payment and proof of payment for <strong>${escapeHtml(params.courseTitle)}</strong>. Our team will review it shortly.`,
+        ) +
+        button("Track its status", url) +
+        p("Best regards,<br>Al-Qur'an Academy Team"),
+    }),
   });
 }
 
@@ -32,11 +39,17 @@ export async function sendPaymentApprovalEmail(params: {
     to: params.to,
     label: "payment approval email",
     subject: "Your payment is approved — Al-Qur'an Academy",
-    html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
-<p>Your payment for <strong>${escapeHtml(params.courseTitle)}</strong> has been approved.</p>
-<p>${statusLine}</p>
-<p>View your dashboard: <a href="${url}">${url}</a></p>
-<p>Best regards,<br>Al-Qur'an Academy Team</p>`,
+    html: renderEmail({
+      heading: "Your payment is approved",
+      body:
+        p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        p(
+          `Your payment for <strong>${escapeHtml(params.courseTitle)}</strong> has been approved.`,
+        ) +
+        p(statusLine) +
+        button("View your dashboard", url) +
+        p("Best regards,<br>Al-Qur'an Academy Team"),
+    }),
   });
 }
 
@@ -51,10 +64,17 @@ export async function sendPaymentRejectionEmail(params: {
     to: params.to,
     label: "payment rejection email",
     subject: "Update on your payment — Al-Qur'an Academy",
-    html: `<p>Assalamualaykum ${escapeHtml(params.firstName)},</p>
-<p>Unfortunately, your recent payment for <strong>${escapeHtml(params.courseTitle)}</strong> could not be approved.</p>
-<p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p>
-<p>You're welcome to submit a new payment here: <a href="${url}">${url}</a></p>
-<p>Best regards,<br>Al-Qur'an Academy Team</p>`,
+    html: renderEmail({
+      heading: "Update on your payment",
+      body:
+        p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        p(
+          `Unfortunately, your recent payment for <strong>${escapeHtml(params.courseTitle)}</strong> could not be approved.`,
+        ) +
+        note(`<strong>Reason:</strong> ${escapeHtml(params.reason)}`) +
+        p("You're welcome to submit a new payment.") +
+        button("Submit a new payment", url) +
+        p("Best regards,<br>Al-Qur'an Academy Team"),
+    }),
   });
 }
