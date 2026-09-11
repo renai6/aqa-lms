@@ -628,6 +628,8 @@ export type AttemptQuestion = {
   answer: string | null
   isCorrect: boolean | null
   pointsEarned: number | null
+  // Teacher's per-question note, written at essay grading time.
+  feedback: string | null
 }
 
 export type StudentAttempt = {
@@ -693,7 +695,13 @@ export async function getStudentAttempt(
         },
       },
       answers: {
-        select: { questionId: true, answer: true, isCorrect: true, pointsEarned: true },
+        select: {
+          questionId: true,
+          answer: true,
+          isCorrect: true,
+          pointsEarned: true,
+          feedback: true,
+        },
       },
     },
   })
@@ -735,6 +743,7 @@ export async function getStudentAttempt(
       answer: a?.answer ?? null,
       isCorrect: a?.isCorrect ?? null,
       pointsEarned: a?.pointsEarned ?? null,
+      feedback: a?.feedback ?? null,
     }
   })
 

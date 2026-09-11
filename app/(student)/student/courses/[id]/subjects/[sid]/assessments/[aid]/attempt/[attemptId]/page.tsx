@@ -159,6 +159,9 @@ export default async function AttemptPage({ params }: Props) {
           const correctOption = q.options.find(o => o.isCorrect)
           const keyWithheld = correctOption == null && q.options.some(o => o.isCorrect === null)
           const isEssay = q.type === 'ESSAY'
+          // An essay stays ungraded until a teacher awards points, and only
+          // then does its score - and any feedback - become real.
+          const isGraded = q.pointsEarned != null
           return (
             <div key={q.id} className="rounded-xl border border-border bg-white p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
@@ -166,9 +169,7 @@ export default async function AttemptPage({ params }: Props) {
                   <span className="text-muted-foreground">{i + 1}.</span> {q.questionText}
                 </p>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {isEssay || q.pointsEarned == null
-                    ? '— / ' + q.points
-                    : q.pointsEarned + ' / ' + q.points}
+                  {isGraded ? q.pointsEarned + ' / ' + q.points : '— / ' + q.points}
                 </span>
               </div>
 
@@ -181,7 +182,18 @@ export default async function AttemptPage({ params }: Props) {
                       <span className="text-muted-foreground">No answer submitted.</span>
                     )}
                   </div>
-                  <p className="text-xs text-amber-600">Awaiting grading</p>
+                  {isGraded ? (
+                    q.feedback && (
+                      <div className="rounded-md border border-border bg-white p-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Teacher feedback
+                        </p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{q.feedback}</p>
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-xs text-amber-600">Awaiting grading</p>
+                  )}
                 </div>
               ) : (
                 <ul className="space-y-1.5">
