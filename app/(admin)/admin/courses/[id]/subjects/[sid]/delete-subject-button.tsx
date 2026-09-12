@@ -36,7 +36,8 @@ export function DeleteSubjectButton({ subjectId, courseId, subjectTitle }: Props
             <AlertDialogHeader>
               <AlertDialogTitle>Delete &quot;{subjectTitle}&quot;?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the subject and all its lessons. This cannot be undone.
+                This will permanently delete the subject, its lessons, its assessments and its
+                teacher assignments. This cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

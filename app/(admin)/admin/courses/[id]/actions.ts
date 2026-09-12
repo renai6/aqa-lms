@@ -161,8 +161,34 @@ export async function deleteSubjectAction(
   const courseId = formData.get('courseId')
   if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
 
+  // Attempts and grades are student history, and nothing else in the app can
+  // restore them, so refuse rather than cascade through them - the same call
+  // deleteAssessmentAction makes for an assessment with attempts.
+  const [attempts, grades] = await Promise.all([
+    db.assessmentAttempt.count({ where: { assessment: { subjectId: id } } }),
+    db.grade.count({ where: { subjectId: id } }),
+  ])
+  if (attempts > 0 || grades > 0) {
+    const blockers = []
+    if (attempts > 0) blockers.push(`${attempts} student attempt${attempts === 1 ? '' : 's'}`)
+    if (grades > 0) blockers.push(`${grades} grade${grades === 1 ? '' : 's'}`)
+    return {
+      error: `Cannot delete this subject: it has ${blockers.join(' and ')} on record. Deleting it would erase that student history.`,
+    }
+  }
+
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Every one of these is a RESTRICT foreign key on Subject, so each has to
+      // go before the subject itself. Assessments go before lessons:
+      // Assessment.lessonId is ON DELETE SET NULL, so clearing lessons first
+      // would detach a lesson gate instead of removing it.
+      await tx.questionOption.deleteMany({
+        where: { question: { assessment: { subjectId: id } } },
+      })
+      await tx.question.deleteMany({ where: { assessment: { subjectId: id } } })
+      await tx.assessment.deleteMany({ where: { subjectId: id } })
+      await tx.subjectTeacher.deleteMany({ where: { subjectId: id } })
       await tx.lesson.deleteMany({ where: { subjectId: id } })
       await tx.subject.delete({ where: { id } })
     })
