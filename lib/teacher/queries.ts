@@ -9,6 +9,7 @@ import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { enrolleeGenderWhere } from '@/lib/subjects/visibility'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { groupSubjectSchedules, type SubjectSchedule } from '@/lib/schedule/format'
 
 // All queries here are scoped to the teacher's assigned subjects via the
 // SubjectTeacher join. A helper checks assignment; callers return notFound()
@@ -80,6 +81,40 @@ export async function getTeacherSubjects(
         pendingGrading,
       }
     }),
+  )
+}
+
+// The same strip the student dashboard shows, scoped to the subjects this
+// teacher is assigned to - so a teacher joins their class from the badge the
+// way their students do.
+export async function getTeacherSchedules(
+  userId: string,
+): Promise<SubjectSchedule[]> {
+  const assignments = await db.subjectTeacher.findMany({
+    where: { userId },
+    select: {
+      subject: {
+        select: {
+          id: true,
+          title: true,
+          course: { select: { meetLink: true } },
+          schedules: { select: { day: true, startTime: true, endTime: true } },
+        },
+      },
+    },
+  })
+
+  return groupSubjectSchedules(
+    assignments.flatMap(({ subject }) =>
+      subject.schedules.map(sched => ({
+        subjectId: subject.id,
+        subjectTitle: subject.title,
+        meetLink: subject.course.meetLink,
+        day: sched.day,
+        startTime: sched.startTime,
+        endTime: sched.endTime,
+      })),
+    ),
   )
 }
 

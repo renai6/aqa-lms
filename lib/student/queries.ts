@@ -9,6 +9,7 @@ import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 import { computeLockedLessons } from '@/lib/lessons/gating'
 import { getLessonGateState } from '@/lib/lessons/queries'
+import { groupSubjectSchedules, type SubjectSchedule, type SubjectScheduleRow } from '@/lib/schedule/format'
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -20,13 +21,6 @@ export type DashboardEnrollment = {
   enrolledAt: Date
   totalLessons: number
   completedLessons: number
-}
-
-export type DashboardSchedule = {
-  subjectTitle: string
-  day: DayOfWeek
-  startTime: string
-  endTime: string
 }
 
 export type DashboardAnnouncement = {
@@ -44,14 +38,9 @@ export type DashboardPendingPurchase = {
 
 export type StudentDashboard = {
   enrollments: DashboardEnrollment[]
-  schedules: DashboardSchedule[]
+  schedules: SubjectSchedule[]
   announcements: DashboardAnnouncement[]
   pendingPurchases: DashboardPendingPurchase[]
-}
-
-const DAY_NUM: Record<string, number> = {
-  MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
-  FRIDAY: 5, SATURDAY: 6, SUNDAY: 7,
 }
 
 export async function getStudentDashboard(userId: string): Promise<StudentDashboard> {
@@ -76,6 +65,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
               // Only subjects this student may see count toward progress + schedule.
               where: subjectGenderFilter(userGender),
               select: {
+                id: true,
                 title: true,
                 lessons: { select: { id: true } },
                 schedules: { select: { day: true, startTime: true, endTime: true } },
@@ -126,7 +116,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
       : []
   const completedSet = new Set(completions.map(c => c.lessonId))
 
-  const schedules: DashboardSchedule[] = []
+  const scheduleRows: SubjectScheduleRow[] = []
 
   const enrollments: DashboardEnrollment[] = enrollmentsRaw.map(e => {
     let totalLessons = 0
@@ -136,7 +126,14 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
       totalLessons += subject.lessons.length
       completedLessons += subject.lessons.filter(l => completedSet.has(l.id)).length
       for (const sched of subject.schedules) {
-        schedules.push({ subjectTitle: subject.title, day: sched.day, startTime: sched.startTime, endTime: sched.endTime })
+        scheduleRows.push({
+          subjectId: subject.id,
+          subjectTitle: subject.title,
+          meetLink: e.course.meetLink,
+          day: sched.day,
+          startTime: sched.startTime,
+          endTime: sched.endTime,
+        })
       }
     }
 
@@ -157,15 +154,8 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
     }
   })
 
-  // Sort schedules by day of week starting from today
-  const jsToday = new Date().getDay() // 0=Sun … 6=Sat
-  const todayNum = jsToday === 0 ? 7 : jsToday // Mon=1 … Sun=7
-  schedules.sort((a, b) => {
-    const aDiff = ((DAY_NUM[a.day] ?? 1) - todayNum + 7) % 7
-    const bDiff = ((DAY_NUM[b.day] ?? 1) - todayNum + 7) % 7
-    if (aDiff !== bDiff) return aDiff - bDiff
-    return a.startTime.localeCompare(b.startTime)
-  })
+  // One badge per subject, soonest first.
+  const schedules = groupSubjectSchedules(scheduleRows)
 
   return { enrollments, schedules, announcements, pendingPurchases }
 }
