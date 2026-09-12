@@ -4,10 +4,12 @@ import { BookOpen, ClipboardCheck } from 'lucide-react'
 import { getSession } from '@/lib/auth/session'
 import {
   getTeacherSubjects,
+  getTeacherSchedules,
   countTeacherPendingGrading,
 } from '@/lib/teacher/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { Card, CardContent } from '@/components/ui/card'
+import { ScheduleStrip } from '@/components/schedule/schedule-strip'
 
 export const metadata = { title: 'Dashboard — AQA Teacher' }
 
@@ -15,14 +17,17 @@ export default async function TeacherDashboardPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const [subjects, pendingGrading] = await Promise.all([
+  const [subjects, schedules, pendingGrading] = await Promise.all([
     getTeacherSubjects(session.userId),
+    getTeacherSchedules(session.userId),
     countTeacherPendingGrading(session.userId),
   ])
 
   return (
     <div className="space-y-6 p-6">
       <PageHeader title="Dashboard" />
+
+      <ScheduleStrip schedules={schedules} />
 
       <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>

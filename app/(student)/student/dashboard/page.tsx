@@ -15,6 +15,7 @@ import {
 import { describeBalance } from "@/lib/payments/balance";
 import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
+import { ScheduleStrip } from "@/components/schedule/schedule-strip";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
@@ -43,24 +44,6 @@ function monthlyTone(line: string | null): string {
   if (line === "Billed monthly") return "text-muted-foreground";
   return "text-amber-600";
 }
-
-function formatTime(t: string): string {
-  const [hStr, mStr] = t.split(":");
-  const h = parseInt(hStr, 10);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${mStr} ${period}`;
-}
-
-const DAY_LABEL: Record<string, string> = {
-  MONDAY: "Mon",
-  TUESDAY: "Tue",
-  WEDNESDAY: "Wed",
-  THURSDAY: "Thu",
-  FRIDAY: "Fri",
-  SATURDAY: "Sat",
-  SUNDAY: "Sun",
-};
 
 export const metadata = { title: "Dashboard — AQA Student" };
 
@@ -179,28 +162,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       )}
 
       {/* Schedules strip */}
-      {schedules.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-            Upcoming Schedule
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {schedules.map((s, i) => (
-              <span
-                key={i}
-                className="bg-muted/60 border-border text-foreground inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
-              >
-                <span className="font-semibold">{s.subjectTitle}</span>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="text-muted-foreground">
-                  {DAY_LABEL[s.day]} {formatTime(s.startTime)}–
-                  {formatTime(s.endTime)}
-                </span>
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+      <ScheduleStrip schedules={schedules} />
 
       {/* Announcements */}
       {announcements.length > 0 && (
