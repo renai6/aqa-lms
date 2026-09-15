@@ -213,6 +213,7 @@ model Course {
   certificates  Certificate[]
   purchaseItems PurchaseItem[]
   batches       Batch[]
+  announcements AnnouncementCourse[]
 
   @@index([archivedAt])
 }
@@ -636,14 +637,41 @@ model Certificate {
 // ANNOUNCEMENTS
 //
 
+enum AnnouncementAudience {
+  EVERYONE
+  COURSES
+}
+
 model Announcement {
   id String @id @default(cuid())
 
-  title   String
-  content String
+  title    String
+  content  String
+  imageUrl String?
 
-  isPublished Boolean @default(false)
+  // EVERYONE ignores `courses`. COURSES reaches only students actively
+  // enrolled in one of `courses`. Kept separate from the join rows so a
+  // targeted announcement that loses its courses never widens to everyone.
+  audience AnnouncementAudience @default(EVERYONE)
+
+  isPublished Boolean   @default(false)
+  // Set on the first publish and never cleared, so unpublishing to fix a
+  // typo and publishing again does not jump the announcement back to the top.
+  publishedAt DateTime?
+  isPinned    Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  courses AnnouncementCourse[]
+}
+
+model AnnouncementCourse {
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  courseId       String
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([announcementId, courseId])
+  @@index([courseId])
 }
