@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import {
   getStudentDashboard,
   getStudentRecentResults,
+  DASHBOARD_ANNOUNCEMENTS,
   type DashboardEnrollment,
 } from "@/lib/student/queries";
 import {
@@ -16,6 +17,7 @@ import { describeBalance } from "@/lib/payments/balance";
 import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { ScheduleStrip } from "@/components/schedule/schedule-strip";
+import { AnnouncementCard } from "@/components/student/announcement-card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
@@ -167,25 +169,22 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       {/* Announcements */}
       {announcements.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-            Announcements
-          </h2>
-          <div className="space-y-2">
-            {announcements.slice(0, 3).map((a) => (
-              <div
-                key={a.id}
-                className="border-border flex overflow-hidden rounded-lg border bg-white shadow-sm"
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
+              Announcements
+            </h2>
+            {announcements.length > DASHBOARD_ANNOUNCEMENTS && (
+              <Link
+                href="/student/announcements"
+                className="text-primary text-xs font-medium hover:underline"
               >
-                <div className="bg-primary w-[3px] shrink-0" />
-                <div className="px-4 py-3">
-                  <p className="text-foreground text-sm font-medium">
-                    {a.title}
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">
-                    {a.content}
-                  </p>
-                </div>
-              </div>
+                View all
+              </Link>
+            )}
+          </div>
+          <div className="space-y-2">
+            {announcements.slice(0, DASHBOARD_ANNOUNCEMENTS).map((a) => (
+              <AnnouncementCard key={a.id} announcement={a} variant="compact" />
             ))}
           </div>
         </section>
