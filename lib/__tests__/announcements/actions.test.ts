@@ -22,7 +22,8 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { saveAnnouncementAction } from '@/lib/announcements/actions'
+import { saveAnnouncementAction, deleteAnnouncementAction } from '@/lib/announcements/actions'
+import { uploadAnnouncementImage, removeAnnouncementImage } from '@/lib/announcements/storage'
 
 const initial = { error: null }
 
@@ -215,5 +216,168 @@ describe('saveAnnouncementAction', () => {
       expect(updateData().isPublished).toBe(false)
       expect(updateData()).not.toHaveProperty('publishedAt')
     })
+  })
+
+  describe('db read failures', () => {
+    it('returns a friendly error when reading the existing announcement fails, without uploading or writing', async () => {
+      vi.mocked(db.announcement.findUnique).mockRejectedValue(new Error('db down'))
+      expect(await saveAnnouncementAction(initial, form({ id: 'a1' }))).toEqual({
+        error: 'A database error occurred. Please try again.',
+      })
+      expect(uploadAnnouncementImage).not.toHaveBeenCalled()
+      expect(db.announcement.update).not.toHaveBeenCalled()
+    })
+
+    it('returns a friendly error when reading courses fails, without writing', async () => {
+      vi.mocked(db.course.findMany).mockRejectedValue(new Error('db down'))
+      expect(
+        await saveAnnouncementAction(initial, form({ audience: 'COURSES', courseIds: ['c1'] })),
+      ).toEqual({ error: 'A database error occurred. Please try again.' })
+      expect(db.announcement.create).not.toHaveBeenCalled()
+    })
+  })
+})
+
+const BUCKET_URL = 'https://abc.supabase.co/storage/v1/object/public/course-images'
+const OLD_URL = `${BUCKET_URL}/announcements/old.png`
+const NEW_URL = `${BUCKET_URL}/announcements/new.png`
+
+function png(): File {
+  const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
+  return new File([bytes], 'poster.png', { type: 'image/png' })
+}
+
+describe('saveAnnouncementAction images', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getSession).mockResolvedValue({ userId: 'admin1', role: 'ADMIN' } as never)
+    vi.mocked(db.announcement.create).mockResolvedValue({ id: 'a1' } as never)
+    vi.mocked(db.announcement.update).mockResolvedValue({} as never)
+    vi.mocked(db.announcement.findUnique).mockResolvedValue(existing({ imageUrl: OLD_URL }) as never)
+    vi.mocked(uploadAnnouncementImage).mockResolvedValue(NEW_URL)
+    vi.mocked(removeAnnouncementImage).mockResolvedValue(undefined)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  it('rejects a file that is not an image before uploading', async () => {
+    const text = new File(['hello'], 'notes.txt', { type: 'text/plain' })
+    expect(await saveAnnouncementAction(initial, form({ image: text }))).toEqual({
+      error: 'Only JPG, PNG, and WEBP images are accepted.',
+    })
+    expect(uploadAnnouncementImage).not.toHaveBeenCalled()
+    expect(db.announcement.create).not.toHaveBeenCalled()
+  })
+
+  it('stores the uploaded image URL on create', async () => {
+    await expect(saveAnnouncementAction(initial, form({ image: png() }))).rejects.toThrow(
+      'NEXT_REDIRECT',
+    )
+    expect(uploadAnnouncementImage).toHaveBeenCalledWith(
+      expect.objectContaining({ ext: 'png', contentType: 'image/png' }),
+    )
+    expect(createData().imageUrl).toBe(NEW_URL)
+  })
+
+  it('reports an upload failure without writing', async () => {
+    vi.mocked(uploadAnnouncementImage).mockRejectedValue(new Error('storage down'))
+    expect(await saveAnnouncementAction(initial, form({ image: png() }))).toEqual({
+      error: 'Failed to upload image. Please try again.',
+    })
+    expect(db.announcement.create).not.toHaveBeenCalled()
+  })
+
+  it('removes the just-uploaded file when the database write fails, and keeps the old one', async () => {
+    vi.mocked(db.announcement.update).mockRejectedValue(new Error('db down'))
+    expect(await saveAnnouncementAction(initial, form({ id: 'a1', image: png() }))).toEqual({
+      error: 'A database error occurred. Please try again.',
+    })
+    expect(removeAnnouncementImage).toHaveBeenCalledTimes(1)
+    expect(removeAnnouncementImage).toHaveBeenCalledWith(NEW_URL)
+  })
+
+  it('replaces the image and removes the old file only after the write', async () => {
+    const result = await saveAnnouncementAction(initial, form({ id: 'a1', image: png() }))
+    expect(result).toEqual({ error: null, message: 'Saved.' })
+    expect(updateData().imageUrl).toBe(NEW_URL)
+    expect(removeAnnouncementImage).toHaveBeenCalledWith(OLD_URL)
+    expect(vi.mocked(db.announcement.update).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(removeAnnouncementImage).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('removes the image when asked', async () => {
+    await saveAnnouncementAction(initial, form({ id: 'a1', removeImage: 'on' }))
+    expect(updateData().imageUrl).toBeNull()
+    expect(removeAnnouncementImage).toHaveBeenCalledWith(OLD_URL)
+  })
+
+  it('keeps the current image when no file is chosen', async () => {
+    await saveAnnouncementAction(initial, form({ id: 'a1' }))
+    expect(updateData().imageUrl).toBe(OLD_URL)
+    expect(uploadAnnouncementImage).not.toHaveBeenCalled()
+    expect(removeAnnouncementImage).not.toHaveBeenCalled()
+  })
+})
+
+describe('deleteAnnouncementAction', () => {
+  function deleteForm(id = 'a1') {
+    const fd = new FormData()
+    fd.set('id', id)
+    return fd
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getSession).mockResolvedValue({ userId: 'admin1', role: 'ADMIN' } as never)
+    vi.mocked(db.announcement.findUnique).mockResolvedValue({ imageUrl: OLD_URL } as never)
+    vi.mocked(db.announcement.delete).mockResolvedValue({} as never)
+    vi.mocked(removeAnnouncementImage).mockResolvedValue(undefined)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  it('rejects a non-admin', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 's1', role: 'STUDENT' } as never)
+    expect(await deleteAnnouncementAction(initial, deleteForm())).toEqual({ error: 'Forbidden' })
+    expect(db.announcement.delete).not.toHaveBeenCalled()
+  })
+
+  it('reports a missing announcement', async () => {
+    vi.mocked(db.announcement.findUnique).mockResolvedValue(null as never)
+    expect(await deleteAnnouncementAction(initial, deleteForm('gone'))).toEqual({
+      error: 'Announcement not found.',
+    })
+  })
+
+  it('deletes the row, then its image, then returns to the list', async () => {
+    await expect(deleteAnnouncementAction(initial, deleteForm())).rejects.toThrow('NEXT_REDIRECT')
+    expect(db.announcement.delete).toHaveBeenCalledWith({ where: { id: 'a1' } })
+    expect(removeAnnouncementImage).toHaveBeenCalledWith(OLD_URL)
+    expect(vi.mocked(db.announcement.delete).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(removeAnnouncementImage).mock.invocationCallOrder[0],
+    )
+    expect(redirect).toHaveBeenCalledWith('/admin/announcements')
+  })
+
+  it('skips storage when there is no image', async () => {
+    vi.mocked(db.announcement.findUnique).mockResolvedValue({ imageUrl: null } as never)
+    await expect(deleteAnnouncementAction(initial, deleteForm())).rejects.toThrow('NEXT_REDIRECT')
+    expect(removeAnnouncementImage).not.toHaveBeenCalled()
+  })
+
+  it('keeps the image when the delete fails', async () => {
+    vi.mocked(db.announcement.delete).mockRejectedValue(new Error('db down'))
+    expect(await deleteAnnouncementAction(initial, deleteForm())).toEqual({
+      error: 'A database error occurred. Please try again.',
+    })
+    expect(removeAnnouncementImage).not.toHaveBeenCalled()
+  })
+
+  it('returns a friendly error when reading the announcement fails, without deleting or removing its image', async () => {
+    vi.mocked(db.announcement.findUnique).mockRejectedValue(new Error('db down'))
+    expect(await deleteAnnouncementAction(initial, deleteForm())).toEqual({
+      error: 'A database error occurred. Please try again.',
+    })
+    expect(db.announcement.delete).not.toHaveBeenCalled()
+    expect(removeAnnouncementImage).not.toHaveBeenCalled()
   })
 })
