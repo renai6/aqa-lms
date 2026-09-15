@@ -13,9 +13,10 @@ export type GateAssessment = {
 export type GatingLesson = {
   id: string
   order: number
-  // A LessonCompletion row exists for this student. It is written both by the
-  // manual "Mark as done" button and by passing a gate, which is what makes
-  // students who progressed before gating existed keep their access.
+  // A LessonCompletion row exists for this student. It is written by passing a
+  // gate, and was also written by a manual "Mark as done" button before it was
+  // removed, which is what makes students who progressed before gating existed
+  // keep their access.
   isCompleted: boolean
   assessment: GateAssessment | null
 }
