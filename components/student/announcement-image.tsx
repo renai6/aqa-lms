@@ -7,8 +7,9 @@ import { X, ZoomIn } from 'lucide-react'
 type Props = { src: string; title: string; variant: 'compact' | 'full' }
 
 // An announcement image that opens full size on click, in the same viewer
-// style as the faculty posters. The card only has room for a thumbnail or a
-// card-width crop, so this is the one place a student sees the whole image.
+// style as the faculty posters. The dashboard card shows a cover crop and the
+// announcements page a card-width image, so this is the one place a student
+// is guaranteed to see the whole image.
 export function AnnouncementImage({ src, title, variant }: Props) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -39,30 +40,35 @@ export function AnnouncementImage({ src, title, variant }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Enlarge image: ${title}`}
-        className={
-          variant === 'compact'
-            ? 'focus-visible:ring-primary h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-md ring-offset-2 focus-visible:ring-2 focus-visible:outline-none'
-            : 'group focus-visible:ring-primary relative block w-full cursor-zoom-in focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset'
-        }
+        className={`group focus-visible:ring-primary relative block w-full cursor-zoom-in focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${
+          variant === 'compact' ? 'bg-muted aspect-[16/10] overflow-hidden' : ''
+        }`}
       >
         {variant === 'compact' ? (
-          <Image src={src} alt={title} width={56} height={56} className="h-14 w-14 object-cover" />
+          // A fixed-ratio cover keeps every dashboard card the same shape.
+          // Anchored to the top because announcement images are often
+          // documents whose heading is the part worth seeing.
+          <Image
+            src={src}
+            alt={title}
+            fill
+            sizes="(min-width: 1024px) 33vw, 100vw"
+            className="object-cover object-top"
+          />
         ) : (
-          <>
-            <Image
-              src={src}
-              alt={title}
-              width={1200}
-              height={800}
-              sizes="(min-width: 768px) 672px, 100vw"
-              className="h-auto w-full"
-            />
-            {/* Affordance for the zoom, revealed on hover and on keyboard focus. */}
-            <span className="text-primary pointer-events-none absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium opacity-0 shadow-sm transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
-              <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" /> View full size
-            </span>
-          </>
+          <Image
+            src={src}
+            alt={title}
+            width={1200}
+            height={800}
+            sizes="(min-width: 768px) 672px, 100vw"
+            className="h-auto w-full"
+          />
         )}
+        {/* Affordance for the zoom, revealed on hover and on keyboard focus. */}
+        <span className="text-primary pointer-events-none absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium opacity-0 shadow-sm transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
+          <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" /> View full size
+        </span>
       </button>
 
       {open && (
