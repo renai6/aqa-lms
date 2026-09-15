@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   GraduationCap,
   Wallet,
+  Megaphone,
 } from "lucide-react";
 import { NavLink } from "./nav-link";
 import { TopBar } from "@/components/admin/top-bar";
@@ -97,6 +98,11 @@ export default async function AdminLayout({
             href="/admin/courses"
             icon={<BookOpen className="w-4 h-4" aria-hidden="true" />}
             label="Courses"
+          />
+          <NavLink
+            href="/admin/announcements"
+            icon={<Megaphone className="w-4 h-4" aria-hidden="true" />}
+            label="Announcements"
           />
           <NavLink
             href="/admin/reports"
