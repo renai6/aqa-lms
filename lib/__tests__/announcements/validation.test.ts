@@ -74,4 +74,13 @@ describe('parseAnnouncementForm', () => {
   it('rejects an unknown intent', () => {
     expect(errorOf(form({ intent: 'archive' }))).toBe('Invalid action.')
   })
+
+  it('normalizes CRLF line breaks before checking the 5,000 character limit', () => {
+    const raw = 'a'.repeat(2500) + '\r\n' + 'b'.repeat(2499)
+    const result = parseAnnouncementForm(form({ content: raw }))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data.content).toBe('a'.repeat(2500) + '\n' + 'b'.repeat(2499))
+    expect(result.data.content).toHaveLength(5000)
+  })
 })

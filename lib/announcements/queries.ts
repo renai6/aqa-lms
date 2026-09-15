@@ -42,7 +42,7 @@ export async function getStudentAnnouncements(
 ): Promise<StudentAnnouncement[]> {
   return db.announcement.findMany({
     where: studentAnnouncementWhere(userId),
-    orderBy: [{ isPinned: 'desc' }, { publishedAt: 'desc' }],
+    orderBy: [{ isPinned: 'desc' }, { publishedAt: { sort: 'desc', nulls: 'last' } }],
     take: options.take,
     select: { id: true, title: true, content: true, imageUrl: true, isPinned: true, publishedAt: true },
   })

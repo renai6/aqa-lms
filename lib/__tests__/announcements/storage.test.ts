@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const storage = vi.hoisted(() => ({
   from: vi.fn(),
@@ -31,10 +31,18 @@ describe('announcement storage', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
+  afterEach(() => vi.unstubAllEnvs())
+
   describe('storagePathFromPublicUrl', () => {
     it('maps a public bucket URL to its object path', () => {
       expect(storagePathFromPublicUrl(`${BASE}/course-images/announcements/abc.png`)).toBe(
         'announcements/abc.png',
+      )
+    })
+
+    it('decodes a percent-encoded path segment', () => {
+      expect(storagePathFromPublicUrl(`${BASE}/course-images/announcements/a%20b.png`)).toBe(
+        'announcements/a b.png',
       )
     })
 
@@ -46,6 +54,23 @@ describe('announcement storage', () => {
     it('refuses another bucket and non-URLs', () => {
       expect(storagePathFromPublicUrl(`${BASE}/proofs/announcements/abc.png`)).toBeNull()
       expect(storagePathFromPublicUrl('not a url')).toBeNull()
+    })
+
+    it('refuses a path traversal segment revealed only after decoding', () => {
+      // The slash is percent-encoded so the URL parser keeps `..%2Fcourses` as
+      // one opaque segment and never runs its own dot-segment normalization;
+      // only our decodeURIComponent turns it into a real `..` segment.
+      expect(
+        storagePathFromPublicUrl(`${BASE}/course-images/announcements/..%2Fcourses/c1/image.png`),
+      ).toBeNull()
+    })
+
+    it('refuses a URL whose marker is not at the start of the pathname', () => {
+      expect(
+        storagePathFromPublicUrl(
+          'https://evil.example/not/storage/v1/object/public/course-images/announcements/abc.png',
+        ),
+      ).toBeNull()
     })
   })
 

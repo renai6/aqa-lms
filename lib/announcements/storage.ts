@@ -19,11 +19,16 @@ export function storagePathFromPublicUrl(publicUrl: string): string | null {
   } catch {
     return null
   }
+  // Anchored at the start, so a host that merely contains the marker further
+  // along its path cannot be mistaken for a real Supabase object URL.
   const marker = `/storage/v1/object/public/${bucket()}/`
-  const start = pathname.indexOf(marker)
-  if (start === -1) return null
-  const path = decodeURIComponent(pathname.slice(start + marker.length))
-  return path.startsWith(PREFIX) ? path : null
+  if (!pathname.startsWith(marker)) return null
+  const path = decodeURIComponent(pathname.slice(marker.length))
+  if (!path.startsWith(PREFIX)) return null
+  // Decoding can reveal a `..` segment (e.g. an encoded slash) that the URL
+  // parser's own normalization never saw, so it must be checked afterward.
+  if (path.split('/').includes('..')) return null
+  return path
 }
 
 export async function uploadAnnouncementImage(image: {

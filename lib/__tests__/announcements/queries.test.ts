@@ -42,7 +42,7 @@ describe('announcement queries', () => {
           },
         ],
       })
-      expect(arg.orderBy).toEqual([{ isPinned: 'desc' }, { publishedAt: 'desc' }])
+      expect(arg.orderBy).toEqual([{ isPinned: 'desc' }, { publishedAt: { sort: 'desc', nulls: 'last' } }])
       expect(arg.take).toBeUndefined()
     })
 

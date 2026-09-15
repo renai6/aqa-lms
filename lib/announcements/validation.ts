@@ -27,14 +27,22 @@ const announcementSchema = z
 
 export type AnnouncementInput = z.output<typeof announcementSchema>
 
+// A textarea's maxLength counts a line break as one character, but form
+// submission sends CRLF, which would count as two against the same limit.
+// Normalizing before validation keeps the browser and server limits in sync,
+// and the stored text always uses a plain \n.
+function normalizeLineBreaks(value: FormDataEntryValue | null): FormDataEntryValue {
+  return typeof value === 'string' ? value.replace(/\r\n/g, '\n') : (value ?? '')
+}
+
 export function parseAnnouncementForm(
   formData: FormData,
 ): { ok: true; data: AnnouncementInput } | { ok: false; error: string } {
   const id = formData.get('id')
   const result = announcementSchema.safeParse({
     id: typeof id === 'string' && id !== '' ? id : undefined,
-    title: formData.get('title') ?? '',
-    content: formData.get('content') ?? '',
+    title: normalizeLineBreaks(formData.get('title')),
+    content: normalizeLineBreaks(formData.get('content')),
     audience: formData.get('audience'),
     courseIds: formData.getAll('courseIds').filter((v): v is string => typeof v === 'string'),
     isPinned: formData.get('isPinned') === 'on',
