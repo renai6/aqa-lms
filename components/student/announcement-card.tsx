@@ -21,7 +21,7 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
               )}
               <span className="truncate">{a.title}</span>
             </p>
-            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm whitespace-pre-line">
+            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm whitespace-pre-line wrap-break-word">
               {a.content}
             </p>
           </div>
@@ -53,7 +53,7 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
       )}
       <div className="space-y-2 px-5 py-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-foreground text-base font-semibold">{a.title}</h2>
+          <h2 className="text-foreground min-w-0 text-base font-semibold wrap-break-word">{a.title}</h2>
           {a.isPinned && (
             <span className="text-primary inline-flex items-center gap-1 text-xs font-medium">
               <Pin className="h-3.5 w-3.5" aria-hidden="true" />
@@ -66,7 +66,7 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
             <time dateTime={a.publishedAt.toISOString()}>{formatAnnouncementDate(a.publishedAt)}</time>
           </p>
         )}
-        <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">{a.content}</p>
+        <p className="text-foreground text-sm leading-relaxed whitespace-pre-line wrap-break-word">{a.content}</p>
       </div>
     </article>
   )
