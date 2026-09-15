@@ -1,7 +1,7 @@
-import Image from 'next/image'
 import { Pin } from 'lucide-react'
 import type { StudentAnnouncement } from '@/lib/announcements/queries'
 import { formatAnnouncementDate } from '@/lib/announcements/format'
+import { AnnouncementImage } from '@/components/student/announcement-image'
 
 type Props = { announcement: StudentAnnouncement; variant: 'compact' | 'full' }
 
@@ -30,15 +30,7 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
               </p>
             )}
           </div>
-          {a.imageUrl && (
-            <Image
-              src={a.imageUrl}
-              alt=""
-              width={56}
-              height={56}
-              className="h-14 w-14 shrink-0 rounded-md object-cover"
-            />
-          )}
+          {a.imageUrl && <AnnouncementImage src={a.imageUrl} title={a.title} variant="compact" />}
         </div>
       </div>
     )
@@ -46,16 +38,7 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
 
   return (
     <article className="border-border overflow-hidden rounded-lg border bg-white shadow-sm">
-      {a.imageUrl && (
-        <Image
-          src={a.imageUrl}
-          alt=""
-          width={1200}
-          height={800}
-          sizes="(min-width: 768px) 672px, 100vw"
-          className="h-auto w-full"
-        />
-      )}
+      {a.imageUrl && <AnnouncementImage src={a.imageUrl} title={a.title} variant="full" />}
       <div className="space-y-2 px-5 py-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="text-foreground min-w-0 text-base font-semibold wrap-break-word">{a.title}</h2>
