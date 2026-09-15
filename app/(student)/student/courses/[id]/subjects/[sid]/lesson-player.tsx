@@ -16,7 +16,6 @@ import {
   ChevronsRight,
   Lock,
 } from "lucide-react";
-import { LessonDoneButton } from "./lesson-done-button";
 import type {
   StudentLesson,
   StudentAssessment,
@@ -258,76 +257,59 @@ export function LessonPlayer({
 
                 return (
                   <li key={lesson.id}>
-                    {/* Row header — click to expand/collapse. LessonDoneButton
-                        renders its own button, so it has to be a sibling of the
-                        toggle rather than a child: a button inside a button is
-                        invalid HTML and breaks hydration. */}
-                    <div
+                    {/* Row header — click to expand/collapse */}
+                    <button
+                      onClick={() => toggleLesson(lesson.id)}
+                      aria-expanded={isOpen}
                       className={
-                        "w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 " +
+                        "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 " +
                         (isPlaying ? "bg-primary/5" : "")
                       }
                     >
-                      <button
-                        onClick={() => toggleLesson(lesson.id)}
-                        aria-expanded={isOpen}
-                        className="flex flex-1 min-w-0 items-center gap-3 text-left"
+                      {/* Completion indicator */}
+                      <span
+                        aria-label={
+                          lesson.isCompleted
+                            ? "Completed"
+                            : `Lesson ${index + 1}`
+                        }
+                        className={
+                          "flex-none w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold " +
+                          (lesson.isCompleted
+                            ? "bg-green-600 border-green-600 text-white"
+                            : "border-muted-foreground text-muted-foreground")
+                        }
                       >
-                        {/* Completion indicator */}
-                        <span
-                          aria-label={
-                            lesson.isCompleted
-                              ? "Completed"
-                              : `Lesson ${index + 1}`
-                          }
-                          className={
-                            "flex-none w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold " +
-                            (lesson.isCompleted
-                              ? "bg-green-600 border-green-600 text-white"
-                              : "border-muted-foreground text-muted-foreground")
-                          }
-                        >
-                          {lesson.isCompleted ? (
-                            <Check className="w-3 h-3" aria-hidden="true" />
-                          ) : (
-                            index + 1
-                          )}
-                        </span>
+                        {lesson.isCompleted ? (
+                          <Check className="w-3 h-3" aria-hidden="true" />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
 
-                        <span
-                          className={
-                            "flex-1 text-sm font-medium line-clamp-2 " +
-                            (lesson.isCompleted
-                              ? "text-muted-foreground"
-                              : "text-foreground")
-                          }
-                        >
-                          {lesson.title}
-                        </span>
-                      </button>
+                      <span
+                        className={
+                          "flex-1 min-w-0 text-sm font-medium line-clamp-2 " +
+                          (lesson.isCompleted
+                            ? "text-muted-foreground"
+                            : "text-foreground")
+                        }
+                      >
+                        {lesson.title}
+                      </span>
 
-                      {lesson.isCompleted && lesson.assessment == null && (
-                        <LessonDoneButton
-                          lessonId={lesson.id}
-                          subjectId={subjectId}
-                          courseId={courseId}
-                          isCompleted={lesson.isCompleted}
+                      {isOpen ? (
+                        <ChevronDown
+                          className="flex-none w-4 h-4 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <ChevronRight
+                          className="flex-none w-4 h-4 text-muted-foreground"
+                          aria-hidden="true"
                         />
                       )}
-
-                      <button
-                        onClick={() => toggleLesson(lesson.id)}
-                        aria-expanded={isOpen}
-                        aria-label={isOpen ? "Collapse lesson" : "Expand lesson"}
-                        className="flex-none text-muted-foreground"
-                      >
-                        {isOpen ? (
-                          <ChevronDown className="w-4 h-4" aria-hidden="true" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                        )}
-                      </button>
-                    </div>
+                    </button>
 
                     {/* Expanded content */}
                     {isOpen && (
@@ -425,17 +407,6 @@ export function LessonPlayer({
                                 ),
                               Headphones,
                             )}
-
-                          {!lesson.isCompleted && lesson.assessment == null && (
-                            <div>
-                              <LessonDoneButton
-                                lessonId={lesson.id}
-                                subjectId={subjectId}
-                                courseId={courseId}
-                                isCompleted={lesson.isCompleted}
-                              />
-                            </div>
-                          )}
 
                           {!lesson.materialUrl &&
                             !lesson.pptUrl &&
