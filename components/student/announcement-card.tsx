@@ -8,31 +8,28 @@ type Props = { announcement: StudentAnnouncement; variant: 'compact' | 'full' }
 export function AnnouncementCard({ announcement: a, variant }: Props) {
   if (variant === 'compact') {
     return (
-      <div className="border-border flex overflow-hidden rounded-lg border bg-white shadow-sm">
-        <div className="bg-primary w-[3px] shrink-0" />
-        <div className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-foreground flex items-center gap-1.5 text-sm font-medium">
-              {a.isPinned && (
-                <>
-                  <Pin className="text-primary h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span className="sr-only">Pinned:</span>
-                </>
-              )}
-              <span className="truncate">{a.title}</span>
-            </p>
-            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm whitespace-pre-line wrap-break-word">
-              {a.content}
-            </p>
-            {a.publishedAt && (
-              <p className="text-muted-foreground mt-1 text-xs">
-                <time dateTime={a.publishedAt.toISOString()}>{formatAnnouncementDate(a.publishedAt)}</time>
-              </p>
+      <article className="border-border overflow-hidden rounded-lg border bg-white shadow-sm">
+        {a.imageUrl && <AnnouncementImage src={a.imageUrl} title={a.title} variant="compact" />}
+        <div className="px-4 py-3">
+          <p className="text-foreground flex items-start gap-1.5 text-sm font-semibold">
+            {a.isPinned && (
+              <>
+                <Pin className="text-primary mt-[3px] h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span className="sr-only">Pinned:</span>
+              </>
             )}
-          </div>
-          {a.imageUrl && <AnnouncementImage src={a.imageUrl} title={a.title} variant="compact" />}
+            <span className="line-clamp-2 wrap-break-word">{a.title}</span>
+          </p>
+          <p className="text-muted-foreground mt-1 line-clamp-3 text-sm whitespace-pre-line wrap-break-word">
+            {a.content}
+          </p>
+          {a.publishedAt && (
+            <p className="text-muted-foreground mt-2 text-xs">
+              <time dateTime={a.publishedAt.toISOString()}>{formatAnnouncementDate(a.publishedAt)}</time>
+            </p>
+          )}
         </div>
-      </div>
+      </article>
     )
   }
 
