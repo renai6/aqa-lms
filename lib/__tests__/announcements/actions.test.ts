@@ -313,7 +313,15 @@ describe('saveAnnouncementAction images', () => {
 
   it('keeps the current image when no file is chosen', async () => {
     await saveAnnouncementAction(initial, form({ id: 'a1' }))
-    expect(updateData().imageUrl).toBe(OLD_URL)
+    expect(updateData()).not.toHaveProperty('imageUrl')
+    expect(uploadAnnouncementImage).not.toHaveBeenCalled()
+    expect(removeAnnouncementImage).not.toHaveBeenCalled()
+  })
+
+  it('omits imageUrl from the create data when no image is chosen', async () => {
+    vi.mocked(db.announcement.findUnique).mockResolvedValue(existing() as never)
+    await expect(saveAnnouncementAction(initial, form({}))).rejects.toThrow('NEXT_REDIRECT')
+    expect(createData()).not.toHaveProperty('imageUrl')
     expect(uploadAnnouncementImage).not.toHaveBeenCalled()
     expect(removeAnnouncementImage).not.toHaveBeenCalled()
   })

@@ -89,15 +89,19 @@ export async function saveAnnouncementAction(
     }
   }
 
+  // Only a new upload or an explicit removal touches the image. Otherwise a
+  // stale imageUrl read at form-load time could overwrite a concurrent
+  // admin's replacement and point the row at a file that no longer exists.
   const oldImageUrl = existing?.imageUrl ?? null
-  const imageUrl = uploadedUrl ?? (input.removeImage ? null : oldImageUrl)
+  const imageTouched = uploadedUrl !== null || input.removeImage
+  const imageUrl = uploadedUrl ?? null
 
   const data = {
     title: input.title,
     content: input.content,
     audience: input.audience,
     isPinned: input.isPinned,
-    imageUrl,
+    ...(imageTouched && { imageUrl }),
     ...(input.intent === 'publish' && {
       isPublished: true,
       publishedAt: existing?.publishedAt ?? new Date(),
@@ -129,8 +133,8 @@ export async function saveAnnouncementAction(
     return { error: 'A database error occurred. Please try again.' }
   }
 
-  // Only now is the old file unreferenced.
-  if (oldImageUrl && oldImageUrl !== imageUrl) await removeAnnouncementImage(oldImageUrl)
+  // Only now is the old file unreferenced, and only when it was actually replaced or removed.
+  if (imageTouched && oldImageUrl) await removeAnnouncementImage(oldImageUrl)
 
   revalidateAnnouncements(id)
   if (!input.id) redirect(`/admin/announcements/${id}?created=1`)
