@@ -7,6 +7,7 @@ import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { getStudentAnnouncements, type StudentAnnouncement } from '@/lib/announcements/queries'
 import { computeLockedLessons } from '@/lib/lessons/gating'
 import { getLessonGateState } from '@/lib/lessons/queries'
 import { groupSubjectSchedules, type SubjectSchedule, type SubjectScheduleRow } from '@/lib/schedule/format'
@@ -23,12 +24,11 @@ export type DashboardEnrollment = {
   completedLessons: number
 }
 
-export type DashboardAnnouncement = {
-  id: string
-  title: string
-  content: string
-  createdAt: Date
-}
+// The dashboard shows this many; it fetches one more to know whether to offer
+// "View all".
+export const DASHBOARD_ANNOUNCEMENTS = 3
+
+export type DashboardAnnouncement = StudentAnnouncement
 
 export type DashboardPendingPurchase = {
   id: string
@@ -75,11 +75,7 @@ export async function getStudentDashboard(userId: string): Promise<StudentDashbo
         },
       },
     }),
-    db.announcement.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, title: true, content: true, createdAt: true },
-    }),
+    getStudentAnnouncements(userId, { take: DASHBOARD_ANNOUNCEMENTS + 1 }),
     db.purchase.findMany({
       where: { userId, status: 'PENDING' },
       orderBy: { createdAt: 'desc' },
