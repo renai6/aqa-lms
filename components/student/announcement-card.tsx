@@ -24,6 +24,11 @@ export function AnnouncementCard({ announcement: a, variant }: Props) {
             <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm whitespace-pre-line wrap-break-word">
               {a.content}
             </p>
+            {a.publishedAt && (
+              <p className="text-muted-foreground mt-1 text-xs">
+                <time dateTime={a.publishedAt.toISOString()}>{formatAnnouncementDate(a.publishedAt)}</time>
+              </p>
+            )}
           </div>
           {a.imageUrl && (
             <Image

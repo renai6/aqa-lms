@@ -5,6 +5,9 @@ import type { AnnouncementAudience } from '@prisma/client'
 import { saveAnnouncementAction, type AnnouncementActionState } from '@/lib/announcements/actions'
 import type { AnnouncementCourseOption, AnnouncementForEdit } from '@/lib/announcements/queries'
 import { CONTENT_MAX, TITLE_MAX } from '@/lib/announcements/limits'
+// Same 10 MB limit the server enforces in lib/uploads/image.ts, checked here
+// too so an oversized file never reaches the server action's body limit.
+import { MAX_SIZE } from '@/lib/uploads/image'
 import { groupCheckState, toggleCourse, toggleGroup, type GroupCheckState } from '@/lib/announcements/picker'
 import { groupCourses } from '@/lib/courses/grouping'
 import { Badge } from '@/components/ui/badge'
@@ -29,6 +32,7 @@ export function AnnouncementForm({ announcement, courses, initialMessage }: Prop
   const [selected, setSelected] = useState<Set<string>>(() => new Set(announcement?.courseIds))
   const [preview, setPreview] = useState<string | null>(null)
   const [removeImage, setRemoveImage] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function AnnouncementForm({ announcement, courses, initialMessage }: Prop
     setHandledState(state)
     setPreview(null)
     setRemoveImage(false)
+    setImageError(null)
   }
   useEffect(() => {
     if (state.message && fileRef.current) fileRef.current.value = ''
@@ -105,6 +110,7 @@ export function AnnouncementForm({ announcement, courses, initialMessage }: Prop
           <div className="space-y-2">
             <Label htmlFor="image">Image</Label>
             {shownImage && (
+              // eslint-disable-next-line @next/next/no-img-element -- local blob: preview, not an optimizable remote image
               <img
                 src={shownImage}
                 alt=""
@@ -120,6 +126,13 @@ export function AnnouncementForm({ announcement, courses, initialMessage }: Prop
               className="text-sm w-full"
               onChange={(e) => {
                 const chosen = e.target.files?.[0]
+                if (chosen && chosen.size > MAX_SIZE) {
+                  e.target.value = ''
+                  setPreview(null)
+                  setImageError('File size must be 10MB or less.')
+                  return
+                }
+                setImageError(null)
                 setPreview(chosen ? URL.createObjectURL(chosen) : null)
               }}
             />
@@ -127,6 +140,9 @@ export function AnnouncementForm({ announcement, courses, initialMessage }: Prop
               Optional. JPG, PNG or WEBP, up to 10 MB.
               {announcement?.imageUrl ? ' Choosing a file replaces the current image.' : ''}
             </p>
+            {imageError && (
+              <p role="alert" className="text-destructive text-sm">{imageError}</p>
+            )}
             {announcement?.imageUrl && !preview && (
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
