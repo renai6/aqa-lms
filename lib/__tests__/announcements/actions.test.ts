@@ -102,6 +102,8 @@ describe('saveAnnouncementAction', () => {
       expect(data).not.toHaveProperty('isPublished')
       expect(data).not.toHaveProperty('publishedAt')
       expect(redirect).toHaveBeenCalledWith('/admin/announcements/a1?created=1')
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/announcements')
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/announcements/a1')
       expect(revalidatePath).toHaveBeenCalledWith('/student/dashboard')
       expect(revalidatePath).toHaveBeenCalledWith('/student/announcements')
     })
@@ -168,6 +170,8 @@ describe('saveAnnouncementAction', () => {
       expect(vi.mocked(db.announcement.update).mock.calls[0][0].where).toEqual({ id: 'a1' })
       expect(updateData().courses).toEqual({ deleteMany: {}, create: [{ courseId: 'c2' }] })
       expect(redirect).not.toHaveBeenCalled()
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/announcements')
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/announcements/a1')
     })
 
     it('clears the courses when switching to everyone', async () => {
