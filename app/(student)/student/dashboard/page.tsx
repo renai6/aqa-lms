@@ -21,6 +21,13 @@ import { AnnouncementCard } from "@/components/student/announcement-card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
+// Two levels of section label, so the page has a hierarchy instead of five
+// identical whispers. My Courses is what a student came for and reads as a
+// real heading; everything else stays a quiet eyebrow above its cards.
+const SECTION_LABEL =
+  "text-muted-foreground text-[11px] font-semibold tracking-[0.15em] uppercase";
+const SECTION_HEADING = "text-foreground text-base font-bold tracking-tight";
+
 function balanceLine(
   info: EnrollmentBalanceInfo | undefined,
   course: DashboardEnrollment["course"],
@@ -90,8 +97,14 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
   const hasAnnouncements = announcements.length > 0;
 
+  // A lone card stranded in a three-column grid left two thirds of the row
+  // empty, so a single enrollment renders as one wide row with its image
+  // beside the text. Two already fill the grid on their own, and look denser
+  // in it than they did as a pair of near-empty full-width rows.
+  const wideCards = enrollments.length === 1;
+
   return (
-    <div className="space-y-12 px-6 py-10 md:px-10">
+    <div className="mx-auto max-w-[1400px] space-y-12 px-6 py-10 md:px-10">
       {/* Page title */}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-foreground text-2xl font-bold tracking-tight">
@@ -105,7 +118,10 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
       <div
         className={
           hasAnnouncements
-            ? "grid grid-cols-1 items-start gap-12 lg:grid-cols-3 lg:gap-10"
+            ? // A fixed rail rather than a third of the viewport: at desktop
+              // widths a fractional column handed ~590px to the least
+              // actionable content on the page.
+              "grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10"
             : undefined
         }
       >
@@ -115,9 +131,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
         {hasAnnouncements && (
           <section className="min-w-0 space-y-3 lg:order-last">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-                Announcements
-              </h2>
+              <h2 className={SECTION_LABEL}>Announcements</h2>
               {announcements.length > DASHBOARD_ANNOUNCEMENTS && (
                 <Link
                   href="/student/announcements"
@@ -139,7 +153,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           </section>
         )}
 
-        <div className="min-w-0 space-y-12 lg:col-span-2">
+        <div className="min-w-0 space-y-12">
           {/* Enrollment success banner (shown right after checkout) */}
           {justEnrolled && (
             <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
@@ -176,9 +190,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
           {/* Pending enrollments awaiting admin review */}
           {pendingPurchases.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-                Pending Enrollments
-              </h2>
+              <h2 className={SECTION_LABEL}>Pending Enrollments</h2>
               <div className="space-y-2">
                 {pendingPurchases.map((p) => (
                   <div
@@ -208,9 +220,7 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
           {/* My Courses */}
           <section className="space-y-4">
-            <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-              My Courses
-            </h2>
+            <h2 className={SECTION_HEADING}>My Courses</h2>
             {enrollments.length === 0 ? (
               <p className="text-muted-foreground text-sm">
                 No active enrollments.
@@ -218,9 +228,13 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
             ) : (
               <div
                 className={
-                  hasAnnouncements
-                    ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                    : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                  wideCards
+                    ? // Capped, or one card stretches the whole column and
+                      // goes hollow in the middle.
+                      "grid max-w-2xl grid-cols-1 gap-4"
+                    : hasAnnouncements
+                      ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                      : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
                 }
               >
                 {enrollments.map((e) => {
@@ -236,22 +250,57 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                         className="absolute inset-0 z-0 rounded-xl"
                         aria-label={e.course.title}
                       />
-                      <div className="border-border group-hover:border-input h-full overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 group-hover:shadow-md">
+                      <div
+                        className={[
+                          "border-border group-hover:border-input h-full overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 group-hover:shadow-md",
+                          wideCards ? "flex flex-col sm:flex-row" : "",
+                        ].join(" ")}
+                      >
+                        {/* A ratio rather than a fixed h-72: the image used to
+                            stand taller than everything below it, and cropped
+                            a poster through its own title. */}
                         {e.course.imageUrl ? (
-                          <div className="relative h-72 w-full overflow-hidden">
+                          <div
+                            className={[
+                              "relative w-full shrink-0 overflow-hidden",
+                              wideCards
+                                ? "aspect-[16/9] sm:aspect-[4/3] sm:w-56"
+                                : "aspect-[4/3]",
+                            ].join(" ")}
+                          >
                             <Image
                               src={e.course.imageUrl}
                               alt={e.course.title}
                               fill
+                              sizes="(min-width: 1024px) 24rem, 100vw"
                               className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                           </div>
                         ) : (
-                          <div className="bg-muted h-20 w-full" />
+                          <div
+                            className={[
+                              "bg-muted w-full shrink-0",
+                              wideCards
+                                ? "aspect-[16/9] sm:aspect-[4/3] sm:w-56"
+                                : "aspect-[4/3]",
+                            ].join(" ")}
+                          />
                         )}
-                        <div className="space-y-3 p-4">
-                          <div className="flex items-start justify-between gap-2">
+                        <div
+                          className={[
+                            "space-y-3 p-4",
+                            wideCards ? "flex-1 sm:self-center" : "",
+                          ].join(" ")}
+                        >
+                          <div
+                            className={[
+                              "flex items-start gap-2",
+                              // At full width `justify-between` strands the
+                              // badge hundreds of pixels from the title it
+                              // labels, so a wide card keeps the two together.
+                              wideCards ? "" : "justify-between",
+                            ].join(" ")}
+                          >
                             <p className="text-foreground group-hover:text-primary text-sm font-semibold transition-colors duration-150">
                               {e.course.title}
                             </p>
@@ -268,18 +317,34 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                                 : "Partial"}
                             </span>
                           </div>
-                          <div className="space-y-1">
-                            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                              <div
-                                className="bg-primary h-full rounded-full transition-all duration-300"
-                                style={{ width: pct + "%" }}
-                              />
+                          {/* A course with no lessons has no progress to
+                              report: the bar could never fill, and "0 of 0"
+                              reads as a fault rather than an empty course. */}
+                          {e.totalLessons > 0 ? (
+                            <div
+                              className={[
+                                "space-y-1",
+                                // Capped, or the bar becomes a hairline drawn
+                                // across the whole card.
+                                wideCards ? "max-w-md" : "",
+                              ].join(" ")}
+                            >
+                              <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                                <div
+                                  className="bg-primary h-full rounded-full transition-all duration-300"
+                                  style={{ width: pct + "%" }}
+                                />
+                              </div>
+                              <p className="text-muted-foreground text-[11px]">
+                                {e.completedLessons} of {e.totalLessons} lessons
+                                completed
+                              </p>
                             </div>
+                          ) : (
                             <p className="text-muted-foreground text-[11px]">
-                              {e.completedLessons} of {e.totalLessons} lessons
-                              completed
+                              No lessons yet
                             </p>
-                          </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -289,71 +354,12 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
             )}
           </section>
 
-          {/* Recent Results */}
-          {recentResults.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-                Recent Results
-              </h2>
-              <div className="space-y-2">
-                {recentResults.map((r) => {
-                  const awaiting = r.score === null;
-                  const passed =
-                    r.score !== null && r.passingScore !== null
-                      ? r.score >= r.passingScore
-                      : null;
-                  return (
-                    <Link
-                      key={r.attemptId}
-                      href={`/student/courses/${r.courseId}/subjects/${r.subjectId}/assessments/${r.assessmentId}/attempt/${r.attemptId}`}
-                      className="border-border hover:border-input flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 shadow-sm transition-all hover:shadow-md"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-foreground truncate text-sm font-semibold">
-                          {r.assessmentTitle}
-                        </p>
-                        <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                          {r.courseTitle} · {r.subjectTitle}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        {awaiting ? (
-                          <span className="text-xs font-medium text-amber-600">
-                            Awaiting grading
-                          </span>
-                        ) : (
-                          <>
-                            <span className="text-foreground text-sm font-bold tabular-nums">
-                              {Math.round(r.score as number)}%
-                            </span>
-                            {passed !== null && (
-                              <span
-                                className={[
-                                  "rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
-                                  passed
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                    : "border-red-200 bg-red-50 text-red-700",
-                                ].join(" ")}
-                              >
-                                {passed ? "Pass" : "Fail"}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* Payment summary */}
+          {/* Payment summary. Above Recent Results because an outstanding
+              balance is the most time-sensitive thing on this page and used
+              to sit below the fold. */}
           {unsettledEnrollments.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-                Payment
-              </h2>
+              <h2 className={SECTION_LABEL}>Payment</h2>
               <div className="space-y-2">
                 {unsettledEnrollments.map((e) => {
                   const state = paymentStates[e.id] ?? { kind: "idle" as const };
@@ -403,6 +409,63 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
                         )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Recent Results */}
+          {recentResults.length > 0 && (
+            <section className="space-y-4">
+              <h2 className={SECTION_LABEL}>Recent Results</h2>
+              <div className="space-y-2">
+                {recentResults.map((r) => {
+                  const awaiting = r.score === null;
+                  const passed =
+                    r.score !== null && r.passingScore !== null
+                      ? r.score >= r.passingScore
+                      : null;
+                  return (
+                    <Link
+                      key={r.attemptId}
+                      href={`/student/courses/${r.courseId}/subjects/${r.subjectId}/assessments/${r.assessmentId}/attempt/${r.attemptId}`}
+                      className="border-border hover:border-input flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 shadow-sm transition-all hover:shadow-md"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-foreground truncate text-sm font-semibold">
+                          {r.assessmentTitle}
+                        </p>
+                        <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                          {r.courseTitle} · {r.subjectTitle}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        {awaiting ? (
+                          <span className="text-xs font-medium text-amber-600">
+                            Awaiting grading
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-foreground text-sm font-bold tabular-nums">
+                              {Math.round(r.score as number)}%
+                            </span>
+                            {passed !== null && (
+                              <span
+                                className={[
+                                  "rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
+                                  passed
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : "border-red-200 bg-red-50 text-red-700",
+                                ].join(" ")}
+                              >
+                                {passed ? "Pass" : "Fail"}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </Link>
                   );
                 })}
               </div>
