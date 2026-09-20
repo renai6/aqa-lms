@@ -1,5 +1,11 @@
 // lib/students/queries.ts
-import { type CourseType, Gender, PaymentStatus, UserRole } from '@prisma/client'
+import {
+  type CourseType,
+  type EnrollmentStatus,
+  Gender,
+  PaymentStatus,
+  UserRole,
+} from '@prisma/client'
 import { db } from '@/lib/db'
 
 export type StudentRow = {
@@ -21,6 +27,16 @@ export type StudentRow = {
     enrolledAt: Date
     removedAt: Date | null
   }[]
+}
+
+// What the CSV export reads: a StudentRow whose enrollments carry the payments
+// behind the Amount Paid and Last Payment Date columns. Separate from
+// StudentRow because the paginated admin table renders neither, and should not
+// pay for an extra join per enrollment to fetch them.
+export type StudentExportRow = Omit<StudentRow, 'enrollments'> & {
+  enrollments: (StudentRow['enrollments'][number] & {
+    payments: { amount: number; status: EnrollmentStatus; createdAt: Date }[]
+  })[]
 }
 
 export type StudentDetail = {
@@ -136,8 +152,54 @@ export async function getStudentsPage(
 // a partial roster that looks complete.
 export async function getAllStudents(
   filters: StudentFilters,
-): Promise<StudentRow[]> {
-  return findStudents(filters)
+): Promise<StudentExportRow[]> {
+  const users = await db.user.findMany({
+    where: whereFor(filters),
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      gender: true,
+      isActive: true,
+      createdAt: true,
+      contactNumber: true,
+      facebookName: true,
+      facebookLink: true,
+      enrollments: {
+        select: {
+          id: true,
+          courseId: true,
+          enrolledAt: true,
+          removedAt: true,
+          course: { select: { title: true, courseType: true } },
+          // Every status, not just APPROVED: `formatAmountsPaid` owns the rule
+          // that only approved money counts, so the filter lives in one place
+          // that is provable without a database.
+          payments: { select: { amount: true, status: true, createdAt: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return users.map((u) => ({
+    ...u,
+    enrollments: u.enrollments.map((e) => ({
+      id: e.id,
+      courseId: e.courseId,
+      courseTitle: e.course.title,
+      courseType: e.course.courseType,
+      enrolledAt: e.enrolledAt,
+      removedAt: e.removedAt,
+      payments: e.payments.map((p) => ({
+        // Decimal off the wire; the formatters do centavo arithmetic on numbers.
+        amount: p.amount.toNumber(),
+        status: p.status,
+        createdAt: p.createdAt,
+      })),
+    })),
+  }))
 }
 
 export async function getStudentById(id: string): Promise<StudentDetail | null> {

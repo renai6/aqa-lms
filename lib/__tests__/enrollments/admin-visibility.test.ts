@@ -4,6 +4,7 @@ vi.mock("@/lib/db", () => ({
   db: { user: { findUnique: vi.fn(), findMany: vi.fn() } },
 }));
 
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getAllStudents, getStudentById } from "@/lib/students/queries";
 
@@ -38,7 +39,7 @@ describe("admin student queries expose removed enrollments", () => {
         contactNumber: null,
         facebookName: null,
         facebookLink: null,
-        enrollments: [enrollmentRow],
+        enrollments: [{ ...enrollmentRow, payments: [] }],
       },
     ] as never);
 
@@ -50,6 +51,44 @@ describe("admin student queries expose removed enrollments", () => {
       courseTitle: "Marhala 1",
       removedAt: enrollmentRow.removedAt,
     });
+  });
+
+  // The CSV formatters do centavo arithmetic on numbers. Prisma hands money
+  // back as Decimal, which fails that silently rather than loudly.
+  it("getAllStudents converts payment amounts into numbers", async () => {
+    const paidAt = new Date("2026-09-05T02:30:00+08:00");
+    vi.mocked(db.user.findMany).mockResolvedValue([
+      {
+        id: "s1",
+        firstName: "Sam",
+        lastName: "Ali",
+        email: "s@example.com",
+        gender: "MALE",
+        isActive: true,
+        createdAt: new Date("2026-01-01"),
+        contactNumber: null,
+        facebookName: null,
+        facebookLink: null,
+        enrollments: [
+          {
+            ...enrollmentRow,
+            payments: [
+              {
+                amount: new Prisma.Decimal("1500.50"),
+                status: "APPROVED",
+                createdAt: paidAt,
+              },
+            ],
+          },
+        ],
+      },
+    ] as never);
+
+    const [student] = await getAllStudents({ courseId: "c1" });
+
+    expect(student.enrollments[0].payments).toEqual([
+      { amount: 1500.5, status: "APPROVED", createdAt: paidAt },
+    ]);
   });
 
   it("getStudentById carries the removal reason through", async () => {

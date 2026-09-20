@@ -7,6 +7,7 @@ import {
   monthKeysBetween,
   monthKeyLabel,
   monthKeyShort,
+  toManilaDateKey,
 } from "@/lib/time/manila";
 
 describe("toMonthKey", () => {
@@ -92,5 +93,32 @@ describe("labels", () => {
 
   it("renders a short label for matrix columns", () => {
     expect(monthKeyShort("2026-09")).toBe("Sep");
+  });
+});
+
+// The day-level counterpart to `toMonthKey`, for CSV columns that carry a
+// date rather than a billing month.
+describe("toManilaDateKey", () => {
+  it("reads the day off the Manila calendar, not UTC", () => {
+    // 00:30 on 5 September in Manila is still 16:30 on 4 September in UTC.
+    // Slicing the ISO string would export the payment a day early.
+    expect(toManilaDateKey(new Date("2026-09-05T00:30:00+08:00"))).toBe(
+      "2026-09-05",
+    );
+  });
+
+  it("does not roll a late-Manila instant forward into the next day", () => {
+    // 23:30 Manila is 15:30 the same day in UTC, so this one agrees with the
+    // server clock. It is here so a fix for the case above cannot pass by
+    // shifting every date forward.
+    expect(toManilaDateKey(new Date("2026-09-05T23:30:00+08:00"))).toBe(
+      "2026-09-05",
+    );
+  });
+
+  it("zero-pads so plain string comparison sorts dates correctly", () => {
+    expect(toManilaDateKey(new Date("2026-01-02T12:00:00+08:00"))).toBe(
+      "2026-01-02",
+    );
   });
 });
