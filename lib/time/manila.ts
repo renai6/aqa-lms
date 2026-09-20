@@ -18,6 +18,21 @@ const MANILA_PARTS = new Intl.DateTimeFormat("en-US", {
   month: "2-digit",
 });
 
+const MANILA_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Manila",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+// "2026-09-05" on the Manila calendar, for an instant that really happened.
+// The day-level counterpart to `toMonthKey`, and for the same reason: slicing
+// a UTC ISO string dates anything between midnight and 08:00 Manila to the
+// day before. en-CA because it already formats as YYYY-MM-DD, zero-padded.
+export function toManilaDateKey(date: Date): string {
+  return MANILA_DAY.format(date);
+}
+
 // For an instant that really happened, such as "now" or an enrollment date.
 export function toMonthKey(date: Date): MonthKey {
   const parts = MANILA_PARTS.formatToParts(date);
