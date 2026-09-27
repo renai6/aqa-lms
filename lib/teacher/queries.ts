@@ -243,6 +243,49 @@ export async function getSubjectStudents(
   }))
 }
 
+// ─── Class recordings of a subject ────────────────────────────────────────────
+
+export type TeacherRecording = {
+  id: string
+  url: string
+  date: Date
+  title: string | null
+}
+
+export type TeacherRecordingBatch = {
+  id: string
+  number: number
+  name: string | null
+  isActive: boolean
+  recordings: TeacherRecording[]
+}
+
+// Recordings are kept per batch, so a teacher who taught the subject across
+// several runs sees one list per batch, newest batch first. Batches with no
+// recordings for this subject are left out.
+export async function getTeacherSubjectRecordings(
+  userId: string,
+  subjectId: string,
+): Promise<TeacherRecordingBatch[] | null> {
+  if (!(await isAssigned(userId, subjectId))) return null
+
+  return db.batch.findMany({
+    where: { recordings: { some: { subjectId } } },
+    orderBy: { number: 'desc' },
+    select: {
+      id: true,
+      number: true,
+      name: true,
+      isActive: true,
+      recordings: {
+        where: { subjectId },
+        orderBy: { date: 'desc' },
+        select: { id: true, url: true, date: true, title: true },
+      },
+    },
+  })
+}
+
 // ─── Grading queue for one assessment ─────────────────────────────────────────
 
 export type GradingQueueAttempt = {

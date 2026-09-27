@@ -13,6 +13,7 @@ export function SubjectTabs({ subjectId }: { subjectId: string }) {
     { href: base, label: 'Assessments' },
     { href: base + '/students', label: 'Students' },
     { href: base + '/grades', label: 'Grades' },
+    { href: base + '/recordings', label: 'Recordings' },
   ]
 
   return (
