@@ -2,8 +2,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import HeroBackdrop from "./HeroBackdrop";
-
-const FACEBOOK_URL = "https://www.facebook.com/alquranacademy2014";
+import { FACEBOOK_URL } from "@/lib/site";
 
 /** Small circular photo that sits inline with the headline. */
 function Bubble({ src, alt }: { src: string; alt: string }) {

@@ -9,7 +9,10 @@ const NAV = [
   { label: "Faculty", href: "/faculty" },
 ];
 
-const NAV_RIGHT = [{ label: "Curriculum", href: "/#core" }];
+const NAV_RIGHT = [
+  { label: "Curriculum", href: "/#core" },
+  { label: "FAQ", href: "/faq" },
+];
 
 /**
  * Marketing header for the public homepage: nav links either side of a
