@@ -118,12 +118,45 @@ export default async function StudentDetailPage({ params }: Props) {
             </div>
             <div>
               <dt className="text-muted-foreground">Email</dt>
-              <dd className="mt-0.5">{student.email}</dd>
+              <dd className="mt-0.5 break-all">{student.email}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Contact number</dt>
+              <dd className="mt-0.5">{student.contactNumber ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Address</dt>
+              <dd className="mt-0.5 whitespace-pre-line">{student.address ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Facebook/Messenger</dt>
+              <dd className="mt-0.5 break-all">
+                {student.facebookLink?.startsWith('https://') ? (
+                  <a
+                    href={student.facebookLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {student.facebookName ?? student.facebookLink}
+                  </a>
+                ) : (
+                  student.facebookName ?? '—'
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Gender</dt>
               <dd className="mt-0.5">
                 {student.gender ? (student.gender === 'MALE' ? 'Male' : 'Female') : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Student type</dt>
+              <dd className="mt-0.5">
+                {student.studentType
+                  ? student.studentType === 'NEW' ? 'New student' : 'Old student'
+                  : '—'}
               </dd>
             </div>
             <div>
