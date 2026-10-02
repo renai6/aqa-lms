@@ -4,6 +4,7 @@ import {
   type EnrollmentStatus,
   Gender,
   PaymentStatus,
+  type StudentType,
   UserRole,
 } from '@prisma/client'
 import { db } from '@/lib/db'
@@ -47,6 +48,11 @@ export type StudentDetail = {
   gender: Gender | null
   isActive: boolean
   createdAt: Date
+  contactNumber: string | null
+  address: string | null
+  facebookName: string | null
+  facebookLink: string | null
+  studentType: StudentType | null
   enrollments: {
     id: string
     courseId: string
@@ -214,6 +220,11 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       isActive: true,
       createdAt: true,
       role: true,
+      contactNumber: true,
+      address: true,
+      facebookName: true,
+      facebookLink: true,
+      studentType: true,
       enrollments: {
         // Removed enrollments stay visible to admins, badged and restorable,
         // so the history of a correction is never hidden from staff.
@@ -243,6 +254,11 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
     gender: user.gender,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    contactNumber: user.contactNumber,
+    address: user.address,
+    facebookName: user.facebookName,
+    facebookLink: user.facebookLink,
+    studentType: user.studentType,
     enrollments: user.enrollments.map((e) => ({
       id: e.id,
       courseId: e.courseId,
