@@ -98,7 +98,9 @@ export function MoveEnrollmentCourseButton({
               {courseTitle}. Progress in {courseTitle} does not carry over.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-4">
+          {/* min-w-0: the dialog is a grid, and a long batch name would
+              otherwise widen this column past the dialog's edge on phones. */}
+          <div className="min-w-0 space-y-4">
             <div className="space-y-2">
               <Label htmlFor={`${formId}-course`}>Course</Label>
               <Select

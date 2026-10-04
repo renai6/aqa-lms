@@ -72,12 +72,6 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                   scope="col"
                   className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
                 >
-                  Email
-                </th>
-                <th
-                  scope="col"
-                  className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
-                >
                   Batch
                 </th>
                 <th
@@ -122,8 +116,12 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                         </p>
                       </>
                     )}
+                    {/* Under the name rather than in its own column, so the
+                        row keeps room for its three action buttons. */}
+                    <p className="text-muted-foreground text-xs font-normal">
+                      {r.email}
+                    </p>
                   </td>
-                  <td className="text-muted-foreground px-4 py-3">{r.email}</td>
                   <td className="px-4 py-3">
                     {r.batch ? (
                       batchLabel(r.batch)

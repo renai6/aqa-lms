@@ -102,7 +102,10 @@ export default async function StudentDetailPage({ params }: Props) {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
+                        {/* Stacked, not side by side: this table shares the page
+                            with the profile sidebar, and two buttons in a row
+                            push the last one past the table's clipped edge. */}
+                        <div className="flex flex-col items-end gap-2">
                           {!e.removedAt && !e.hasCertificate && (
                             <MoveEnrollmentCourseButton
                               enrollmentId={e.id}
