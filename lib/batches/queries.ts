@@ -61,6 +61,7 @@ export type BatchSubject = {
   order: number
   lessons: BatchLesson[]
   recordings: BatchRecordingRow[]
+  recordingFolders: { folderId: string }[]
 }
 
 export type BatchDetail = {
@@ -112,6 +113,10 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
                 where: { batchId },
                 orderBy: { date: 'desc' },
                 select: { id: true, url: true, date: true, title: true },
+              },
+              recordingFolders: {
+                where: { batchId },
+                select: { folderId: true },
               },
             },
           },

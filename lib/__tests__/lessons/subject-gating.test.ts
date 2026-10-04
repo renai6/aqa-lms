@@ -7,6 +7,7 @@ vi.mock('@/lib/db', () => ({
     enrollment: { findUnique: vi.fn() },
     lessonCompletion: { findMany: vi.fn() },
     batchLessonContent: { findMany: vi.fn() },
+    batchRecordingFolder: { findUnique: vi.fn() },
     batchRecording: { findMany: vi.fn() },
   },
 }))
@@ -70,6 +71,7 @@ describe('getStudentSubject gating', () => {
         pptUrl: 'https://drive.google.com/l2-ppt',
       },
     ] as never)
+    vi.mocked(db.batchRecordingFolder.findUnique).mockResolvedValue(null)
     vi.mocked(db.batchRecording.findMany).mockResolvedValue([] as never)
 
     const result = await getStudentSubject('student1', 'sub1')
@@ -102,6 +104,7 @@ describe('getStudentSubject gating', () => {
     vi.mocked(db.enrollment.findUnique).mockResolvedValue({ id: 'e1', batchId: null } as never)
     vi.mocked(db.lessonCompletion.findMany).mockResolvedValue([] as never)
     vi.mocked(db.batchLessonContent.findMany).mockResolvedValue([] as never)
+    vi.mocked(db.batchRecordingFolder.findUnique).mockResolvedValue(null)
     vi.mocked(db.batchRecording.findMany).mockResolvedValue([] as never)
 
     const result = await getStudentSubject('student1', 'sub1')
@@ -137,6 +140,7 @@ describe('getStudentSubject gating', () => {
     vi.mocked(db.enrollment.findUnique).mockResolvedValue({ id: 'e1', batchId: null } as never)
     vi.mocked(db.lessonCompletion.findMany).mockResolvedValue([] as never)
     vi.mocked(db.batchLessonContent.findMany).mockResolvedValue([] as never)
+    vi.mocked(db.batchRecordingFolder.findUnique).mockResolvedValue(null)
     vi.mocked(db.batchRecording.findMany).mockResolvedValue([] as never)
 
     const result = await getStudentSubject('student1', 'sub1')

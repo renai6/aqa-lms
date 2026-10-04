@@ -2,16 +2,10 @@
 
 import { useState } from "react";
 import { AudioLines, PlayCircle, VideoOff } from "lucide-react";
-import type {
-  TeacherRecording,
-  TeacherRecordingBatch,
-} from "@/lib/teacher/queries";
+import type { TeacherRecordingBatch } from "@/lib/teacher/queries";
+import type { Recording } from "@/lib/batches/drive-folder";
 import { toPreviewUrl } from "@/lib/batches/drive";
 import { batchLabel } from "@/lib/batches/name";
-import {
-  formatRecordingDate,
-  recordingLabel,
-} from "@/lib/batches/recording-date";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +16,7 @@ export function RecordingsViewer({
 }: {
   batches: TeacherRecordingBatch[];
 }) {
-  const [active, setActive] = useState<TeacherRecording | null>(null);
+  const [active, setActive] = useState<Recording | null>(null);
   const previewUrl = active ? toPreviewUrl(active.url) : null;
 
   return (
@@ -40,45 +34,48 @@ export function RecordingsViewer({
                 <h2 className="text-sm font-medium">{batchLabel(batch)}</h2>
                 {batch.isActive && <Badge variant="outline">Current</Badge>}
               </header>
-              <ul className="divide-y">
-                {batch.recordings.map((recording) => {
-                  const isActive = active?.id === recording.id;
-                  return (
-                    <li key={recording.id}>
-                      <button
-                        type="button"
-                        onClick={() => setActive(recording)}
-                        aria-current={isActive ? "true" : undefined}
-                        className={cn(
-                          "hover:bg-muted/50 flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors",
-                          isActive && "bg-primary/5 text-primary",
-                        )}
-                      >
-                        <PlayCircle
-                          className="text-primary h-4 w-4 flex-none"
-                          aria-hidden="true"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">
-                            {recordingLabel(recording)}
-                          </span>
-                          {recording.title?.trim() && (
-                            <span className="text-muted-foreground block text-xs">
-                              {formatRecordingDate(recording.date)}
-                            </span>
+              {batch.recordings === null ? (
+                <p className="text-muted-foreground px-4 py-3 text-sm">
+                  Recordings can&apos;t be loaded right now.
+                </p>
+              ) : batch.recordings.length === 0 ? (
+                <p className="text-muted-foreground px-4 py-3 text-sm">
+                  No recordings yet.
+                </p>
+              ) : (
+                <ul className="divide-y">
+                  {batch.recordings.map((recording) => {
+                    const isActive = active?.id === recording.id;
+                    return (
+                      <li key={recording.id}>
+                        <button
+                          type="button"
+                          onClick={() => setActive(recording)}
+                          aria-current={isActive ? "true" : undefined}
+                          className={cn(
+                            "hover:bg-muted/50 flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors",
+                            isActive && "bg-primary/5 text-primary",
                           )}
-                        </span>
-                        {isActive && (
-                          <AudioLines
-                            className="text-primary h-4 w-4 flex-none animate-pulse"
-                            aria-label="Now playing"
+                        >
+                          <PlayCircle
+                            className="text-primary h-4 w-4 flex-none"
+                            aria-hidden="true"
                           />
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {recording.title}
+                          </span>
+                          {isActive && (
+                            <AudioLines
+                              className="text-primary h-4 w-4 flex-none animate-pulse"
+                              aria-label="Now playing"
+                            />
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </section>
           ))}
         </div>
@@ -92,7 +89,7 @@ export function RecordingsViewer({
             allow="autoplay"
             allowFullScreen
             className="absolute inset-0 h-full w-full border-0"
-            title={recordingLabel(active!)}
+            title={active!.title}
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-neutral-400">

@@ -6,7 +6,8 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { getMaxBatchNumber, nextBatchNumber } from './queries'
 import { generateBatchName } from './name'
-import { toPreviewUrl } from './drive'
+import { parseDriveFolderId, toPreviewUrl } from './drive'
+import { listFolderRecordings } from './drive-folder'
 
 type ActionState = { error: string | null; success?: boolean }
 
@@ -185,6 +186,58 @@ export async function removeBatchRecordingAction(
     await db.batchRecording.delete({ where: { id: recordingId } })
   } catch (err) {
     console.error('[removeBatchRecording]', err)
+    return { error: 'A database error occurred.' }
+  }
+
+  revalidatePath('/admin/courses/' + courseId + '/batches/' + batchId)
+  return { error: null, success: true }
+}
+
+// One folder per batch and subject. An empty link clears it. A link is only
+// saved once Drive confirms the folder is visible, so an admin learns about a
+// private folder here rather than from students seeing an empty tab.
+export async function setBatchRecordingFolderAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const batchId = formData.get('batchId')
+  const subjectId = formData.get('subjectId')
+  const courseId = formData.get('courseId')
+  if (typeof batchId !== 'string' || !batchId) return { error: 'Invalid batch ID.' }
+  if (typeof subjectId !== 'string' || !subjectId) return { error: 'Invalid subject ID.' }
+  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
+  const rawUrl = formData.get('folderUrl')
+  const folderUrl = typeof rawUrl === 'string' ? rawUrl.trim() : ''
+
+  try {
+    if (!folderUrl) {
+      await db.batchRecordingFolder.deleteMany({ where: { batchId, subjectId } })
+    } else {
+      const folderId = parseDriveFolderId(folderUrl)
+      if (!folderId) return { error: 'Recordings folder must be a Google Drive folder link.' }
+
+      const listing = await listFolderRecordings(folderId)
+      if (!listing.ok) {
+        return {
+          error:
+            listing.reason === 'not-found'
+              ? 'Google Drive could not open that folder. Share it as "Anyone with the link" and try again.'
+              : 'Google Drive could not be reached. Try again in a moment.',
+        }
+      }
+
+      await db.batchRecordingFolder.upsert({
+        where: { batchId_subjectId: { batchId, subjectId } },
+        create: { batchId, subjectId, folderId },
+        update: { folderId },
+      })
+    }
+  } catch (err) {
+    console.error('[setBatchRecordingFolder]', err)
     return { error: 'A database error occurred.' }
   }
 

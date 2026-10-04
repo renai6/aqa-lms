@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import type { DayOfWeek, AssessmentType, QuestionMediaType, QuestionType, AttemptStatus, PaymentFrequency } from '@prisma/client'
 import { pickRelevantAttempt, pickBestAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
+import type { Recording } from '@/lib/batches/drive-folder'
+import { resolveRecordings } from '@/lib/batches/recordings'
 import { canSeeSubject, subjectGenderFilter } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
@@ -285,13 +287,6 @@ export async function getStudentCourse(
 
 // ─── Subject page ─────────────────────────────────────────────────────────────
 
-export type StudentRecording = {
-  id: string
-  url: string
-  date: Date
-  title: string | null
-}
-
 export type StudentAttemptSummary = {
   id: string
   status: AttemptStatus
@@ -337,7 +332,8 @@ export type StudentSubject = {
   schedules: Array<{ day: DayOfWeek; startTime: string; endTime: string }>
   lessons: StudentLesson[]
   assessments: StudentAssessment[]
-  recordings: StudentRecording[]
+  // null when the batch's Drive folder could not be listed.
+  recordings: Recording[] | null
 }
 
 export async function getStudentSubject(
@@ -396,7 +392,7 @@ export async function getStudentSubject(
 
   const lessonIds = subject.lessons.map(l => l.id)
 
-  const [completions, batchContents, recordings] = await Promise.all([
+  const [completions, batchContents, recordingFolder, recordingLinks] = await Promise.all([
     lessonIds.length > 0
       ? db.lessonCompletion.findMany({
           where: { userId, lessonId: { in: lessonIds } },
@@ -418,6 +414,12 @@ export async function getStudentSubject(
     // Recordings hang off the subject, not the lessons, so a subject with no
     // lessons yet can still have sessions to watch.
     enrollment.batchId
+      ? db.batchRecordingFolder.findUnique({
+          where: { batchId_subjectId: { batchId: enrollment.batchId, subjectId: subject.id } },
+          select: { folderId: true },
+        })
+      : Promise.resolve(null),
+    enrollment.batchId
       ? db.batchRecording.findMany({
           where: { batchId: enrollment.batchId, subjectId: subject.id },
           orderBy: { date: 'desc' },
@@ -425,6 +427,7 @@ export async function getStudentSubject(
         })
       : Promise.resolve([]),
   ])
+  const recordings = await resolveRecordings(recordingFolder?.folderId ?? null, recordingLinks)
 
   const completedSet = new Set(completions.map(c => c.lessonId))
   const batchContentMap = new Map(batchContents.map(bc => [bc.lessonId, bc]))

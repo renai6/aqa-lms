@@ -236,12 +236,13 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lessons     Lesson[]
-  assessments Assessment[]
-  grades      Grade[]
-  teachers    SubjectTeacher[]
-  schedules   SubjectSchedule[]
-  recordings  BatchRecording[]
+  lessons          Lesson[]
+  assessments      Assessment[]
+  grades           Grade[]
+  teachers         SubjectTeacher[]
+  schedules        SubjectSchedule[]
+  recordings       BatchRecording[]
+  recordingFolders BatchRecordingFolder[]
 }
 
 model SubjectTeacher {
@@ -280,9 +281,10 @@ model Batch {
 
   createdAt DateTime @default(now())
 
-  enrollments   Enrollment[]
-  lessonContent BatchLessonContent[]
-  recordings    BatchRecording[]
+  enrollments      Enrollment[]
+  lessonContent    BatchLessonContent[]
+  recordings       BatchRecording[]
+  recordingFolders BatchRecordingFolder[]
 
   @@unique([courseId, number])
   @@index([courseId])
@@ -322,6 +324,26 @@ model BatchRecording {
   createdAt DateTime @default(now())
 
   @@index([batchId, subjectId])
+}
+
+// The Google Drive folder holding the class-session recordings for one subject
+// as taught in one batch. The videos themselves are listed live from Drive, so
+// an admin uploading a new session to the folder is all it takes to publish it.
+// Once set, the folder replaces that batch and subject's BatchRecording links,
+// which stay only until every subject has moved to a folder.
+model BatchRecordingFolder {
+  id        String  @id @default(cuid())
+  batchId   String
+  batch     Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  folderId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([batchId, subjectId])
 }
 
 model Lesson {
