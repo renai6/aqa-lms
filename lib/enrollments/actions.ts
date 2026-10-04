@@ -216,7 +216,7 @@ export async function moveEnrollmentCourseAction(
 
       const current = await tx.enrollment.findUnique({
         where: { id },
-        select: { removedAt: true, paymentStatus: true },
+        select: { removedAt: true, paymentStatus: true, enrolledAt: true },
       });
       if (!current || current.removedAt)
         throw new MoveRefusedError(
@@ -241,10 +241,14 @@ export async function moveEnrollmentCourseAction(
           `This student is already enrolled in ${destination.title}.`,
         );
 
+      // Monthly billing owes every month from enrolledAt onward, so course B
+      // keeps course A's start: the moved payments stay inside B's owed range
+      // and a restored B row does not invent arrears from its old date.
       const data = {
         batchId,
         totalDue,
         paymentStatus: current.paymentStatus,
+        enrolledAt: current.enrolledAt,
       };
       // Enrollment is unique per (userId, courseId), so an earlier removal from
       // course B must be restored rather than duplicated.

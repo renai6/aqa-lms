@@ -42,16 +42,26 @@ function form(fields: Record<string, string> = {}) {
 const courseA = { title: "Marhala 1", archivedAt: null, paymentFrequency: "ONE_TIME" };
 const courseB = { title: "Marhala 2", archivedAt: null, paymentFrequency: "ONE_TIME" };
 
+const enrolledAtA = new Date("2026-03-01T00:00:00Z");
+
+// The locked course A row: a tracked balance (Prisma hands back a Decimal) and
+// the date its billing started.
+function courseARow(overrides: Record<string, unknown> = {}) {
+  return {
+    removedAt: null,
+    paymentStatus: "PARTIALLY_PAID",
+    enrolledAt: enrolledAtA,
+    totalDue: { toNumber: () => 12000 },
+    ...overrides,
+  };
+}
+
 // tx.enrollment.findUnique answers two different lookups: the locked course A
 // row (by id) and the student's course B row (by userId_courseId).
-function txEnrollmentLookups(courseBRow: unknown) {
+function txEnrollmentLookups(courseBRow: unknown, rowA = courseARow()) {
   tx.enrollment.findUnique.mockImplementation(
     ({ where }: { where: { id?: string } }) =>
-      Promise.resolve(
-        where.id === "eA"
-          ? { removedAt: null, paymentStatus: "PARTIALLY_PAID" }
-          : courseBRow,
-      ),
+      Promise.resolve(where.id === "eA" ? rowA : courseBRow),
   );
 }
 
@@ -102,6 +112,7 @@ describe("moveEnrollmentCourseAction", () => {
         batchId: "bB",
         totalDue: 12000,
         paymentStatus: "PARTIALLY_PAID",
+        enrolledAt: enrolledAtA,
       },
       select: { id: true },
     });
@@ -129,6 +140,7 @@ describe("moveEnrollmentCourseAction", () => {
         batchId: "bB",
         totalDue: 12000,
         paymentStatus: "PARTIALLY_PAID",
+        enrolledAt: enrolledAtA,
         removedAt: null,
         removedReason: null,
       },
@@ -261,14 +273,7 @@ describe("moveEnrollmentCourseAction", () => {
     });
 
     it("refuses when course A was removed after the first read", async () => {
-      tx.enrollment.findUnique.mockImplementation(
-        ({ where }: { where: { id?: string } }) =>
-          Promise.resolve(
-            where.id === "eA"
-              ? { removedAt: new Date(), paymentStatus: "PARTIALLY_PAID" }
-              : null,
-          ),
-      );
+      txEnrollmentLookups(null, courseARow({ removedAt: new Date() }));
       await expectRefused({}, "This student is already removed from the course.");
     });
   });
