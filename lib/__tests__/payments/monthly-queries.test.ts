@@ -98,6 +98,39 @@ describe("getCourseMonthlyMatrix", () => {
     expect(call.where).toEqual({ courseId: "c1" });
   });
 
+  it("leaves out enrollments moved to another course, but keeps other removals", async () => {
+    // A moved-away row has no payments left (they followed the student to the
+    // destination enrollment), so keeping it would show every month unpaid.
+    const row = (id: string, removedReason: string | null) => ({
+      id,
+      enrolledAt: new Date("2026-09-01T09:00:00+08:00"),
+      completedAt: null,
+      removedAt: new Date("2026-09-05T09:00:00+08:00"),
+      removedReason,
+      user: { firstName: id, lastName: "R", email: id + "@x.c" },
+      payments: [],
+    });
+    vi.mocked(db.enrollment.findMany).mockResolvedValue([
+      row("moved", "Moved to Marhala 2"),
+      row("dropped", "Stopped attending"),
+      row("blank", null),
+    ] as never);
+
+    const result = await getCourseMonthlyMatrix(
+      "c1",
+      new Date("2026-09-08T10:00:00+08:00"),
+    );
+
+    expect(result!.matrix.rows.map((r) => r.enrollmentId).sort()).toEqual([
+      "blank",
+      "dropped",
+    ]);
+    const call = vi.mocked(db.enrollment.findMany).mock.calls[0][0] as {
+      select: Record<string, unknown>;
+    };
+    expect(call.select).toMatchObject({ removedReason: true });
+  });
+
   it("converts stored period dates back into month keys", async () => {
     vi.mocked(db.enrollment.findMany).mockResolvedValue([
       {

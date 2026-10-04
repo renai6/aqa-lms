@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { isMovedAway, movedReason } from "@/lib/enrollments/moved";
 
 type ActionState = { error: string | null };
 
@@ -16,7 +17,12 @@ async function loadTarget(formData: FormData): Promise<
   | { error: string }
   | {
       id: string;
-      enrollment: { userId: string; courseId: string; removedAt: Date | null };
+      enrollment: {
+        userId: string;
+        courseId: string;
+        removedAt: Date | null;
+        removedReason: string | null;
+      };
     }
 > {
   const session = await getSession();
@@ -29,7 +35,12 @@ async function loadTarget(formData: FormData): Promise<
 
   const enrollment = await db.enrollment.findUnique({
     where: { id },
-    select: { userId: true, courseId: true, removedAt: true },
+    select: {
+      userId: true,
+      courseId: true,
+      removedAt: true,
+      removedReason: true,
+    },
   });
   if (!enrollment) return { error: "Enrollment not found." };
 
@@ -80,6 +91,13 @@ export async function restoreEnrollmentAction(
   const { id, enrollment } = target;
   if (!enrollment.removedAt)
     return { error: "This student is not removed from the course." };
+  // Its payments left with the student, so restoring it would make them
+  // active in both courses with this one owing nothing it can show.
+  if (isMovedAway(enrollment.removedReason))
+    return {
+      error:
+        "This student was moved to another course. Use Change course to move them back.",
+    };
 
   try {
     await db.enrollment.update({
@@ -270,9 +288,12 @@ export async function moveEnrollmentCourseAction(
 
       await tx.enrollment.update({
         where: { id },
+        // Clearing totalDue keeps the emptied row from reading as owing its
+        // full tuition, since its payments now belong to course B.
         data: {
           removedAt: new Date(),
-          removedReason: `Moved to ${destination.title}`,
+          removedReason: movedReason(destination.title),
+          totalDue: null,
         },
       });
     });

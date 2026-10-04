@@ -11,6 +11,7 @@ import { MoveEnrollmentButton } from "@/components/admin/move-enrollment-button"
 import { MoveEnrollmentCourseButton } from "@/components/admin/move-enrollment-course-button";
 import { getCourseMoveTargets } from "@/lib/enrollments/move-targets";
 import { courseMoveOptions } from "@/lib/enrollments/move-options";
+import { isMovedAway } from "@/lib/enrollments/moved";
 import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -179,12 +180,17 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                           })}
                         />
                       )}
-                      <RemoveEnrollmentButton
-                        enrollmentId={r.enrollmentId}
-                        studentName={`${r.firstName} ${r.lastName}`}
-                        courseTitle={courseTitle}
-                        isRemoved={r.removedAt !== null}
-                      />
+                      {/* A row moved to another course has no restore: its
+                          payments left with the student. Change course on the
+                          destination row moves them back. */}
+                      {!(r.removedAt && isMovedAway(r.removedReason)) && (
+                        <RemoveEnrollmentButton
+                          enrollmentId={r.enrollmentId}
+                          studentName={`${r.firstName} ${r.lastName}`}
+                          courseTitle={courseTitle}
+                          isRemoved={r.removedAt !== null}
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>

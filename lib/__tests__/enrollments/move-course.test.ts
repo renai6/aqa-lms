@@ -120,9 +120,15 @@ describe("moveEnrollmentCourseAction", () => {
       where: { enrollmentId: "eA" },
       data: { enrollmentId: "eB" },
     });
+    // totalDue is cleared so the emptied course A row does not read as owing
+    // its full tuition; its money now lives on course B.
     expect(tx.enrollment.update).toHaveBeenCalledWith({
       where: { id: "eA" },
-      data: { removedAt: expect.any(Date), removedReason: "Moved to Marhala 2" },
+      data: {
+        removedAt: expect.any(Date),
+        removedReason: "Moved to Marhala 2",
+        totalDue: null,
+      },
     });
   });
 

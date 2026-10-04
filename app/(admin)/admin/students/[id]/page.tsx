@@ -7,6 +7,7 @@ import { RemoveEnrollmentButton } from '@/components/admin/remove-enrollment-but
 import { MoveEnrollmentCourseButton } from '@/components/admin/move-enrollment-course-button'
 import { getCourseMoveTargets } from '@/lib/enrollments/move-targets'
 import { courseMoveOptions } from '@/lib/enrollments/move-options'
+import { isMovedAway } from '@/lib/enrollments/moved'
 import { cn } from '@/lib/utils'
 
 type Props = { params: Promise<{ id: string }> }
@@ -115,12 +116,16 @@ export default async function StudentDetailPage({ params }: Props) {
                               })}
                             />
                           )}
-                          <RemoveEnrollmentButton
-                            enrollmentId={e.id}
-                            studentName={`${student.firstName} ${student.lastName}`}
-                            courseTitle={e.courseTitle}
-                            isRemoved={e.removedAt !== null}
-                          />
+                          {/* A row moved to another course has no restore: its
+                              payments left with the student. */}
+                          {!(e.removedAt && isMovedAway(e.removedReason)) && (
+                            <RemoveEnrollmentButton
+                              enrollmentId={e.id}
+                              studentName={`${student.firstName} ${student.lastName}`}
+                              courseTitle={e.courseTitle}
+                              isRemoved={e.removedAt !== null}
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>

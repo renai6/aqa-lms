@@ -10,6 +10,7 @@ import {
 } from "@/lib/payments/monthly";
 import { dateToMonthKey } from "@/lib/time/manila";
 import { ACTIVE_COURSE } from "@/lib/courses/archive";
+import { isMovedAway } from "@/lib/enrollments/moved";
 
 export type MonthlyCourse = {
   id: string;
@@ -53,6 +54,7 @@ export async function getCourseMonthlyMatrix(
       enrolledAt: true,
       completedAt: true,
       removedAt: true,
+      removedReason: true,
       user: { select: { firstName: true, lastName: true, email: true } },
       payments: {
         // Rejected payments are neither money received nor awaiting review,
@@ -63,19 +65,23 @@ export async function getCourseMonthlyMatrix(
     },
   });
 
-  const enrollments: MatrixEnrollment[] = rows.map((r) => ({
-    id: r.id,
-    enrolledAt: r.enrolledAt,
-    completedAt: r.completedAt,
-    removedAt: r.removedAt,
-    student: r.user,
-    payments: r.payments.map((p) => ({
-      id: p.id,
-      amount: p.amount.toNumber(),
-      periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
-      status: p.status,
-    })),
-  }));
+  // The exception is a row moved to another course: its money now lives on
+  // the destination enrollment, so here it would only show every month unpaid.
+  const enrollments: MatrixEnrollment[] = rows
+    .filter((r) => !(r.removedAt && isMovedAway(r.removedReason)))
+    .map((r) => ({
+      id: r.id,
+      enrolledAt: r.enrolledAt,
+      completedAt: r.completedAt,
+      removedAt: r.removedAt,
+      student: r.user,
+      payments: r.payments.map((p) => ({
+        id: p.id,
+        amount: p.amount.toNumber(),
+        periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+        status: p.status,
+      })),
+    }));
 
   const tuitionFee = course.tuitionFee?.toNumber() ?? null;
   return {
