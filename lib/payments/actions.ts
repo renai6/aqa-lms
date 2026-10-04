@@ -20,6 +20,11 @@ type ActionState = { error: string | null };
 // back instead of leaving a second row for the same money.
 class DuplicatePendingError extends Error {}
 
+// Thrown inside the create transaction when the enrollment was removed after
+// the earlier read, e.g. by a course move that took its payments elsewhere, so
+// no pending payment is left on a row the student can no longer see.
+class EnrollmentRemovedError extends Error {}
+
 export async function createPaymentAction(
   _prev: ActionState,
   formData: FormData,
@@ -100,6 +105,11 @@ export async function createPaymentAction(
         // Locking the enrollment row serialises submissions for this enrollment
         // so the re-check below is authoritative.
         await tx.$queryRaw`SELECT id FROM "Enrollment" WHERE id = ${enrollmentId} FOR UPDATE`;
+        const locked = await tx.enrollment.findUnique({
+          where: { id: enrollmentId },
+          select: { removedAt: true },
+        });
+        if (!locked || locked.removedAt) throw new EnrollmentRemovedError();
         const pending = await tx.payment.findFirst({
           where: isMonthly
             ? {
@@ -127,6 +137,9 @@ export async function createPaymentAction(
     );
     paymentId = payment.id;
   } catch (err) {
+    if (err instanceof EnrollmentRemovedError) {
+      return { error: "Enrollment not found." };
+    }
     if (err instanceof DuplicatePendingError) {
       return {
         error: isMonthly
