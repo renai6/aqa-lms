@@ -31,6 +31,7 @@ type Props = {
   studentName: string;
   courseTitle: string;
   // Course A's agreed total, pre-filled so a same-price move is one click.
+  // Null means course A is untracked, and course B will be too.
   totalDue: number | null;
   // Already narrowed by courseMoveOptions for this enrollment.
   courses: CourseMoveOption[];
@@ -155,8 +156,16 @@ export function MoveEnrollmentCourseButton({
                 value={batchId}
               />
             </div>
-            {/* Monthly courses track a per-month ledger, not a single total. */}
-            {selected && !isMonthly && (
+            {/* Monthly courses track a per-month ledger, not a single total.
+                An untracked course A keeps course B untracked server-side, so
+                the field would only collect a number that is thrown away. */}
+            {selected && !isMonthly && totalDue === null && (
+              <p className="text-muted-foreground text-sm">
+                This enrollment has no tracked balance, so the new course will
+                not track one either.
+              </p>
+            )}
+            {selected && !isMonthly && totalDue !== null && (
               <div className="space-y-2">
                 <Label htmlFor={`${formId}-total`}>Total due</Label>
                 <Input

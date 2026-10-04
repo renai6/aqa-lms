@@ -218,11 +218,14 @@ export async function moveEnrollmentCourseAction(
   // their balance. Same rule as purchase approval.
   const rawTotal = formData.get("totalDue");
   const total = typeof rawTotal === "string" ? rawTotal.trim() : "";
-  const totalDue =
+  const typedTotal =
     destination.paymentFrequency === "MONTHLY" || total === ""
       ? null
       : Number(total);
-  if (totalDue !== null && (!Number.isFinite(totalDue) || totalDue < 0))
+  if (
+    typedTotal !== null &&
+    (!Number.isFinite(typedTotal) || typedTotal < 0)
+  )
     return { error: "Total due must be zero or a positive number." };
 
   const { userId } = enrollment;
@@ -234,7 +237,12 @@ export async function moveEnrollmentCourseAction(
 
       const current = await tx.enrollment.findUnique({
         where: { id },
-        select: { removedAt: true, paymentStatus: true, enrolledAt: true },
+        select: {
+          removedAt: true,
+          paymentStatus: true,
+          enrolledAt: true,
+          totalDue: true,
+        },
       });
       if (!current || current.removedAt)
         throw new MoveRefusedError(
@@ -262,9 +270,13 @@ export async function moveEnrollmentCourseAction(
       // Monthly billing owes every month from enrolledAt onward, so course B
       // keeps course A's start: the moved payments stay inside B's owed range
       // and a restored B row does not invent arrears from its old date.
+      //
+      // An untracked course A (from before balances were tracked) keeps its
+      // checkout money on the purchase, which does not move, so any total
+      // typed for course B would overstate the debt. B stays untracked too.
       const data = {
         batchId,
-        totalDue,
+        totalDue: current.totalDue === null ? null : typedTotal,
         paymentStatus: current.paymentStatus,
         enrolledAt: current.enrolledAt,
       };

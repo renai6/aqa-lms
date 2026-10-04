@@ -164,6 +164,20 @@ describe("moveEnrollmentCourseAction", () => {
     expect(tx.enrollment.create.mock.calls[0][0].data.totalDue).toBeNull();
   });
 
+  // Pre-migration enrollments keep their checkout money on the purchase, which
+  // does not move, so a typed total for course B would overstate the debt.
+  it("keeps course B untracked when course A is untracked", async () => {
+    txEnrollmentLookups(null, courseARow({ totalDue: null }));
+
+    const result = await moveEnrollmentCourseAction(
+      initial,
+      form({ totalDue: "5000" }),
+    );
+
+    expect(result.error).toBeNull();
+    expect(tx.enrollment.create.mock.calls[0][0].data.totalDue).toBeNull();
+  });
+
   it("ignores totalDue for a monthly course", async () => {
     courseA.paymentFrequency = "MONTHLY";
     courseB.paymentFrequency = "MONTHLY";
