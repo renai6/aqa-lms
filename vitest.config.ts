@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
@@ -10,6 +10,9 @@ export default defineConfig({
     globals: true,
     passWithNoTests: true,
     setupFiles: ['@testing-library/jest-dom/vitest'],
+    // Claude Code worktrees are full checkouts of other branches; their tests
+    // belong to those branches and fail against this one's code.
+    exclude: [...configDefaults.exclude, '.claude/**'],
   },
   resolve: {
     alias: {
