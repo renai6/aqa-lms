@@ -297,8 +297,8 @@ export type RosterRow = {
   // Null when this enrollment's balance is not tracked.
   totalDue: number | null
   hasCertificate: boolean
-  // Courses the student is actively enrolled in, this one included, so the
-  // course move picker can leave them out.
+  // Courses the student is actively enrolled in, so the course move picker
+  // can leave them out.
   activeCourseIds: string[]
   // Null for enrollments written before ensureActiveBatchId existed; those
   // students see no lesson content until an admin moves them into a batch.

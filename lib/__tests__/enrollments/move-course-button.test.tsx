@@ -49,6 +49,23 @@ function openAndPickCourse(totalDue: number | null) {
 }
 
 describe("MoveEnrollmentCourseButton", () => {
+  // The accessible name starts with the visible text, so voice control users
+  // can say "click Change course".
+  it("names the trigger after its visible text", () => {
+    render(
+      <MoveEnrollmentCourseButton
+        enrollmentId="eA"
+        studentName="Aisha R"
+        courseTitle="Marhala 1"
+        totalDue={null}
+        courses={courses}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Change course for Aisha R" }),
+    ).toHaveTextContent("Change course");
+  });
+
   it("offers a total for a tracked enrollment, pre-filled from course A", () => {
     openAndPickCourse(12000);
 

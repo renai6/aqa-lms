@@ -38,4 +38,21 @@ describe("courseMoveOptions", () => {
   it("disables a course with no batches", () => {
     expect(byId.cE.disabledReason).toBe("No batches");
   });
+
+  it("reports billing first when a course is billed differently and has no batches", () => {
+    const [option] = courseMoveOptions(
+      [{ id: "cG", title: "Hifz", paymentFrequency: "MONTHLY", batches: [] }],
+      { courseId: "cA", paymentFrequency: "ONE_TIME", activeCourseIds: [] },
+    );
+    expect(option.disabledReason).toBe("Billed differently");
+  });
+
+  it("enables a course when both sides have no billing frequency", () => {
+    const [option] = courseMoveOptions([targets[3]], {
+      courseId: "cX",
+      paymentFrequency: null,
+      activeCourseIds: [],
+    });
+    expect(option.disabledReason).toBeNull();
+  });
 });

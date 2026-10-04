@@ -83,7 +83,7 @@ export function MoveEnrollmentCourseButton({
             variant="outline"
             size="sm"
             disabled={isMoving}
-            aria-label={`Move ${studentName} to another course`}
+            aria-label={`Change course for ${studentName}`}
           >
             {isMoving ? "Changing..." : "Change course"}
           </Button>
