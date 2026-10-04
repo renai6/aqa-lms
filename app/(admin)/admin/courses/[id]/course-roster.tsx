@@ -8,6 +8,9 @@ import {
 } from "@/lib/batches/queries";
 import { RemoveEnrollmentButton } from "@/components/admin/remove-enrollment-button";
 import { MoveEnrollmentButton } from "@/components/admin/move-enrollment-button";
+import { MoveEnrollmentCourseButton } from "@/components/admin/move-enrollment-course-button";
+import { getCourseMoveTargets } from "@/lib/enrollments/move-targets";
+import { courseMoveOptions } from "@/lib/enrollments/move-options";
 import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -19,10 +22,11 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 type Props = { courseId: string; courseTitle: string };
 
 export async function CourseRoster({ courseId, courseTitle }: Props) {
-  const [roster, batches, coverage] = await Promise.all([
+  const [roster, batches, coverage, moveTargets] = await Promise.all([
     getCourseRoster(courseId),
     getCourseBatches(courseId),
     getBatchContentCoverage(courseId),
+    getCourseMoveTargets(),
   ]);
   const activeCount = roster.filter((r) => !r.removedAt).length;
 
@@ -31,6 +35,11 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
     label: batchLabel(b) + (b.isActive ? " (current intake)" : ""),
     covered: coverage.byBatch[b.id] ?? 0,
   }));
+
+  // The roster only renders for live courses, which getCourseMoveTargets
+  // always includes, so this lookup finds the current course.
+  const paymentFrequency =
+    moveTargets.find((t) => t.id === courseId)?.paymentFrequency ?? null;
 
   return (
     <div className="space-y-4">
@@ -155,6 +164,19 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                             (b) => b.id !== r.batch?.id,
                           )}
                           totalLessons={coverage.totalLessons}
+                        />
+                      )}
+                      {!r.removedAt && !r.hasCertificate && (
+                        <MoveEnrollmentCourseButton
+                          enrollmentId={r.enrollmentId}
+                          studentName={`${r.firstName} ${r.lastName}`}
+                          courseTitle={courseTitle}
+                          totalDue={r.totalDue}
+                          courses={courseMoveOptions(moveTargets, {
+                            courseId,
+                            paymentFrequency,
+                            activeCourseIds: r.activeCourseIds,
+                          })}
                         />
                       )}
                       <RemoveEnrollmentButton
