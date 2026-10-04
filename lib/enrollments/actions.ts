@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 
@@ -139,5 +140,147 @@ export async function moveEnrollmentBatchAction(
   // The batches list carries a per-batch enrollment count, which this move
   // changes on both the source and the destination batch.
   revalidatePath("/admin/courses/" + enrollment.courseId + "/batches");
+  return { error: null };
+}
+
+// Thrown inside the transaction to abort it with a message for the admin.
+class MoveRefusedError extends Error {}
+
+// Moving a student to another course fixes a wrong-level placement. Course A's
+// enrollment is soft-removed, so its progress, grades and attempts stay put
+// (they key off course A's own lessons and subjects and mean nothing in course
+// B). The money moves: every Payment row is re-pointed at course B's
+// enrollment, and computeBalance derives the new balance from those rows and
+// the totalDue the admin confirms here. Matching paymentFrequency keeps each
+// payment's periodMonth meaningful on the other side.
+export async function moveEnrollmentCourseAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const target = await loadTarget(formData);
+  if ("error" in target) return { error: target.error };
+
+  const { id, enrollment } = target;
+  if (enrollment.removedAt)
+    return { error: "This student is already removed from the course." };
+
+  const courseId = formData.get("courseId");
+  if (typeof courseId !== "string" || !courseId)
+    return { error: "Invalid course ID." };
+  if (courseId === enrollment.courseId)
+    return { error: "Choose a different course." };
+
+  const batchId = formData.get("batchId");
+  if (typeof batchId !== "string" || !batchId)
+    return { error: "Invalid batch ID." };
+
+  const [source, destination, batch] = await Promise.all([
+    db.course.findUnique({
+      where: { id: enrollment.courseId },
+      select: { paymentFrequency: true },
+    }),
+    db.course.findUnique({
+      where: { id: courseId },
+      select: { title: true, archivedAt: true, paymentFrequency: true },
+    }),
+    db.batch.findUnique({ where: { id: batchId }, select: { courseId: true } }),
+  ]);
+  if (!destination) return { error: "Course not found." };
+  if (destination.archivedAt) return { error: "That course is archived." };
+  if (source?.paymentFrequency !== destination.paymentFrequency)
+    return {
+      error:
+        "These courses are billed differently, so payments cannot move between them.",
+    };
+  if (!batch) return { error: "Batch not found." };
+  if (batch.courseId !== courseId)
+    return { error: "That batch belongs to a different course." };
+
+  // Monthly enrollments have no single agreed total; the per-month ledger is
+  // their balance. Same rule as purchase approval.
+  const rawTotal = formData.get("totalDue");
+  const total = typeof rawTotal === "string" ? rawTotal.trim() : "";
+  const totalDue =
+    destination.paymentFrequency === "MONTHLY" || total === ""
+      ? null
+      : Number(total);
+  if (totalDue !== null && (!Number.isFinite(totalDue) || totalDue < 0))
+    return { error: "Total due must be zero or a positive number." };
+
+  const { userId } = enrollment;
+  try {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Two admins moving the same student at once would otherwise both pass
+      // the checks above and both move the payments.
+      await tx.$queryRaw`SELECT id FROM "Enrollment" WHERE id = ${id} FOR UPDATE`;
+
+      const current = await tx.enrollment.findUnique({
+        where: { id },
+        select: { removedAt: true, paymentStatus: true },
+      });
+      if (!current || current.removedAt)
+        throw new MoveRefusedError(
+          "This student is already removed from the course.",
+        );
+
+      const certificate = await tx.certificate.findUnique({
+        where: { userId_courseId: { userId, courseId: enrollment.courseId } },
+        select: { id: true },
+      });
+      if (certificate)
+        throw new MoveRefusedError(
+          "A certificate has been issued for this course, so the student can no longer be moved.",
+        );
+
+      const existing = await tx.enrollment.findUnique({
+        where: { userId_courseId: { userId, courseId } },
+        select: { id: true, removedAt: true },
+      });
+      if (existing && !existing.removedAt)
+        throw new MoveRefusedError(
+          `This student is already enrolled in ${destination.title}.`,
+        );
+
+      const data = {
+        batchId,
+        totalDue,
+        paymentStatus: current.paymentStatus,
+      };
+      // Enrollment is unique per (userId, courseId), so an earlier removal from
+      // course B must be restored rather than duplicated.
+      const moved = existing
+        ? await tx.enrollment.update({
+            where: { id: existing.id },
+            data: { ...data, removedAt: null, removedReason: null },
+            select: { id: true },
+          })
+        : await tx.enrollment.create({
+            data: { userId, courseId, ...data },
+            select: { id: true },
+          });
+
+      await tx.payment.updateMany({
+        where: { enrollmentId: id },
+        data: { enrollmentId: moved.id },
+      });
+
+      await tx.enrollment.update({
+        where: { id },
+        data: {
+          removedAt: new Date(),
+          removedReason: `Moved to ${destination.title}`,
+        },
+      });
+    });
+  } catch (err) {
+    if (err instanceof MoveRefusedError) return { error: err.message };
+    console.error("[moveEnrollmentCourse]", err);
+    return { error: "A database error occurred. Please try again." };
+  }
+
+  revalidateSurfaces(userId, enrollment.courseId);
+  revalidateSurfaces(userId, courseId);
+  revalidatePath("/admin/courses/" + enrollment.courseId + "/batches");
+  revalidatePath("/admin/courses/" + courseId + "/batches");
   return { error: null };
 }
