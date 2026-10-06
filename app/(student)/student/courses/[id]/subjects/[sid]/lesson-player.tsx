@@ -16,18 +16,15 @@ import {
   ChevronsRight,
   Lock,
 } from "lucide-react";
-import type {
-  StudentLesson,
-  StudentAssessment,
-  StudentRecording,
-} from "@/lib/student/queries";
+import type { StudentLesson, StudentAssessment } from "@/lib/student/queries";
+import type { Recording } from "@/lib/batches/drive-folder";
 import { toPreviewUrl } from "@/lib/batches/drive";
-import { recordingLabel } from "@/lib/batches/recording-date";
 
 type Props = {
   lessons: StudentLesson[];
   assessments: StudentAssessment[];
-  recordings: StudentRecording[];
+  // null when the recordings folder could not be read from Drive.
+  recordings: Recording[] | null;
   subjectId: string;
   courseId: string;
 };
@@ -171,7 +168,12 @@ export function LessonPlayer({
 
         <div className="flex-1 overflow-y-auto">
           {tab === "recordings" ? (
-            recordings.length === 0 ? (
+            recordings === null ? (
+              <p className="px-4 py-8 text-sm text-center text-muted-foreground">
+                Recordings can&apos;t be loaded right now. Please try again
+                later.
+              </p>
+            ) : recordings.length === 0 ? (
               <p className="px-4 py-8 text-sm text-center text-muted-foreground">
                 No recordings for this subject yet.
               </p>
@@ -179,7 +181,7 @@ export function LessonPlayer({
               <ul className="divide-y divide-border">
                 {recordings.map((recording) => {
                   const key = "recording:" + recording.id;
-                  const label = recordingLabel(recording);
+                  const label = recording.title;
                   return (
                     <li key={recording.id}>
                       {mediaEntry(
@@ -514,7 +516,11 @@ export function LessonPlayer({
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
             <VideoOff className="w-10 h-10" aria-hidden="true" />
-            <p className="text-sm">Select a lesson to watch</p>
+            <p className="text-sm">
+              {tab === "recordings"
+                ? "Select a recording to watch"
+                : "Select a lesson to watch"}
+            </p>
           </div>
         )}
       </main>

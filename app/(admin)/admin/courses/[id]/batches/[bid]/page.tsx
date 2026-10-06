@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { getBatchDetail, batchLabel } from '@/lib/batches/queries'
+import { listFolderRecordings } from '@/lib/batches/drive-folder'
 import { getCourseById } from '@/lib/courses/queries'
 import { getSession } from '@/lib/auth/session'
 import { PageHeader } from '@/components/admin/page-header'
@@ -23,6 +24,13 @@ export default async function BatchDetailPage({ params }: Props) {
 
   const [course, batch] = await Promise.all([getCourseById(id), getBatchDetail(bid)])
   if (!course || !batch || batch.courseId !== id) notFound()
+
+  const listings = await Promise.all(
+    batch.course.subjects.map((subject) => {
+      const folderId = subject.recordingFolders[0]?.folderId
+      return folderId ? listFolderRecordings(folderId) : null
+    }),
+  )
 
   return (
     <div className="p-6 space-y-6">
@@ -51,7 +59,7 @@ export default async function BatchDetailPage({ params }: Props) {
             No subjects in this course yet.
           </p>
         )}
-        {batch.course.subjects.map((subject) => (
+        {batch.course.subjects.map((subject, index) => (
           <BatchSubjectCard key={subject.id} title={subject.title}>
             {subject.lessons.length === 0 ? (
               <p className="text-sm text-muted-foreground">No lessons in this subject.</p>
@@ -80,7 +88,9 @@ export default async function BatchDetailPage({ params }: Props) {
               batchId={bid}
               courseId={id}
               subjectId={subject.id}
-              recordings={subject.recordings}
+              folderId={subject.recordingFolders[0]?.folderId ?? null}
+              listing={listings[index]}
+              links={subject.recordings}
             />
           </BatchSubjectCard>
         ))}

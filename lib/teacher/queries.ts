@@ -10,6 +10,8 @@ import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { enrolleeGenderWhere } from '@/lib/subjects/visibility'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
 import { groupSubjectSchedules, type SubjectSchedule } from '@/lib/schedule/format'
+import type { Recording } from '@/lib/batches/drive-folder'
+import { resolveRecordings } from '@/lib/batches/recordings'
 
 // All queries here are scoped to the teacher's assigned subjects via the
 // SubjectTeacher join. A helper checks assignment; callers return notFound()
@@ -245,38 +247,38 @@ export async function getSubjectStudents(
 
 // ─── Class recordings of a subject ────────────────────────────────────────────
 
-export type TeacherRecording = {
-  id: string
-  url: string
-  date: Date
-  title: string | null
-}
-
 export type TeacherRecordingBatch = {
   id: string
   number: number
   name: string | null
   isActive: boolean
-  recordings: TeacherRecording[]
+  // null when the batch's Drive folder could not be listed.
+  recordings: Recording[] | null
 }
 
 // Recordings are kept per batch, so a teacher who taught the subject across
-// several runs sees one list per batch, newest batch first. Batches with no
-// recordings for this subject are left out.
+// several runs sees one list per batch, newest batch first. Batches with
+// neither a folder nor links for this subject are left out.
 export async function getTeacherSubjectRecordings(
   userId: string,
   subjectId: string,
 ): Promise<TeacherRecordingBatch[] | null> {
   if (!(await isAssigned(userId, subjectId))) return null
 
-  return db.batch.findMany({
-    where: { recordings: { some: { subjectId } } },
+  const batches = await db.batch.findMany({
+    where: {
+      OR: [
+        { recordingFolders: { some: { subjectId } } },
+        { recordings: { some: { subjectId } } },
+      ],
+    },
     orderBy: { number: 'desc' },
     select: {
       id: true,
       number: true,
       name: true,
       isActive: true,
+      recordingFolders: { where: { subjectId }, select: { folderId: true } },
       recordings: {
         where: { subjectId },
         orderBy: { date: 'desc' },
@@ -284,6 +286,13 @@ export async function getTeacherSubjectRecordings(
       },
     },
   })
+
+  return Promise.all(
+    batches.map(async ({ recordingFolders, recordings, ...batch }) => ({
+      ...batch,
+      recordings: await resolveRecordings(recordingFolders[0]?.folderId ?? null, recordings),
+    })),
+  )
 }
 
 // ─── Grading queue for one assessment ─────────────────────────────────────────
