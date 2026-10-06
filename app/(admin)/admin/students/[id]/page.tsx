@@ -4,6 +4,10 @@ import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { DeactivateStudentButton } from '../deactivate-student-button'
 import { RemoveEnrollmentButton } from '@/components/admin/remove-enrollment-button'
+import { MoveEnrollmentCourseButton } from '@/components/admin/move-enrollment-course-button'
+import { getCourseMoveTargets } from '@/lib/enrollments/move-targets'
+import { courseMoveOptions } from '@/lib/enrollments/move-options'
+import { isMovedAway } from '@/lib/enrollments/moved'
 import { cn } from '@/lib/utils'
 
 type Props = { params: Promise<{ id: string }> }
@@ -16,8 +20,15 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export default async function StudentDetailPage({ params }: Props) {
   const { id } = await params
-  const student = await getStudentById(id)
+  const [student, moveTargets] = await Promise.all([
+    getStudentById(id),
+    getCourseMoveTargets(),
+  ])
   if (!student) notFound()
+
+  const activeCourseIds = student.enrollments
+    .filter((e) => !e.removedAt)
+    .map((e) => e.courseId)
 
   return (
     <div className="p-6 space-y-6">
@@ -90,13 +101,35 @@ export default async function StudentDetailPage({ params }: Props) {
                           {e.paymentStatus === 'FULLY_PAID' ? 'Fully Paid' : 'Partially Paid'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <RemoveEnrollmentButton
-                          enrollmentId={e.id}
-                          studentName={`${student.firstName} ${student.lastName}`}
-                          courseTitle={e.courseTitle}
-                          isRemoved={e.removedAt !== null}
-                        />
+                      <td className="px-4 py-3">
+                        {/* Stacked, not side by side: this table shares the page
+                            with the profile sidebar, and two buttons in a row
+                            push the last one past the table's clipped edge. */}
+                        <div className="flex flex-col items-end gap-2">
+                          {!e.removedAt && !e.hasCertificate && (
+                            <MoveEnrollmentCourseButton
+                              enrollmentId={e.id}
+                              studentName={`${student.firstName} ${student.lastName}`}
+                              courseTitle={e.courseTitle}
+                              totalDue={e.totalDue}
+                              courses={courseMoveOptions(moveTargets, {
+                                courseId: e.courseId,
+                                paymentFrequency: e.paymentFrequency,
+                                activeCourseIds,
+                              })}
+                            />
+                          )}
+                          {/* A row moved to another course has no restore: its
+                              payments left with the student. */}
+                          {!(e.removedAt && isMovedAway(e.removedReason)) && (
+                            <RemoveEnrollmentButton
+                              enrollmentId={e.id}
+                              studentName={`${student.firstName} ${student.lastName}`}
+                              courseTitle={e.courseTitle}
+                              isRemoved={e.removedAt !== null}
+                            />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

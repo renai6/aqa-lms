@@ -3,6 +3,7 @@ import {
   type CourseType,
   type EnrollmentStatus,
   Gender,
+  type PaymentFrequency,
   PaymentStatus,
   type StudentType,
   UserRole,
@@ -63,6 +64,9 @@ export type StudentDetail = {
     paymentStatus: PaymentStatus
     removedAt: Date | null
     removedReason: string | null
+    totalDue: number | null
+    hasCertificate: boolean
+    paymentFrequency: PaymentFrequency | null
   }[]
 }
 
@@ -225,6 +229,7 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       facebookName: true,
       facebookLink: true,
       studentType: true,
+      certificates: { select: { courseId: true } },
       enrollments: {
         // Removed enrollments stay visible to admins, badged and restorable,
         // so the history of a correction is never hidden from staff.
@@ -237,7 +242,8 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
           paymentStatus: true,
           removedAt: true,
           removedReason: true,
-          course: { select: { title: true } },
+          totalDue: true,
+          course: { select: { title: true, paymentFrequency: true } },
         },
         orderBy: { enrolledAt: 'desc' },
       },
@@ -245,6 +251,8 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
   })
 
   if (!user || user.role !== UserRole.STUDENT) return null
+
+  const certified = new Set(user.certificates.map((c) => c.courseId))
 
   return {
     id: user.id,
@@ -269,6 +277,9 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       paymentStatus: e.paymentStatus,
       removedAt: e.removedAt,
       removedReason: e.removedReason,
+      totalDue: e.totalDue?.toNumber() ?? null,
+      hasCertificate: certified.has(e.courseId),
+      paymentFrequency: e.course.paymentFrequency,
     })),
   }
 }
@@ -283,6 +294,12 @@ export type RosterRow = {
   paymentStatus: PaymentStatus
   removedAt: Date | null
   removedReason: string | null
+  // Null when this enrollment's balance is not tracked.
+  totalDue: number | null
+  hasCertificate: boolean
+  // Courses the student is actively enrolled in, so the course move picker
+  // can leave them out.
+  activeCourseIds: string[]
   // Null for enrollments written before ensureActiveBatchId existed; those
   // students see no lesson content until an admin moves them into a batch.
   batch: { id: string; name: string | null; number: number } | null
@@ -304,8 +321,16 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
       removedAt: true,
       removedReason: true,
       paymentStatus: true,
+      totalDue: true,
       user: {
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          certificates: { where: { courseId }, select: { id: true } },
+          enrollments: { where: { removedAt: null }, select: { courseId: true } },
+        },
       },
       batch: { select: { id: true, name: true, number: true } },
     },
@@ -321,6 +346,9 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
     paymentStatus: e.paymentStatus,
     removedAt: e.removedAt,
     removedReason: e.removedReason,
+    totalDue: e.totalDue?.toNumber() ?? null,
+    hasCertificate: e.user.certificates.length > 0,
+    activeCourseIds: e.user.enrollments.map((x) => x.courseId),
     batch: e.batch,
   }))
 }

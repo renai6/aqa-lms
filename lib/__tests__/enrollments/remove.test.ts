@@ -174,6 +174,7 @@ describe("restoreEnrollmentAction", () => {
     userId: "s1",
     courseId: "c1",
     removedAt: new Date("2026-08-01"),
+    removedReason: "Stopped attending",
   };
 
   it("rejects a STUDENT caller", async () => {
@@ -205,6 +206,24 @@ describe("restoreEnrollmentAction", () => {
       form({ enrollmentId: "e1" }),
     );
     expect(result.error).toBe("This student is not removed from the course.");
+    expect(db.enrollment.update).not.toHaveBeenCalled();
+  });
+
+  // Restoring would leave the student active in both courses, with course A's
+  // payments already moved to course B.
+  it("refuses to restore an enrollment that was moved to another course", async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: "a1", role: "ADMIN" });
+    vi.mocked(db.enrollment.findUnique).mockResolvedValue({
+      ...removed,
+      removedReason: "Moved to Marhala 2",
+    } as never);
+    const result = await restoreEnrollmentAction(
+      initial,
+      form({ enrollmentId: "e1" }),
+    );
+    expect(result.error).toBe(
+      "This student was moved to another course. Use Change course to move them back.",
+    );
     expect(db.enrollment.update).not.toHaveBeenCalled();
   });
 

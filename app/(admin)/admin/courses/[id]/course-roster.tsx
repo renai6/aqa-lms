@@ -8,6 +8,10 @@ import {
 } from "@/lib/batches/queries";
 import { RemoveEnrollmentButton } from "@/components/admin/remove-enrollment-button";
 import { MoveEnrollmentButton } from "@/components/admin/move-enrollment-button";
+import { MoveEnrollmentCourseButton } from "@/components/admin/move-enrollment-course-button";
+import { getCourseMoveTargets } from "@/lib/enrollments/move-targets";
+import { courseMoveOptions } from "@/lib/enrollments/move-options";
+import { isMovedAway } from "@/lib/enrollments/moved";
 import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -19,10 +23,11 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 type Props = { courseId: string; courseTitle: string };
 
 export async function CourseRoster({ courseId, courseTitle }: Props) {
-  const [roster, batches, coverage] = await Promise.all([
+  const [roster, batches, coverage, moveTargets] = await Promise.all([
     getCourseRoster(courseId),
     getCourseBatches(courseId),
     getBatchContentCoverage(courseId),
+    getCourseMoveTargets(),
   ]);
   const activeCount = roster.filter((r) => !r.removedAt).length;
 
@@ -31,6 +36,11 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
     label: batchLabel(b) + (b.isActive ? " (current intake)" : ""),
     covered: coverage.byBatch[b.id] ?? 0,
   }));
+
+  // The roster only renders for live courses, which getCourseMoveTargets
+  // always includes, so this lookup finds the current course.
+  const paymentFrequency =
+    moveTargets.find((t) => t.id === courseId)?.paymentFrequency ?? null;
 
   return (
     <div className="space-y-4">
@@ -57,12 +67,6 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                   className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   Student
-                </th>
-                <th
-                  scope="col"
-                  className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
-                >
-                  Email
                 </th>
                 <th
                   scope="col"
@@ -112,8 +116,12 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                         </p>
                       </>
                     )}
+                    {/* Under the name rather than in its own column, so the
+                        row keeps room for its three action buttons. */}
+                    <p className="text-muted-foreground text-xs font-normal">
+                      {r.email}
+                    </p>
                   </td>
-                  <td className="text-muted-foreground px-4 py-3">{r.email}</td>
                   <td className="px-4 py-3">
                     {r.batch ? (
                       batchLabel(r.batch)
@@ -157,12 +165,30 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                           totalLessons={coverage.totalLessons}
                         />
                       )}
-                      <RemoveEnrollmentButton
-                        enrollmentId={r.enrollmentId}
-                        studentName={`${r.firstName} ${r.lastName}`}
-                        courseTitle={courseTitle}
-                        isRemoved={r.removedAt !== null}
-                      />
+                      {!r.removedAt && !r.hasCertificate && (
+                        <MoveEnrollmentCourseButton
+                          enrollmentId={r.enrollmentId}
+                          studentName={`${r.firstName} ${r.lastName}`}
+                          courseTitle={courseTitle}
+                          totalDue={r.totalDue}
+                          courses={courseMoveOptions(moveTargets, {
+                            courseId,
+                            paymentFrequency,
+                            activeCourseIds: r.activeCourseIds,
+                          })}
+                        />
+                      )}
+                      {/* A row moved to another course has no restore: its
+                          payments left with the student. Change course on the
+                          destination row moves them back. */}
+                      {!(r.removedAt && isMovedAway(r.removedReason)) && (
+                        <RemoveEnrollmentButton
+                          enrollmentId={r.enrollmentId}
+                          studentName={`${r.firstName} ${r.lastName}`}
+                          courseTitle={courseTitle}
+                          isRemoved={r.removedAt !== null}
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>

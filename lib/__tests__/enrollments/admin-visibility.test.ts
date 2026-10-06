@@ -17,7 +17,8 @@ const enrollmentRow = {
   paymentStatus: "PARTIALLY_PAID",
   removedAt: new Date("2026-08-01"),
   removedReason: "Transferred to Marhala 2",
-  course: { title: "Marhala 1" },
+  totalDue: null,
+  course: { title: "Marhala 1", paymentFrequency: "ONE_TIME" },
 };
 
 // Removal is an admin correction, so admins keep seeing the row - badged and
@@ -101,6 +102,7 @@ describe("admin student queries expose removed enrollments", () => {
       isActive: true,
       createdAt: new Date("2026-01-01"),
       role: "STUDENT",
+      certificates: [{ courseId: "c1" }],
       enrollments: [enrollmentRow],
     } as never);
 
@@ -110,6 +112,9 @@ describe("admin student queries expose removed enrollments", () => {
       id: "e1",
       removedAt: enrollmentRow.removedAt,
       removedReason: "Transferred to Marhala 2",
+      totalDue: null,
+      hasCertificate: true,
+      paymentFrequency: "ONE_TIME",
     });
   });
 });

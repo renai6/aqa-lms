@@ -27,11 +27,14 @@ describe("getCourseRoster", () => {
         removedAt: null,
         removedReason: null,
         paymentStatus: "FULLY_PAID",
+        totalDue: { toNumber: () => 12000 },
         user: {
           id: "s1",
           firstName: "Sam",
           lastName: "Ali",
           email: "s@example.com",
+          certificates: [{ id: "cert1" }],
+          enrollments: [{ courseId: "c1" }, { courseId: "c2" }],
         },
       },
     ] as never);
@@ -47,8 +50,26 @@ describe("getCourseRoster", () => {
         paymentStatus: "FULLY_PAID",
         removedAt: null,
         removedReason: null,
+        totalDue: 12000,
+        hasCertificate: true,
+        activeCourseIds: ["c1", "c2"],
       },
     ]);
+  });
+
+  it("scopes certificates to this course and enrollments to active ones", async () => {
+    await getCourseRoster("c1");
+    const arg = vi.mocked(db.enrollment.findMany).mock.calls[0][0]!;
+    const user = (arg.select as { user: { select: Record<string, unknown> } })
+      .user.select;
+    expect(user.certificates).toEqual({
+      where: { courseId: "c1" },
+      select: { id: true },
+    });
+    expect(user.enrollments).toEqual({
+      where: { removedAt: null },
+      select: { courseId: true },
+    });
   });
 
   it("orders active students ahead of removed ones", async () => {
@@ -73,11 +94,14 @@ describe("getCourseRoster batch", () => {
       removedAt: null,
       removedReason: null,
       paymentStatus: "FULLY_PAID",
+      totalDue: null,
       user: {
         id: "s1",
         firstName: "Sam",
         lastName: "Ali",
         email: "s@example.com",
+        certificates: [],
+        enrollments: [{ courseId: "c1" }],
       },
       batch,
     },
