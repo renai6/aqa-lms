@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, Monitor, MapPin } from "lucide-react";
 import { getPublicCourseDetail } from "@/lib/courses/queries";
+import { CourseStatusBadge } from "@/components/courses/course-status-badge";
 import { priceSuffix } from "@/lib/courses/format";
 import Eyebrow from "@/components/homepage/Eyebrow";
 import Reveal from "@/components/homepage/Reveal";
@@ -118,6 +119,10 @@ export default async function PublicCourseDetailPage({ params }: Props) {
                       : "Long Course"}
                   </span>
                 )}
+                <CourseStatusBadge
+                  status={course.courseStatus}
+                  className="px-3 py-1 text-[11px] font-bold tracking-[0.12em] uppercase ring-1 ring-white/15"
+                />
               </div>
               <h1 className="animate-[fadeUp_0.9s_0.2s_both] text-3xl leading-tight font-semibold text-white sm:text-4xl lg:text-5xl">
                 {course.title}

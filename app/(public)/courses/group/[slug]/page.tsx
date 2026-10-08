@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { getPublicCourseGroup } from "@/lib/courses/queries";
 import { priceSuffix } from "@/lib/courses/format";
+import { CourseStatusBadge } from "@/components/courses/course-status-badge";
 import Eyebrow from "@/components/homepage/Eyebrow";
 import Reveal from "@/components/homepage/Reveal";
 import GeoMotif from "@/components/homepage/GeoMotif";
@@ -82,11 +83,17 @@ export default async function CourseGroupPage({ params }: Props) {
                         </span>
                       </div>
                     )}
-                    {course.level != null && (
-                      <span className="bg-gold text-primary absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase">
-                        Level {course.level}
-                      </span>
-                    )}
+                    <div className="absolute inset-x-3 top-3 flex flex-wrap items-start gap-1.5">
+                      {course.level != null && (
+                        <span className="bg-gold text-primary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase">
+                          Level {course.level}
+                        </span>
+                      )}
+                      <CourseStatusBadge
+                        status={course.courseStatus}
+                        className="ml-auto px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase"
+                      />
+                    </div>
                     <span className="bg-gold absolute inset-x-0 bottom-0 z-10 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
                   </div>
 

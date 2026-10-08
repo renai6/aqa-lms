@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { PurchasableCourse } from "@/lib/purchases/queries";
 import { groupCourses } from "@/lib/courses/grouping";
 import { priceSuffix } from "@/lib/courses/format";
+import { CourseStatusBadge } from "@/components/courses/course-status-badge";
 
 type TypeFilter = "ALL" | "ON_SITE" | "ONLINE";
 
@@ -205,6 +206,10 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                                 )}
                                 {c.title}
                               </span>
+                              <CourseStatusBadge
+                                status={c.courseStatus}
+                                className="my-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              />
                               <span className="text-foreground block text-sm font-bold">
                                 {c.tuitionFee != null ? (
                                   <>
@@ -270,17 +275,23 @@ export function CourseCart({ courses }: { courses: PurchasableCourse[] }) {
                       <BookOpen className="h-8 w-8" aria-hidden="true" />
                     </div>
                   )}
-                  {/* Type badge */}
-                  <span
-                    className={[
-                      "absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                      c.courseType === "ONLINE"
-                        ? "bg-blue-600 text-white"
-                        : "bg-amber-600 text-white",
-                    ].join(" ")}
-                  >
-                    {c.courseType === "ONLINE" ? "Online" : "On-Site"}
-                  </span>
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    {/* Type badge */}
+                    <span
+                      className={[
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                        c.courseType === "ONLINE"
+                          ? "bg-blue-600 text-white"
+                          : "bg-amber-600 text-white",
+                      ].join(" ")}
+                    >
+                      {c.courseType === "ONLINE" ? "Online" : "On-Site"}
+                    </span>
+                    <CourseStatusBadge
+                      status={c.courseStatus}
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    />
+                  </div>
                   {isSel && (
                     <div className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full shadow">
                       <Check className="h-4 w-4" aria-hidden="true" />

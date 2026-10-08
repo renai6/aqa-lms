@@ -9,6 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import type {
   CourseType,
   CourseDuration,
+  CourseStatus,
   PaymentFrequency,
 } from "@prisma/client";
 
@@ -53,6 +54,12 @@ const courseSchema = z.object({
   courseDuration: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
     z.enum(["SHORT", "LONG"]).optional(),
+  ),
+  courseStatus: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z
+      .enum(["ENROLLMENT_ONGOING", "CLASSES_ONGOING", "SEMESTER_ENDED"])
+      .optional(),
   ),
   paymentFrequency: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
@@ -103,6 +110,7 @@ export async function createCourseAction(
     tuitionFee: formData.get("tuitionFee"),
     meetLink: formData.get("meetLink"),
     courseDuration: formData.get("courseDuration"),
+    courseStatus: formData.get("courseStatus"),
     paymentFrequency: formData.get("paymentFrequency"),
     miscFeeNote: formData.get("miscFeeNote"),
     groupName: formData.get("groupName"),
@@ -124,6 +132,7 @@ export async function createCourseAction(
     tuitionFee,
     meetLink,
     courseDuration,
+    courseStatus,
     paymentFrequency,
     miscFeeNote,
     groupName,
@@ -143,6 +152,7 @@ export async function createCourseAction(
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
+        courseStatus: (courseStatus ?? null) as CourseStatus | null,
         paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
         miscFeeNote: miscFeeNote || null,
         groupName: groupName || null,
@@ -181,6 +191,7 @@ export async function updateCourseAction(
     tuitionFee: formData.get("tuitionFee"),
     meetLink: formData.get("meetLink"),
     courseDuration: formData.get("courseDuration"),
+    courseStatus: formData.get("courseStatus"),
     paymentFrequency: formData.get("paymentFrequency"),
     miscFeeNote: formData.get("miscFeeNote"),
     groupName: formData.get("groupName"),
@@ -202,6 +213,7 @@ export async function updateCourseAction(
     tuitionFee,
     meetLink,
     courseDuration,
+    courseStatus,
     paymentFrequency,
     miscFeeNote,
     groupName,
@@ -221,6 +233,7 @@ export async function updateCourseAction(
         tuitionFee: tuitionFee ?? null,
         meetLink: meetLink ?? null,
         courseDuration: (courseDuration ?? null) as CourseDuration | null,
+        courseStatus: (courseStatus ?? null) as CourseStatus | null,
         paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
         miscFeeNote: miscFeeNote || null,
         groupName: groupName || null,

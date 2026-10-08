@@ -3,6 +3,7 @@ import { BookOpen } from "lucide-react";
 import { getPublishedCourses } from "@/lib/courses/queries";
 import { groupCourses } from "@/lib/courses/grouping";
 import { priceSuffix } from "@/lib/courses/format";
+import { CourseStatusBadge } from "@/components/courses/course-status-badge";
 import type { CourseType } from "@prisma/client";
 import Eyebrow from "@/components/homepage/Eyebrow";
 import Reveal from "@/components/homepage/Reveal";
@@ -214,27 +215,33 @@ export default async function CoursesPage({
                             </span>
                           </div>
                         )}
-                        {/* Type badge on image */}
-                        <span
-                          className={[
-                            "absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase",
-                            course.courseType === "ONLINE"
-                              ? "bg-primary text-white"
-                              : "bg-gold text-primary",
-                          ].join(" ")}
-                        >
-                          {course.courseType === "ONLINE"
-                            ? "Online"
-                            : "On-Site"}
-                        </span>
-                        {/* Duration badge */}
-                        {course.courseDuration && (
-                          <span className="bg-brand-maroon-deep/70 absolute top-3 left-[4.75rem] px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white uppercase backdrop-blur-sm">
-                            {course.courseDuration === "SHORT"
-                              ? "Short"
-                              : "Long"}
+                        {/* Badges on image: type and duration left, status
+                            pushed right (wraps below on narrow cards) */}
+                        <div className="absolute inset-x-3 top-3 flex flex-wrap items-start gap-1.5">
+                          <span
+                            className={[
+                              "px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase",
+                              course.courseType === "ONLINE"
+                                ? "bg-primary text-white"
+                                : "bg-gold text-primary",
+                            ].join(" ")}
+                          >
+                            {course.courseType === "ONLINE"
+                              ? "Online"
+                              : "On-Site"}
                           </span>
-                        )}
+                          {course.courseDuration && (
+                            <span className="bg-brand-maroon-deep/70 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white uppercase backdrop-blur-sm">
+                              {course.courseDuration === "SHORT"
+                                ? "Short"
+                                : "Long"}
+                            </span>
+                          )}
+                          <CourseStatusBadge
+                            status={course.courseStatus}
+                            className="ml-auto px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] uppercase"
+                          />
+                        </div>
                         {/* Gold underline reveal */}
                         <span className="bg-gold absolute inset-x-0 bottom-0 z-10 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
                       </div>

@@ -4,6 +4,7 @@ import { ACTIVE_COURSE } from "@/lib/courses/archive";
 import type {
   CourseType,
   CourseDuration,
+  CourseStatus,
   DayOfWeek,
   Gender,
   PaymentFrequency,
@@ -18,6 +19,7 @@ export type PublishedCourseRow = {
   courseType: CourseType;
   meetLink: string | null;
   courseDuration: CourseDuration | null;
+  courseStatus: CourseStatus | null;
   paymentFrequency: PaymentFrequency | null;
   miscFeeNote: string | null;
   groupName: string | null;
@@ -39,6 +41,7 @@ export async function getPublishedCourses(
       courseType: true,
       meetLink: true,
       courseDuration: true,
+      courseStatus: true,
       paymentFrequency: true,
       miscFeeNote: true,
       groupName: true,
@@ -99,6 +102,7 @@ export async function getPublicCourseDetail(
       courseType: true,
       meetLink: true,
       courseDuration: true,
+      courseStatus: true,
       paymentFrequency: true,
       miscFeeNote: true,
       groupName: true,
@@ -132,6 +136,7 @@ export type CourseRow = {
   passingGrade: number;
   meetLink: string | null;
   courseDuration: CourseDuration | null;
+  courseStatus: CourseStatus | null;
   createdAt: Date;
   archivedAt: Date | null;
   _count: { subjects: number };
@@ -159,6 +164,7 @@ export type CourseDetail = {
   tuitionFee: number | null;
   meetLink: string | null;
   courseDuration: CourseDuration | null;
+  courseStatus: CourseStatus | null;
   paymentFrequency: PaymentFrequency | null;
   miscFeeNote: string | null;
   groupName: string | null;
@@ -252,6 +258,7 @@ export async function getCourses(archivedOnly = false): Promise<CourseRow[]> {
       passingGrade: true,
       meetLink: true,
       courseDuration: true,
+      courseStatus: true,
       createdAt: true,
       archivedAt: true,
       _count: {
@@ -276,6 +283,7 @@ export async function getCourseById(id: string): Promise<CourseDetail | null> {
       tuitionFee: true,
       meetLink: true,
       courseDuration: true,
+      courseStatus: true,
       paymentFrequency: true,
       miscFeeNote: true,
       groupName: true,

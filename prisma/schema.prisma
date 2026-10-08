@@ -86,6 +86,13 @@ enum CourseType {
   ONLINE
 }
 
+// Admin-set phase badge shown on the course. Null shows no badge.
+enum CourseStatus {
+  ENROLLMENT_ONGOING
+  CLASSES_ONGOING
+  SEMESTER_ENDED
+}
+
 enum CourseDuration {
   SHORT
   LONG
@@ -198,6 +205,7 @@ model Course {
   tuitionFee        Decimal?
   meetLink          String?
   courseDuration    CourseDuration?
+  courseStatus      CourseStatus?
   paymentFrequency  PaymentFrequency?
   miscFeeNote       String?
 
