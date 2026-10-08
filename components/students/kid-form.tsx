@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useId } from 'react'
+import { useActionState, useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,13 +16,31 @@ type Props = {
 
 // Shared by the parent's kids page and the admin student page.
 export function KidForm({ action, submitLabel, hidden, defaults, onSuccess }: Props) {
-  const [state, formAction, isPending] = useActionState(action, { error: null })
   // Unique per instance: a page renders one form per kid being edited plus the add form.
   const uid = useId()
-
+  // React resets uncontrolled fields after every form action, even a failed one,
+  // so the values are controlled to keep what the user typed when there is an error.
+  const [firstName, setFirstName] = useState(defaults?.firstName ?? '')
+  const [lastName, setLastName] = useState(defaults?.lastName ?? '')
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(defaults?.gender ?? null)
+  const onSuccessRef = useRef(onSuccess)
   useEffect(() => {
-    if (state.success) onSuccess?.()
-  }, [state, onSuccess])
+    onSuccessRef.current = onSuccess
+  })
+
+  const [state, formAction, isPending] = useActionState(
+    async (prev: KidActionState, formData: FormData) => {
+      const result = await action(prev, formData)
+      if (result.success) {
+        setFirstName(defaults?.firstName ?? '')
+        setLastName(defaults?.lastName ?? '')
+        setGender(defaults?.gender ?? null)
+        onSuccessRef.current?.()
+      }
+      return result
+    },
+    { error: null },
+  )
 
   return (
     <form action={formAction} className="space-y-3">
@@ -32,11 +50,11 @@ export function KidForm({ action, submitLabel, hidden, defaults, onSuccess }: Pr
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`${uid}-firstName`}>First name</Label>
-          <Input id={`${uid}-firstName`} name="firstName" required defaultValue={defaults?.firstName} />
+          <Input id={`${uid}-firstName`} name="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${uid}-lastName`}>Last name</Label>
-          <Input id={`${uid}-lastName`} name="lastName" required defaultValue={defaults?.lastName} />
+          <Input id={`${uid}-lastName`} name="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
       </div>
       <fieldset className="space-y-1.5">
@@ -44,7 +62,7 @@ export function KidForm({ action, submitLabel, hidden, defaults, onSuccess }: Pr
         <div className="flex gap-4 text-sm">
           {(['MALE', 'FEMALE'] as const).map((g) => (
             <label key={g} className="flex items-center gap-2">
-              <input type="radio" name="gender" value={g} required defaultChecked={defaults?.gender === g} />
+              <input type="radio" name="gender" value={g} required checked={gender === g} onChange={() => setGender(g)} />
               {g === 'MALE' ? 'Male' : 'Female'}
             </label>
           ))}

@@ -3,6 +3,17 @@
 import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { KidForm } from '@/components/students/kid-form'
 import type { KidActionState, KidListItem } from '@/lib/students/dependents'
 
@@ -33,6 +44,7 @@ function KidRow({ kid, updateAction, removeAction, hidden, linkBase }: Omit<Prop
   const [removeState, removeFormAction, removing] = useActionState(removeAction, { error: null })
   const name = `${kid.firstName} ${kid.lastName}`
   const fields = { ...hidden, kidId: kid.id }
+  const formId = `remove-kid-${kid.id}`
 
   return (
     <li className="space-y-3 p-4">
@@ -54,14 +66,35 @@ function KidRow({ kid, updateAction, removeAction, hidden, linkBase }: Omit<Prop
             {editing ? 'Cancel' : 'Edit'}
           </Button>
           {!kid.hasHistory && (
-            <form action={removeFormAction}>
-              {Object.entries(fields).map(([n, v]) => (
-                <input key={n} type="hidden" name={n} value={v} />
-              ))}
-              <Button type="submit" variant="outline" size="sm" disabled={removing} className="text-destructive hover:text-destructive">
-                {removing ? 'Removing...' : 'Remove'}
-              </Button>
-            </form>
+            <>
+              {/* AlertDialogContent renders into document.body, outside this form, so the
+                  confirm button cannot be a descendant of it - the form={formId} attribute
+                  on that button is what associates them, and must not be removed. */}
+              <form action={removeFormAction} id={formId}>
+                {Object.entries(fields).map(([n, v]) => (
+                  <input key={n} type="hidden" name={n} value={v} />
+                ))}
+              </form>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" variant="outline" size="sm" disabled={removing} className="text-destructive hover:text-destructive">
+                    {removing ? 'Removing...' : 'Remove'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{`Remove ${name}?`}</AlertDialogTitle>
+                    <AlertDialogDescription>This deletes the kid profile. You can add it again later.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction type="submit" form={formId}>
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </div>
