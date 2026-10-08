@@ -9,6 +9,7 @@ describe('contactOf', () => {
       email: 's@example.com',
       contactNumber: '0918',
       parentName: null,
+      viaParent: false,
     })
   })
 
@@ -17,6 +18,16 @@ describe('contactOf', () => {
       email: 'raffi@example.com',
       contactNumber: '09171234567',
       parentName: 'Raffi Muloc',
+      viaParent: true,
+    })
+  })
+
+  it('contacts a linked kid with their own email directly but keeps the parent name', () => {
+    expect(contactOf({ email: 'kid@example.com', contactNumber: '0918', guardian: parent })).toEqual({
+      email: 'kid@example.com',
+      contactNumber: '0918',
+      parentName: 'Raffi Muloc',
+      viaParent: false,
     })
   })
 
@@ -25,6 +36,7 @@ describe('contactOf', () => {
       email: 's@example.com',
       contactNumber: null,
       parentName: null,
+      viaParent: false,
     })
   })
 })

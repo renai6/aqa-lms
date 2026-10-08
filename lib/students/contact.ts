@@ -1,6 +1,8 @@
-// A kid profile has no email or phone of its own: the parent who manages it is
-// the contact. Every admin, teacher and email surface resolves a student's
-// contact details through here, so that rule lives in one place.
+// A student with their own email is contacted directly, even when a parent
+// manages them. A kid profile without an email has no contact details of its
+// own: the parent who manages it is the contact. Every admin, teacher and email
+// surface resolves a student's contact details through here, so that rule
+// lives in one place.
 
 type GuardianContact = {
   firstName: string
@@ -16,8 +18,10 @@ export const GUARDIAN_CONTACT_SELECT = {
 export type Contact = {
   email: string
   contactNumber: string | null
-  // Set only for a kid: the parent whose email and phone are shown instead.
+  // Set whenever the student has a guardian, so staff still see the Kid note.
   parentName: string | null
+  // True only when the email and phone shown are the guardian's.
+  viaParent: boolean
 }
 
 export function contactOf(user: {
@@ -26,10 +30,11 @@ export function contactOf(user: {
   guardian?: GuardianContact | null
 }): Contact {
   const g = user.guardian
-  if (!g) {
-    return { email: user.email ?? '', contactNumber: user.contactNumber ?? null, parentName: null }
+  const parentName = g ? `${g.firstName} ${g.lastName}` : null
+  if (!g || user.email) {
+    return { email: user.email ?? '', contactNumber: user.contactNumber ?? null, parentName, viaParent: false }
   }
-  return { email: g.email ?? '', contactNumber: g.contactNumber, parentName: `${g.firstName} ${g.lastName}` }
+  return { email: g.email ?? '', contactNumber: g.contactNumber, parentName, viaParent: true }
 }
 
 export const NOTIFY_SELECT = {

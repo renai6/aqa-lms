@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import {
   createDependent,
+  linkDependent,
   parseDependentForm,
   removeDependent,
   updateDependent,
@@ -101,5 +102,19 @@ export async function removeKidAdminAction(_prev: KidActionState, formData: Form
   const result = await removeDependent(guardianId, kidId)
   if (!result.ok) return { error: result.error }
   revalidateFamily(guardianId, kidId)
+  return { error: null, success: true }
+}
+
+export async function linkToParentAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const kidId = String(formData.get('kidId') ?? '')
+  const parentEmail = String(formData.get('parentEmail') ?? '').trim()
+  if (!parentEmail) return { error: "Enter the parent's email." }
+
+  const result = await linkDependent(kidId, parentEmail)
+  if (!result.ok) return { error: result.error }
+
+  const linked = await db.user.findUnique({ where: { id: kidId }, select: { guardianId: true } })
+  if (linked?.guardianId) revalidateFamily(linked.guardianId, kidId)
   return { error: null, success: true }
 }

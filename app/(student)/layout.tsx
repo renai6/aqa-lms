@@ -16,6 +16,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
     select: {
       firstName: true,
       isActive: true,
+      guardianId: true,
       dependents: { where: { isActive: true }, orderBy: { createdAt: 'asc' }, select: { id: true, firstName: true } },
     },
   })
@@ -25,7 +26,12 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <StudentNav self={{ firstName: user.firstName }} kids={user.dependents} activeKidId={activeKidId} />
+      <StudentNav
+        self={{ firstName: user.firstName }}
+        kids={user.dependents}
+        activeKidId={activeKidId}
+        canManageKids={!user.guardianId}
+      />
       <main className="flex-1">{children}</main>
     </div>
   )

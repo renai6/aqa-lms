@@ -50,6 +50,8 @@ export type StudentDetail = {
   lastName: string
   email: string
   parentName: string | null
+  // True when email and contact number shown are the parent's.
+  contactViaParent: boolean
   gender: Gender | null
   isActive: boolean
   createdAt: Date
@@ -260,6 +262,7 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
           lastName: true,
           gender: true,
           isActive: true,
+          email: true,
           _count: { select: { purchases: true, enrollments: true } },
         },
       },
@@ -295,6 +298,7 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
     lastName: user.lastName,
     email: contact.email,
     parentName: contact.parentName,
+    contactViaParent: contact.viaParent,
     gender: user.gender,
     isActive: user.isActive,
     createdAt: user.createdAt,
@@ -306,9 +310,9 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
     guardian: user.guardian
       ? { id: user.guardian.id, firstName: user.guardian.firstName, lastName: user.guardian.lastName }
       : null,
-    dependents: user.dependents.map(({ _count, ...k }) => ({
+    dependents: user.dependents.map(({ _count, email, ...k }) => ({
       ...k,
-      hasHistory: _count.purchases + _count.enrollments > 0,
+      removable: _count.purchases + _count.enrollments === 0 && !email,
     })),
     enrollments: user.enrollments.map((e) => ({
       id: e.id,

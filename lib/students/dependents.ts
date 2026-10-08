@@ -14,8 +14,8 @@ export type KidListItem = {
   lastName: string
   gender: 'MALE' | 'FEMALE' | null
   isActive: boolean
-  // Has purchases or enrollments, so it can no longer be removed.
-  hasHistory: boolean
+  // False once the kid has purchases, enrollments or their own login.
+  removable: boolean
 }
 
 const dependentSchema = z.object({
@@ -80,14 +80,16 @@ export async function updateDependent(
   }
 }
 
-// Only a kid with no purchases or enrollments can be removed. After that the
-// profile carries payment and grade history that must stay auditable.
+// Only a kid with no purchases, enrollments or own login can be removed. After
+// that the profile carries payment and grade history that must stay auditable,
+// and a kid with an email is a real login account.
 export async function removeDependent(guardianId: string, kidId: string): Promise<DependentResult> {
   const kid = await db.user.findFirst({
     where: { id: kidId, guardianId },
-    select: { _count: { select: { purchases: true, enrollments: true } } },
+    select: { email: true, _count: { select: { purchases: true, enrollments: true } } },
   })
   if (!kid) return { ok: false, error: 'Kid not found.' }
+  if (kid.email) return { ok: false, error: 'This kid has their own login, so the profile cannot be removed.' }
   if (kid._count.purchases > 0 || kid._count.enrollments > 0) {
     return { ok: false, error: 'This kid already has enrollments or purchases, so the profile cannot be removed.' }
   }
@@ -99,5 +101,43 @@ export async function removeDependent(guardianId: string, kidId: string): Promis
     // A purchase created between the check and the delete trips the foreign key.
     console.error('[removeDependent]', err)
     return { ok: false, error: 'This profile could not be removed. Please refresh and try again.' }
+  }
+}
+
+// An admin turns an existing student account into a kid of another account.
+// The student keeps their own email and password; only guardianId is set.
+export async function linkDependent(kidId: string, guardianEmail: string): Promise<DependentResult> {
+  const alreadyLinked = 'This student is already linked to a parent.'
+  try {
+    const guardian = await db.user.findUnique({
+      where: { email: guardianEmail.trim().toLowerCase() },
+      select: { id: true, role: true, isActive: true, guardianId: true },
+    })
+    if (!guardian || guardian.role !== 'STUDENT' || guardian.guardianId) {
+      return { ok: false, error: 'No eligible parent account has that email.' }
+    }
+    if (!guardian.isActive) return { ok: false, error: 'That parent account is inactive.' }
+    if (guardian.id === kidId) return { ok: false, error: 'A student cannot be linked to their own account.' }
+
+    const kid = await db.user.findUnique({
+      where: { id: kidId },
+      select: { role: true, guardianId: true, _count: { select: { dependents: true } } },
+    })
+    if (!kid || kid.role !== 'STUDENT') return { ok: false, error: 'Student not found.' }
+    if (kid.guardianId) return { ok: false, error: alreadyLinked }
+    if (kid._count.dependents > 0) {
+      return { ok: false, error: 'This student has kids of their own, so they cannot be linked to a parent.' }
+    }
+
+    // The guardianId: null filter makes a concurrent link lose cleanly.
+    const { count } = await db.user.updateMany({
+      where: { id: kidId, guardianId: null },
+      data: { guardianId: guardian.id },
+    })
+    if (count === 0) return { ok: false, error: alreadyLinked }
+    return { ok: true, id: kidId }
+  } catch (err) {
+    console.error('[linkDependent]', err)
+    return { ok: false, error: 'A database error occurred. Please try again.' }
   }
 }

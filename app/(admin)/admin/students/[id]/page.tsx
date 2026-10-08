@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { KidForm } from '@/components/students/kid-form'
 import { KidList } from '@/components/students/kid-list'
 import { addKidAdminAction, removeKidAdminAction, updateKidAdminAction } from '../actions'
+import { LinkParentForm } from './link-parent-form'
 import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { DeactivateStudentButton } from '../deactivate-student-button'
@@ -155,14 +156,14 @@ export default async function StudentDetailPage({ params }: Props) {
               <dd className="font-medium mt-0.5">{student.firstName} {student.lastName}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Email{student.parentName && ' (parent)'}</dt>
+              <dt className="text-muted-foreground">Email{student.contactViaParent && ' (parent)'}</dt>
               <dd className="mt-0.5 break-all">{student.email}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Contact number{student.parentName && ' (parent)'}</dt>
+              <dt className="text-muted-foreground">Contact number{student.contactViaParent && ' (parent)'}</dt>
               <dd className="mt-0.5">{student.contactNumber ?? '—'}</dd>
             </div>
-            {!student.guardian && (
+            {!student.contactViaParent && (
               <>
             <div>
               <dt className="text-muted-foreground">Address</dt>
@@ -253,6 +254,16 @@ export default async function StudentDetailPage({ params }: Props) {
                   <KidForm action={addKidAdminAction} submitLabel="Add kid" hidden={{ guardianId: student.id }} />
                 </div>
               </details>
+            </div>
+          )}
+
+          {!student.guardian && student.dependents.length === 0 && (
+            <div className="border rounded-lg p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Parent</h2>
+              <p className="text-sm text-muted-foreground">
+                Link this student to a parent&apos;s account so the parent can study as them. The student keeps their own login.
+              </p>
+              <LinkParentForm kidId={student.id} />
             </div>
           )}
         </div>

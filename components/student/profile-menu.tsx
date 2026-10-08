@@ -9,11 +9,13 @@ type Props = {
   self: { firstName: string }
   kids: { id: string; firstName: string }[]
   activeKidId: string | null
+  // False for a linked kid: kids cannot have kids.
+  canManageKids: boolean
 }
 
 // Always visible, including on mobile where the other nav links are hidden, so
 // a parent can add their first kid from any device.
-export function ProfileMenu({ self, kids, activeKidId }: Props) {
+export function ProfileMenu({ self, kids, activeKidId, canManageKids }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const active = kids.find((k) => k.id === activeKidId)
@@ -68,10 +70,14 @@ export function ProfileMenu({ self, kids, activeKidId }: Props) {
               </form>
             )
           })}
-          <div className="my-1 border-t" />
-          <Link href="/student/kids" role="menuitem" onClick={() => setOpen(false)} className="hover:bg-muted block px-3 py-2">
-            Manage kids
-          </Link>
+          {canManageKids && (
+            <>
+              <div className="my-1 border-t" />
+              <Link href="/student/kids" role="menuitem" onClick={() => setOpen(false)} className="hover:bg-muted block px-3 py-2">
+                Manage kids
+              </Link>
+            </>
+          )}
         </div>
       )}
     </div>

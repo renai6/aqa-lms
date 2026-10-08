@@ -12,6 +12,10 @@ export default async function KidsPage() {
   const account = await getAccountSession()
   if (!account || account.role !== 'STUDENT') redirect('/login')
 
+  // A linked kid logs in as themselves, and kids cannot have kids.
+  const self = await db.user.findUnique({ where: { id: account.userId }, select: { guardianId: true } })
+  if (self?.guardianId) redirect('/student/dashboard')
+
   const kids = await db.user.findMany({
     where: { guardianId: account.userId },
     orderBy: { createdAt: 'asc' },
@@ -21,6 +25,7 @@ export default async function KidsPage() {
       lastName: true,
       gender: true,
       isActive: true,
+      email: true,
       _count: { select: { purchases: true, enrollments: true } },
     },
   })
@@ -35,12 +40,15 @@ export default async function KidsPage() {
 
       <section className="mt-6">
         <KidList
-          kids={kids.map(({ _count, ...k }) => ({ ...k, hasHistory: _count.purchases + _count.enrollments > 0 }))}
+          kids={kids.map(({ _count, email, ...k }) => ({
+            ...k,
+            removable: _count.purchases + _count.enrollments === 0 && !email,
+          }))}
           updateAction={updateKidAction}
           removeAction={removeKidAction}
         />
         <p className="text-muted-foreground mt-2 text-xs">
-          A kid who has enrolled or purchased a course cannot be removed. Contact the academy if you need changes.
+          A kid who has enrolled, purchased a course, or has their own login cannot be removed. Contact the academy if you need changes.
         </p>
       </section>
 

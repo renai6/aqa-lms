@@ -8,13 +8,16 @@ vi.mock('@/lib/students/dependents', async (importOriginal) => ({
   createDependent: vi.fn(),
   updateDependent: vi.fn(),
   removeDependent: vi.fn(),
+  linkDependent: vi.fn(),
 }))
 
+import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
-import { createDependent, removeDependent, updateDependent } from '@/lib/students/dependents'
+import { createDependent, linkDependent, removeDependent, updateDependent } from '@/lib/students/dependents'
 import {
   addKidAdminAction,
+  linkToParentAdminAction,
   removeKidAdminAction,
   updateKidAdminAction,
 } from '@/app/(admin)/admin/students/actions'
@@ -59,5 +62,35 @@ describe('admin kid actions', () => {
     expect(updateDependent).toHaveBeenCalledWith('p1', 'k1', kid)
     expect(removeDependent).toHaveBeenCalledWith('p1', 'k1')
     expect(revalidatePath).toHaveBeenCalledWith('/admin/students/k1')
+  })
+})
+
+describe('linkToParentAdminAction', () => {
+  const run = (f: Record<string, string>) => linkToParentAdminAction({ error: null }, form(f))
+
+  it('rejects a teacher', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 't1', role: 'TEACHER' })
+    expect(await run({ kidId: 'k1', parentEmail: 'p@example.com' })).toEqual({ error: 'Forbidden' })
+    expect(linkDependent).not.toHaveBeenCalled()
+  })
+
+  it('links the student and refreshes both pages', async () => {
+    vi.mocked(linkDependent).mockResolvedValue({ ok: true, id: 'k1' })
+    vi.mocked(db.user.findUnique).mockResolvedValue({ guardianId: 'p1' } as never)
+
+    expect(await run({ kidId: 'k1', parentEmail: 'p@example.com' })).toEqual({ error: null, success: true })
+    expect(linkDependent).toHaveBeenCalledWith('k1', 'p@example.com')
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/students/p1')
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/students/k1')
+  })
+
+  it('returns the rule error', async () => {
+    vi.mocked(linkDependent).mockResolvedValue({ ok: false, error: 'Student not found.' })
+    expect(await run({ kidId: 'k1', parentEmail: 'p@example.com' })).toEqual({ error: 'Student not found.' })
+  })
+
+  it('requires an email', async () => {
+    expect(await run({ kidId: 'k1', parentEmail: '  ' })).toEqual({ error: "Enter the parent's email." })
+    expect(linkDependent).not.toHaveBeenCalled()
   })
 })

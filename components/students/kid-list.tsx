@@ -65,7 +65,7 @@ function KidRow({ kid, updateAction, removeAction, hidden, linkBase }: Omit<Prop
           <Button type="button" variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
             {editing ? 'Cancel' : 'Edit'}
           </Button>
-          {!kid.hasHistory && (
+          {kid.removable && (
             <>
               {/* AlertDialogContent renders into document.body, outside this form, so the
                   confirm button cannot be a descendant of it - the form={formId} attribute

@@ -7,9 +7,10 @@ type Props = {
   self: { firstName: string }
   kids: { id: string; firstName: string }[]
   activeKidId: string | null
+  canManageKids: boolean
 }
 
-export function StudentNav({ self, kids, activeKidId }: Props) {
+export function StudentNav({ self, kids, activeKidId, canManageKids }: Props) {
   const viewing = kids.find((k) => k.id === activeKidId)
 
   return (
@@ -28,7 +29,7 @@ export function StudentNav({ self, kids, activeKidId }: Props) {
           <Link href="/student/announcements" className="text-white/70 hover:text-white text-sm hidden sm:block">Announcements</Link>
           <Link href="/student/courses" className="text-white/70 hover:text-white text-sm hidden sm:block">Courses</Link>
           <Link href="/faq" className="text-white/70 hover:text-white text-sm hidden sm:block">FAQ</Link>
-          <ProfileMenu self={self} kids={kids} activeKidId={activeKidId} />
+          <ProfileMenu self={self} kids={kids} activeKidId={activeKidId} canManageKids={canManageKids} />
           <SignOutButton className="text-white/60 hover:text-white hover:bg-white/10" />
         </div>
       </div>
