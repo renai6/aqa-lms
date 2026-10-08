@@ -266,11 +266,12 @@ export default async function StudentDetailPage({ params }: Props) {
                 removeAction={removeKidAdminAction}
                 hidden={{ guardianId: student.id }}
                 linkBase="/admin/students/"
+                stacked
               />
               <details className="text-sm">
                 <summary className="text-primary cursor-pointer font-medium">Add kid</summary>
                 <div className="mt-3">
-                  <KidForm action={addKidAdminAction} submitLabel="Add kid" hidden={{ guardianId: student.id }} />
+                  <KidForm action={addKidAdminAction} submitLabel="Add kid" hidden={{ guardianId: student.id }} stacked />
                 </div>
               </details>
             </div>

@@ -26,20 +26,30 @@ type Props = {
   hidden?: Record<string, string>
   // Admin only: makes each name a link to that kid's student page.
   linkBase?: string
+  // Passed to the edit form: one column, for the admin page's narrow sidebar.
+  stacked?: boolean
 }
 
-export function KidList({ kids, updateAction, removeAction, hidden, linkBase }: Props) {
+export function KidList({ kids, updateAction, removeAction, hidden, linkBase, stacked }: Props) {
   if (kids.length === 0) return <p className="text-muted-foreground text-sm">No kids yet.</p>
   return (
     <ul className="divide-y rounded-lg border">
       {kids.map((kid) => (
-        <KidRow key={kid.id} kid={kid} updateAction={updateAction} removeAction={removeAction} hidden={hidden} linkBase={linkBase} />
+        <KidRow
+          key={kid.id}
+          kid={kid}
+          updateAction={updateAction}
+          removeAction={removeAction}
+          hidden={hidden}
+          linkBase={linkBase}
+          stacked={stacked}
+        />
       ))}
     </ul>
   )
 }
 
-function KidRow({ kid, updateAction, removeAction, hidden, linkBase }: Omit<Props, 'kids'> & { kid: KidListItem }) {
+function KidRow({ kid, updateAction, removeAction, hidden, linkBase, stacked }: Omit<Props, 'kids'> & { kid: KidListItem }) {
   const [editing, setEditing] = useState(false)
   const [removeState, removeFormAction, removing] = useActionState(removeAction, { error: null })
   const name = `${kid.firstName} ${kid.lastName}`
@@ -106,6 +116,7 @@ function KidRow({ kid, updateAction, removeAction, hidden, linkBase }: Omit<Prop
           hidden={fields}
           defaults={{ firstName: kid.firstName, lastName: kid.lastName, gender: kid.gender }}
           onSuccess={() => setEditing(false)}
+          stacked={stacked}
         />
       )}
     </li>

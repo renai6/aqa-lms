@@ -4,6 +4,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 import type { KidActionState } from '@/lib/students/dependents'
 
 type Props = {
@@ -12,10 +13,12 @@ type Props = {
   hidden?: Record<string, string>
   defaults?: { firstName: string; lastName: string; gender: 'MALE' | 'FEMALE' | null }
   onSuccess?: () => void
+  // One column, for narrow places like the admin student page's sidebar.
+  stacked?: boolean
 }
 
 // Shared by the parent's kids page and the admin student page.
-export function KidForm({ action, submitLabel, hidden, defaults, onSuccess }: Props) {
+export function KidForm({ action, submitLabel, hidden, defaults, onSuccess, stacked }: Props) {
   // Unique per instance: a page renders one form per kid being edited plus the add form.
   const uid = useId()
   // React resets uncontrolled fields after every form action, even a failed one,
@@ -47,7 +50,7 @@ export function KidForm({ action, submitLabel, hidden, defaults, onSuccess }: Pr
       {Object.entries(hidden ?? {}).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className={cn('grid grid-cols-1 gap-3', !stacked && 'sm:grid-cols-2')}>
         <div className="space-y-1.5">
           <Label htmlFor={`${uid}-firstName`}>First name</Label>
           <Input id={`${uid}-firstName`} name="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
