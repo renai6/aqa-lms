@@ -3,6 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
+import {
+  createDependent,
+  parseDependentForm,
+  removeDependent,
+  updateDependent,
+  type KidActionState,
+} from '@/lib/students/dependents'
 
 type ActionState = { error: string | null }
 
@@ -46,4 +53,53 @@ export async function toggleStudentActiveAction(
   revalidatePath('/admin/students')
   revalidatePath('/admin/students/' + userId)
   return { error: null }
+}
+
+async function isAdmin(): Promise<boolean> {
+  const session = await getSession()
+  return session?.role === 'ADMIN' || session?.role === 'SUPER_ADMIN'
+}
+
+// For walk-ins: an admin adds a kid to a parent's account from the parent's
+// student page. The same rules as the parent's own form apply.
+function revalidateFamily(guardianId: string, kidId?: string) {
+  revalidatePath('/admin/students')
+  revalidatePath('/admin/students/' + guardianId)
+  if (kidId) revalidatePath('/admin/students/' + kidId)
+}
+
+export async function addKidAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const guardianId = String(formData.get('guardianId') ?? '')
+  const parsed = parseDependentForm(formData)
+  if (!parsed.ok) return { error: parsed.error }
+
+  const result = await createDependent(guardianId, parsed.data)
+  if (!result.ok) return { error: result.error }
+  revalidateFamily(guardianId)
+  return { error: null, success: true }
+}
+
+export async function updateKidAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const guardianId = String(formData.get('guardianId') ?? '')
+  const kidId = String(formData.get('kidId') ?? '')
+  const parsed = parseDependentForm(formData)
+  if (!parsed.ok) return { error: parsed.error }
+
+  const result = await updateDependent(guardianId, kidId, parsed.data)
+  if (!result.ok) return { error: result.error }
+  revalidateFamily(guardianId, kidId)
+  return { error: null, success: true }
+}
+
+export async function removeKidAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const guardianId = String(formData.get('guardianId') ?? '')
+  const kidId = String(formData.get('kidId') ?? '')
+
+  const result = await removeDependent(guardianId, kidId)
+  if (!result.ok) return { error: result.error }
+  revalidateFamily(guardianId, kidId)
+  return { error: null, success: true }
 }

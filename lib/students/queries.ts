@@ -9,6 +9,7 @@ import {
   UserRole,
 } from '@prisma/client'
 import { db } from '@/lib/db'
+import type { KidListItem } from '@/lib/students/dependents'
 import { contactOf, GUARDIAN_CONTACT_SELECT } from '@/lib/students/contact'
 
 export type StudentRow = {
@@ -57,6 +58,10 @@ export type StudentDetail = {
   facebookName: string | null
   facebookLink: string | null
   studentType: StudentType | null
+  // Set on a kid: the parent account that manages it.
+  guardian: { id: string; firstName: string; lastName: string } | null
+  // Set on a parent: the kid profiles they manage.
+  dependents: KidListItem[]
   enrollments: {
     id: string
     courseId: string
@@ -246,7 +251,18 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       facebookName: true,
       facebookLink: true,
       studentType: true,
-      guardian: GUARDIAN_CONTACT_SELECT,
+      guardian: { select: { ...GUARDIAN_CONTACT_SELECT.select, id: true } },
+      dependents: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
+          isActive: true,
+          _count: { select: { purchases: true, enrollments: true } },
+        },
+      },
       certificates: { select: { courseId: true } },
       enrollments: {
         // Removed enrollments stay visible to admins, badged and restorable,
@@ -287,6 +303,13 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
     facebookName: user.facebookName,
     facebookLink: user.facebookLink,
     studentType: user.studentType,
+    guardian: user.guardian
+      ? { id: user.guardian.id, firstName: user.guardian.firstName, lastName: user.guardian.lastName }
+      : null,
+    dependents: user.dependents.map(({ _count, ...k }) => ({
+      ...k,
+      hasHistory: _count.purchases + _count.enrollments > 0,
+    })),
     enrollments: user.enrollments.map((e) => ({
       id: e.id,
       courseId: e.courseId,

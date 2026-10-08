@@ -103,6 +103,7 @@ describe("admin student queries expose removed enrollments", () => {
       createdAt: new Date("2026-01-01"),
       role: "STUDENT",
       certificates: [{ courseId: "c1" }],
+      dependents: [],
       enrollments: [enrollmentRow],
     } as never);
 
