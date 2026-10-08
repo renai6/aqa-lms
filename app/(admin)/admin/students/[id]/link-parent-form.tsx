@@ -4,17 +4,13 @@ import { useActionState, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { KidActionState } from '@/lib/students/dependents'
 import { linkToParentAdminAction } from '../actions'
 
 export function LinkParentForm({ kidId }: { kidId: string }) {
   const uid = useId()
   // Controlled, so a failed attempt keeps what the admin typed.
   const [email, setEmail] = useState('')
-  const [state, formAction, isPending] = useActionState(
-    async (prev: KidActionState, formData: FormData) => linkToParentAdminAction(prev, formData),
-    { error: null },
-  )
+  const [state, formAction, isPending] = useActionState(linkToParentAdminAction, { error: null })
 
   return (
     <form action={formAction} className="space-y-3">

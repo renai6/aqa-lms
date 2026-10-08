@@ -160,7 +160,7 @@ describe('linkDependent', () => {
       expect.objectContaining({ where: { email: 'parent@example.com' } }),
     )
     expect(db.user.updateMany).toHaveBeenCalledWith({
-      where: { id: 'k1', guardianId: null },
+      where: { id: 'k1', guardianId: null, dependents: { none: {} } },
       data: { guardianId: 'p1' },
     })
   })
@@ -177,7 +177,7 @@ describe('linkDependent', () => {
   })
 
   it.each([
-    ['an inactive parent', parent && { ...parent, isActive: false }, student, 'That parent account is inactive.'],
+    ['an inactive parent', { ...parent, isActive: false }, student, 'That parent account is inactive.'],
     ['linking to self', { ...parent, id: 'k1' }, student, 'A student cannot be linked to their own account.'],
     ['a missing student', parent, null, 'Student not found.'],
     ['a non-student', parent, { ...student, role: 'TEACHER' }, 'Student not found.'],

@@ -129,9 +129,9 @@ export async function linkDependent(kidId: string, guardianEmail: string): Promi
       return { ok: false, error: 'This student has kids of their own, so they cannot be linked to a parent.' }
     }
 
-    // The guardianId: null filter makes a concurrent link lose cleanly.
+    // The filters make a concurrent link, or a kid added meanwhile, lose cleanly.
     const { count } = await db.user.updateMany({
-      where: { id: kidId, guardianId: null },
+      where: { id: kidId, guardianId: null, dependents: { none: {} } },
       data: { guardianId: guardian.id },
     })
     if (count === 0) return { ok: false, error: alreadyLinked }

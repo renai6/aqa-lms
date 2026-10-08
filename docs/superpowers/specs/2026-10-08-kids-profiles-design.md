@@ -43,7 +43,8 @@ model User {
 - Postgres allows many null values under a unique index, so kids need no placeholder emails.
 - A kid stores only first name, last name and gender.
 Gender is required, as it is at registration: gender-restricted subjects fail closed for a student with no gender, so an optional gender would hide those subjects from the kid.
-Address, contact number and Facebook details come from the guardian wherever they are displayed.
+A kid without their own email shows the guardian's contact details wherever they are displayed.
+A linked kid with their own email shows their own.
 - No other table changes.
 Enrollments, purchases, payments, grades, attempts, lesson completions and certificates stay keyed by `userId`, which is the kid's id when the kid is the learner.
 
@@ -51,7 +52,7 @@ Rules enforced in application code:
 
 1. A guardian must be an active `STUDENT` whose own `guardianId` is null.
 2. A kid's `guardianId` is set once, at creation or when an admin links an existing student to a parent, and never changes after that.
-3. A kid can be removed only while it has no purchases and no enrollments.
+3. A kid can be removed only while it has no purchases, no enrollments and no login of its own.
 After that, the parent is told to contact the admin.
 
 Migration: add nullable `guardianId` with its index and foreign key, and drop `NOT NULL` on `email` and `passwordHash`.
