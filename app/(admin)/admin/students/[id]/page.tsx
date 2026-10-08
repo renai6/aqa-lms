@@ -1,5 +1,11 @@
 // app/(admin)/admin/students/[id]/page.tsx
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { KidForm } from '@/components/students/kid-form'
+import { KidList } from '@/components/students/kid-list'
+import { addKidAdminAction, removeKidAdminAction, updateKidAdminAction } from '../actions'
+import { LinkParentForm } from './link-parent-form'
+import { UnlinkParentButton } from './unlink-parent-button'
 import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { DeactivateStudentButton } from '../deactivate-student-button'
@@ -140,7 +146,8 @@ export default async function StudentDetailPage({ params }: Props) {
         </div>
 
         {/* Profile — sidebar */}
-        <div className="border rounded-lg p-4 space-y-3 self-start">
+        <div className="space-y-6 self-start">
+        <div className="border rounded-lg p-4 space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Profile
           </h2>
@@ -150,13 +157,15 @@ export default async function StudentDetailPage({ params }: Props) {
               <dd className="font-medium mt-0.5">{student.firstName} {student.lastName}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Email</dt>
+              <dt className="text-muted-foreground">Email{student.contactViaParent && ' (parent)'}</dt>
               <dd className="mt-0.5 break-all">{student.email}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Contact number</dt>
+              <dt className="text-muted-foreground">Contact number{student.contactViaParent && ' (parent)'}</dt>
               <dd className="mt-0.5">{student.contactNumber ?? '—'}</dd>
             </div>
+            {!student.contactViaParent && (
+              <>
             <div>
               <dt className="text-muted-foreground">Address</dt>
               <dd className="mt-0.5 whitespace-pre-line">{student.address ?? '—'}</dd>
@@ -178,6 +187,8 @@ export default async function StudentDetailPage({ params }: Props) {
                 )}
               </dd>
             </div>
+              </>
+            )}
             <div>
               <dt className="text-muted-foreground">Gender</dt>
               <dd className="mt-0.5">
@@ -215,6 +226,66 @@ export default async function StudentDetailPage({ params }: Props) {
               <dd className="mt-0.5">{dateFormatter.format(student.createdAt)}</dd>
             </div>
           </dl>
+        </div>
+
+          {student.guardian ? (
+            <div className="border rounded-lg p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Guardian</h2>
+              {student.contactViaParent ? (
+                <p className="text-sm">
+                  Kid profile managed by{' '}
+                  <Link href={`/admin/students/${student.guardian.id}`} className="text-primary font-medium hover:underline">
+                    {student.guardian.firstName} {student.guardian.lastName}
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm">
+                    Linked to{' '}
+                    <Link href={`/admin/students/${student.guardian.id}`} className="text-primary font-medium hover:underline">
+                      {student.guardian.firstName} {student.guardian.lastName}
+                    </Link>
+                    &apos;s account. This student also has their own login.
+                  </p>
+                  {/* Only a student with their own login can be unlinked: a kid
+                      created by a parent would be left with no way to log in. */}
+                  <UnlinkParentButton
+                    kidId={student.id}
+                    parentName={`${student.guardian.firstName} ${student.guardian.lastName}`}
+                  />
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="border rounded-lg p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Kids</h2>
+              <KidList
+                kids={student.dependents}
+                updateAction={updateKidAdminAction}
+                removeAction={removeKidAdminAction}
+                hidden={{ guardianId: student.id }}
+                linkBase="/admin/students/"
+                stacked
+              />
+              <details className="text-sm">
+                <summary className="text-primary cursor-pointer font-medium">Add kid</summary>
+                <div className="mt-3">
+                  <KidForm action={addKidAdminAction} submitLabel="Add kid" hidden={{ guardianId: student.id }} stacked />
+                </div>
+              </details>
+            </div>
+          )}
+
+          {!student.guardian && student.dependents.length === 0 && (
+            <div className="border rounded-lg p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Parent</h2>
+              <p className="text-sm text-muted-foreground">
+                Link this student to a parent&apos;s account so the parent can study as them. The student keeps their own login.
+              </p>
+              <LinkParentForm kidId={student.id} />
+            </div>
+          )}
         </div>
       </div>
     </div>

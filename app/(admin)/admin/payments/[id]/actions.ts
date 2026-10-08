@@ -12,6 +12,7 @@ import {
 } from "@/lib/payments/email";
 import { monthKeyToDate, toMonthKey } from "@/lib/time/manila";
 import { payableMonths } from "@/lib/payments/monthly";
+import { NOTIFY_SELECT, notificationTargets } from "@/lib/students/contact";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -54,7 +55,7 @@ export async function approvePaymentAction(
           removedAt: true,
           purchase: { select: { paymentProofUrl: true } },
           course: { select: { title: true, paymentFrequency: true } },
-          user: { select: { email: true, firstName: true } },
+          user: { select: NOTIFY_SELECT },
           // Only whether an APPROVED CHECKOUT row already exists matters
           // here, so one row is enough to know.
           payments: {
@@ -200,12 +201,11 @@ export async function approvePaymentAction(
   revalidatePath("/admin/payments");
 
   try {
-    await sendPaymentApprovalEmail({
-      to: payment.enrollment.user.email,
-      firstName: payment.enrollment.user.firstName,
-      courseTitle: payment.enrollment.course.title,
-      paymentStatus,
-    });
+    await Promise.all(
+      notificationTargets(payment.enrollment.user).map((target) =>
+        sendPaymentApprovalEmail({ ...target, courseTitle: payment.enrollment.course.title, paymentStatus }),
+      ),
+    );
   } catch (err) {
     console.error("[approvePayment] Email error:", err);
     return {
@@ -327,7 +327,7 @@ export async function rejectPaymentAction(
       enrollment: {
         select: {
           course: { select: { title: true } },
-          user: { select: { email: true, firstName: true } },
+          user: { select: NOTIFY_SELECT },
         },
       },
     },
@@ -355,12 +355,11 @@ export async function rejectPaymentAction(
   revalidatePath("/admin/payments");
 
   try {
-    await sendPaymentRejectionEmail({
-      to: payment.enrollment.user.email,
-      firstName: payment.enrollment.user.firstName,
-      courseTitle: payment.enrollment.course.title,
-      reason,
-    });
+    await Promise.all(
+      notificationTargets(payment.enrollment.user).map((target) =>
+        sendPaymentRejectionEmail({ ...target, courseTitle: payment.enrollment.course.title, reason }),
+      ),
+    );
   } catch (err) {
     console.error("[rejectPayment] Email error:", err);
     return {

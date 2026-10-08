@@ -41,11 +41,14 @@ export async function GET(request: NextRequest) {
   const students = await getAllStudents({ courseId: course, gender })
 
   const header =
-    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Course Type,Amount Paid,Last Payment Date,Enrolled Date,Status\r\n'
+    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Course Type,Amount Paid,Last Payment Date,Enrolled Date,Status,Parent\r\n'
   const rows = students.map((s) => {
     const name = csvField(`${s.firstName} ${s.lastName}`)
-    const email = csvField(s.email)
-    const mobileNumber = csvField(s.contactNumber ?? '')
+    // A kid without their own login is exported with the parent's details,
+    // marked so the sheet does not pass them off as the kid's.
+    const viaParent = (value: string) => (s.contactViaParent && value ? `${value} (parent)` : value)
+    const email = csvField(viaParent(s.email))
+    const mobileNumber = csvField(viaParent(s.contactNumber ?? ''))
     const facebookName = csvField(s.facebookName ?? '')
     const facebookLink = csvField(s.facebookLink ?? '')
     const genderLabel = s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : ''
@@ -60,6 +63,7 @@ export async function GET(request: NextRequest) {
       ? toManilaDateKey(s.enrollments[0].enrolledAt)
       : ''
     const status = s.isActive ? 'Active' : 'Inactive'
+    const parent = csvField(s.parentName ?? '')
     return [
       name,
       email,
@@ -73,6 +77,7 @@ export async function GET(request: NextRequest) {
       lastPaymentDates,
       enrolledDate,
       status,
+      parent,
     ].join(',')
   })
 

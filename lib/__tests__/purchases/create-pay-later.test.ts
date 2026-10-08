@@ -55,11 +55,34 @@ describe("createPurchaseAction pay later", () => {
     vi.mocked(db.purchase.delete).mockResolvedValue({ id: "p1" } as never);
   });
 
+  it("refuses a form rendered for another profile and writes nothing", async () => {
+    const result = await createPurchaseAction(
+      { error: null },
+      form({ learnerId: "k1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+    );
+
+    expect(result).toEqual({
+      error: "You switched profiles in another tab. Reload this page to check out for the right person.",
+    });
+    expect(db.purchase.create).not.toHaveBeenCalled();
+    expect(sendPurchaseConfirmationEmail).not.toHaveBeenCalled();
+  });
+
+  it("refuses a form with no learner", async () => {
+    const result = await createPurchaseAction(
+      { error: null },
+      form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+    );
+
+    expect(result.error).toContain("You switched profiles in another tab.");
+    expect(db.purchase.create).not.toHaveBeenCalled();
+  });
+
   it("records a zero amount and no proof, and never touches storage", async () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
@@ -80,7 +103,7 @@ describe("createPurchaseAction pay later", () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
@@ -97,7 +120,7 @@ describe("createPurchaseAction pay later", () => {
 
     const result = await createPurchaseAction(
       { error: null },
-      form({ courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
+      form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
     );
 
     expect(result.error).toBe("Please select a file to upload.");
@@ -117,10 +140,64 @@ describe("createPurchaseAction pay later", () => {
 
     const result = await createPurchaseAction(
       { error: null },
-      form({ courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
+      form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
     );
 
     expect(result.error).toContain("could not be saved");
     expect(db.purchase.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
+  });
+
+  it("sends a kid's confirmation to the parent and names the kid", async () => {
+    vi.mocked(db.user.findUnique).mockResolvedValue({
+      email: null,
+      firstName: "Ana",
+      guardian: { firstName: "Raffi", email: "raffi@example.com" },
+      studentType: "NEW",
+      isActive: true,
+    } as never);
+
+    await expect(
+      createPurchaseAction(
+        { error: null },
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "raffi@example.com",
+        firstName: "Raffi",
+        learnerFirstName: "Ana",
+      }),
+    );
+  });
+
+  it("sends a linked kid's confirmation to the kid and the parent", async () => {
+    vi.mocked(db.user.findUnique).mockResolvedValue({
+      email: "ana@example.com",
+      firstName: "Ana",
+      guardian: { firstName: "Raffi", email: "raffi@example.com" },
+      studentType: "NEW",
+      isActive: true,
+    } as never);
+
+    await expect(
+      createPurchaseAction(
+        { error: null },
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledTimes(2);
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "ana@example.com", learnerFirstName: null }),
+    );
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "raffi@example.com",
+        firstName: "Raffi",
+        learnerFirstName: "Ana",
+      }),
+    );
   });
 });

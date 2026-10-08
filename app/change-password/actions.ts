@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getSession, createSession } from '@/lib/auth/session'
+import { getAccountSession, createSession } from '@/lib/auth/session'
 import { hashPassword } from '@/lib/auth/password'
 import type { UserRole } from '@/lib/auth/types'
 import { ROLE_DASHBOARDS } from '@/lib/auth/dashboards'
@@ -24,7 +24,7 @@ export async function changePasswordAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await getSession()
+  const session = await getAccountSession()
   if (!session) return { error: 'Session expired. Please log in again.' }
 
   const raw = {
@@ -44,7 +44,7 @@ export async function changePasswordAction(
     where: { id: session.userId },
     select: { email: true, isActive: true },
   })
-  if (!user) return { error: 'User not found.' }
+  if (!user?.email) return { error: 'User not found.' }
   if (!user.isActive) return { error: 'Your account is inactive.' }
 
   // Bumping tokenVersion strands every other session issued for this user;

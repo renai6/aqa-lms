@@ -8,16 +8,23 @@ import { validateImageUpload } from '@/lib/uploads/image'
 import { createPurchaseSchema } from '@/lib/purchases/schema'
 import { getPurchasableCourses } from '@/lib/purchases/queries'
 import { sendPurchaseConfirmationEmail } from '@/lib/purchases/email'
+import { NOTIFY_SELECT, notificationTargets } from '@/lib/students/contact'
 
 type ActionState = { error: string | null }
 
 export async function createPurchaseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession()
   if (!session || session.role !== 'STUDENT') return { error: 'Unauthorized' }
+  // The form names the profile it was rendered for. A parent who switched
+  // profiles in another tab would otherwise buy for whoever is active now,
+  // not the learner the page said it was enrolling.
+  if (formData.get('learnerId') !== session.userId) {
+    return { error: 'You switched profiles in another tab. Reload this page to check out for the right person.' }
+  }
 
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { email: true, firstName: true, studentType: true, isActive: true },
+    select: { ...NOTIFY_SELECT, studentType: true, isActive: true },
   })
   if (!user) return { error: 'Account not found.' }
   if (!user.isActive) return { error: 'Your account is inactive.' }
@@ -93,7 +100,9 @@ export async function createPurchaseAction(_prev: ActionState, formData: FormDat
   }
 
   try {
-    await sendPurchaseConfirmationEmail({ to: user.email, firstName: user.firstName, purchaseId, payLater })
+    await Promise.all(
+      notificationTargets(user).map((target) => sendPurchaseConfirmationEmail({ ...target, purchaseId, payLater })),
+    )
   } catch (err) {
     console.error('[createPurchase] Email error:', err)
   }

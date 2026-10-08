@@ -9,12 +9,17 @@ import {
   UserRole,
 } from '@prisma/client'
 import { db } from '@/lib/db'
+import type { KidListItem } from '@/lib/students/dependents'
+import { contactOf, GUARDIAN_CONTACT_SELECT } from '@/lib/students/contact'
 
 export type StudentRow = {
   id: string
   firstName: string
   lastName: string
   email: string
+  parentName: string | null
+  // True when the email and contact number shown are the parent's.
+  contactViaParent: boolean
   gender: Gender | null
   isActive: boolean
   createdAt: Date
@@ -46,6 +51,9 @@ export type StudentDetail = {
   firstName: string
   lastName: string
   email: string
+  parentName: string | null
+  // True when email and contact number shown are the parent's.
+  contactViaParent: boolean
   gender: Gender | null
   isActive: boolean
   createdAt: Date
@@ -54,6 +62,10 @@ export type StudentDetail = {
   facebookName: string | null
   facebookLink: string | null
   studentType: StudentType | null
+  // Set on a kid: the parent account that manages it.
+  guardian: { id: string; firstName: string; lastName: string } | null
+  // Set on a parent: the kid profiles they manage.
+  dependents: KidListItem[]
   enrollments: {
     id: string
     courseId: string
@@ -112,6 +124,7 @@ async function findStudents(
       contactNumber: true,
       facebookName: true,
       facebookLink: true,
+      guardian: GUARDIAN_CONTACT_SELECT,
       enrollments: {
         select: {
           id: true,
@@ -126,17 +139,24 @@ async function findStudents(
     ...range,
   })
 
-  return users.map((u) => ({
-    ...u,
-    enrollments: u.enrollments.map((e) => ({
-      id: e.id,
-      courseId: e.courseId,
-      courseTitle: e.course.title,
-      courseType: e.course.courseType,
-      enrolledAt: e.enrolledAt,
-      removedAt: e.removedAt,
-    })),
-  }))
+  return users.map(({ guardian, ...u }) => {
+    const contact = contactOf({ ...u, guardian })
+    return {
+      ...u,
+      email: contact.email,
+      contactNumber: contact.contactNumber,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
+      enrollments: u.enrollments.map((e) => ({
+        id: e.id,
+        courseId: e.courseId,
+        courseTitle: e.course.title,
+        courseType: e.course.courseType,
+        enrolledAt: e.enrolledAt,
+        removedAt: e.removedAt,
+      })),
+    }
+  })
 }
 
 // One page of the admin students table. The count is awaited first so that an
@@ -176,6 +196,7 @@ export async function getAllStudents(
       contactNumber: true,
       facebookName: true,
       facebookLink: true,
+      guardian: GUARDIAN_CONTACT_SELECT,
       enrollments: {
         select: {
           id: true,
@@ -193,23 +214,30 @@ export async function getAllStudents(
     orderBy: { createdAt: 'desc' },
   })
 
-  return users.map((u) => ({
-    ...u,
-    enrollments: u.enrollments.map((e) => ({
-      id: e.id,
-      courseId: e.courseId,
-      courseTitle: e.course.title,
-      courseType: e.course.courseType,
-      enrolledAt: e.enrolledAt,
-      removedAt: e.removedAt,
-      payments: e.payments.map((p) => ({
-        // Decimal off the wire; the formatters do centavo arithmetic on numbers.
-        amount: p.amount.toNumber(),
-        status: p.status,
-        createdAt: p.createdAt,
+  return users.map(({ guardian, ...u }) => {
+    const contact = contactOf({ ...u, guardian })
+    return {
+      ...u,
+      email: contact.email,
+      contactNumber: contact.contactNumber,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
+      enrollments: u.enrollments.map((e) => ({
+        id: e.id,
+        courseId: e.courseId,
+        courseTitle: e.course.title,
+        courseType: e.course.courseType,
+        enrolledAt: e.enrolledAt,
+        removedAt: e.removedAt,
+        payments: e.payments.map((p) => ({
+          // Decimal off the wire; the formatters do centavo arithmetic on numbers.
+          amount: p.amount.toNumber(),
+          status: p.status,
+          createdAt: p.createdAt,
+        })),
       })),
-    })),
-  }))
+    }
+  })
 }
 
 export async function getStudentById(id: string): Promise<StudentDetail | null> {
@@ -229,6 +257,19 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       facebookName: true,
       facebookLink: true,
       studentType: true,
+      guardian: { select: { ...GUARDIAN_CONTACT_SELECT.select, id: true } },
+      dependents: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
+          isActive: true,
+          email: true,
+          _count: { select: { purchases: true, enrollments: true } },
+        },
+      },
       certificates: { select: { courseId: true } },
       enrollments: {
         // Removed enrollments stay visible to admins, badged and restorable,
@@ -252,21 +293,31 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
 
   if (!user || user.role !== UserRole.STUDENT) return null
 
+  const contact = contactOf(user)
   const certified = new Set(user.certificates.map((c) => c.courseId))
 
   return {
     id: user.id,
     firstName: user.firstName,
     lastName: user.lastName,
-    email: user.email,
+    email: contact.email,
+    parentName: contact.parentName,
+    contactViaParent: contact.viaParent,
     gender: user.gender,
     isActive: user.isActive,
     createdAt: user.createdAt,
-    contactNumber: user.contactNumber,
+    contactNumber: contact.contactNumber,
     address: user.address,
     facebookName: user.facebookName,
     facebookLink: user.facebookLink,
     studentType: user.studentType,
+    guardian: user.guardian
+      ? { id: user.guardian.id, firstName: user.guardian.firstName, lastName: user.guardian.lastName }
+      : null,
+    dependents: user.dependents.map(({ _count, email, ...k }) => ({
+      ...k,
+      removable: _count.purchases + _count.enrollments === 0 && !email,
+    })),
     enrollments: user.enrollments.map((e) => ({
       id: e.id,
       courseId: e.courseId,
@@ -290,6 +341,9 @@ export type RosterRow = {
   firstName: string
   lastName: string
   email: string
+  parentName: string | null
+  // True when the email shown is the parent's.
+  contactViaParent: boolean
   enrolledAt: Date
   paymentStatus: PaymentStatus
   removedAt: Date | null
@@ -328,6 +382,7 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
           firstName: true,
           lastName: true,
           email: true,
+          guardian: GUARDIAN_CONTACT_SELECT,
           certificates: { where: { courseId }, select: { id: true } },
           enrollments: { where: { removedAt: null }, select: { courseId: true } },
         },
@@ -341,7 +396,9 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
     studentId: e.user.id,
     firstName: e.user.firstName,
     lastName: e.user.lastName,
-    email: e.user.email,
+    ...(({ email, parentName, viaParent }) => ({ email, parentName, contactViaParent: viaParent }))(
+      contactOf(e.user),
+    ),
     enrolledAt: e.enrolledAt,
     paymentStatus: e.paymentStatus,
     removedAt: e.removedAt,

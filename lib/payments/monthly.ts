@@ -74,7 +74,13 @@ export type MatrixEnrollment = {
   enrolledAt: Date;
   completedAt: Date | null;
   removedAt: Date | null;
-  student: { firstName: string; lastName: string; email: string };
+  student: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    parentName?: string | null;
+    contactViaParent?: boolean;
+  };
   // The matrix links a cell to the payment(s) behind it (Finding 6), which
   // needs an id `MatrixPayment` itself does not carry - `selectableMonths`
   // below reuses `MatrixPayment` for the student picker, which has no use
@@ -110,6 +116,9 @@ export type MatrixRow = {
   enrollmentId: string;
   studentName: string;
   studentEmail: string;
+  parentName: string | null;
+  // True when the email shown is the parent's.
+  contactViaParent: boolean;
   removedAt: Date | null;
   // Approved money carrying no month. Deliberately not netted against
   // `amountBehind`: until someone says which month it covers, it settles
@@ -224,6 +233,8 @@ export function buildMonthlyMatrix(
       enrollmentId: e.id,
       studentName: `${e.student.firstName} ${e.student.lastName}`,
       studentEmail: e.student.email,
+      parentName: e.student.parentName ?? null,
+      contactViaParent: e.student.contactViaParent ?? false,
       removedAt: e.removedAt,
       unassigned,
       unassignedPaymentIds,

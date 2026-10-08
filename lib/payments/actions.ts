@@ -12,6 +12,7 @@ import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { sendPaymentConfirmationEmail } from "@/lib/payments/email";
 import { payableMonths } from "@/lib/payments/monthly";
 import { monthKeyToDate } from "@/lib/time/manila";
+import { NOTIFY_SELECT, notificationTargets } from "@/lib/students/contact";
 
 type ActionState = { error: string | null };
 
@@ -34,7 +35,7 @@ export async function createPaymentAction(
 
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { email: true, firstName: true, isActive: true },
+    select: { ...NOTIFY_SELECT, isActive: true },
   });
   if (!user) return { error: "Account not found." };
   if (!user.isActive) return { error: "Your account is inactive." };
@@ -189,11 +190,14 @@ export async function createPaymentAction(
   }
 
   try {
-    await sendPaymentConfirmationEmail({
-      to: user.email,
-      firstName: user.firstName,
-      courseTitle: enrollment.course.title,
-    });
+    await Promise.all(
+      notificationTargets(user).map((target) =>
+        sendPaymentConfirmationEmail({
+          ...target,
+          courseTitle: enrollment.course.title,
+        }),
+      ),
+    );
   } catch (err) {
     console.error("[createPayment] Email error:", err);
   }

@@ -46,6 +46,8 @@ describe("getCourseRoster", () => {
         firstName: "Sam",
         lastName: "Ali",
         email: "s@example.com",
+        parentName: null,
+        contactViaParent: false,
         enrolledAt: new Date("2026-01-05"),
         paymentStatus: "FULLY_PAID",
         removedAt: null,

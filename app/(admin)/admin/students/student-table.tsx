@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ChevronRight, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { KidNote } from '@/components/students/kid-note'
 import type { StudentRow } from '@/lib/students/queries'
 import { RemoveEnrollmentButton } from '@/components/admin/remove-enrollment-button'
 
@@ -38,8 +39,13 @@ export function StudentTable({ students, courseId }: Props) {
         <tbody className="divide-y">
           {students.map((s) => (
             <tr key={s.id} className="hover:bg-muted/50 transition-colors">
-              <td className="px-4 py-3 font-medium">{s.firstName} {s.lastName}</td>
-              <td className="px-4 py-3 text-muted-foreground">{s.email}</td>
+              <td className="px-4 py-3 font-medium">{s.firstName} {s.lastName}
+                <KidNote parentName={s.parentName} />
+              </td>
+              <td className="px-4 py-3 text-muted-foreground">
+                {s.email}
+                {s.contactViaParent && ' (parent)'}
+              </td>
               <td className="px-4 py-3 text-muted-foreground">
                 {s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : '—'}
               </td>

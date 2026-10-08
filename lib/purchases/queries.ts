@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { contactOf, GUARDIAN_CONTACT_SELECT } from "@/lib/students/contact";
 import { ACTIVE_COURSE } from "@/lib/courses/archive";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 import { isPayLater } from "@/lib/purchases/payment";
@@ -97,6 +98,9 @@ export type AdminPurchaseRow = {
   createdAt: Date;
   studentName: string;
   studentEmail: string;
+  parentName: string | null;
+  // True when the email shown is the parent's.
+  contactViaParent: boolean;
   courseCount: number;
   payLater: boolean;
 };
@@ -114,20 +118,27 @@ export async function getAdminPurchasesByStatus(
       amountPaid: true,
       paymentProofUrl: true,
       createdAt: true,
-      user: { select: { firstName: true, lastName: true, email: true } },
+      user: {
+        select: { firstName: true, lastName: true, email: true, guardian: GUARDIAN_CONTACT_SELECT },
+      },
       _count: { select: { items: true } },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status,
-    amountPaid: r.amountPaid.toNumber(),
-    createdAt: r.createdAt,
-    studentName: `${r.user.firstName} ${r.user.lastName}`,
-    studentEmail: r.user.email,
-    courseCount: r._count.items,
-    payLater: isPayLater(r),
-  }));
+  return rows.map((r) => {
+    const contact = contactOf(r.user);
+    return {
+      id: r.id,
+      status: r.status,
+      amountPaid: r.amountPaid.toNumber(),
+      createdAt: r.createdAt,
+      studentName: `${r.user.firstName} ${r.user.lastName}`,
+      studentEmail: contact.email,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
+      courseCount: r._count.items,
+      payLater: isPayLater(r),
+    };
+  });
 }
 
 export type AdminPurchaseDetail = {
@@ -143,6 +154,9 @@ export type AdminPurchaseDetail = {
     lastName: string;
     email: string;
     contactNumber: string | null;
+    parentName: string | null;
+    // True when the email and contact number shown are the parent's.
+    contactViaParent: boolean;
   };
   courses: {
     id: string;
@@ -178,6 +192,7 @@ export async function getAdminPurchaseById(
           lastName: true,
           email: true,
           contactNumber: true,
+          guardian: GUARDIAN_CONTACT_SELECT,
         },
       },
       items: {
@@ -227,7 +242,17 @@ export async function getAdminPurchaseById(
     payLater: isPayLater(r),
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
-    student: r.user,
+    student: (() => {
+      const contact = contactOf(r.user);
+      return {
+        firstName: r.user.firstName,
+        lastName: r.user.lastName,
+        email: contact.email,
+        contactNumber: contact.contactNumber,
+        parentName: contact.parentName,
+        contactViaParent: contact.viaParent,
+      };
+    })(),
     courses: r.items.map((i) => ({
       id: i.course.id,
       title: i.course.title,

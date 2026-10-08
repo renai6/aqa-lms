@@ -3,6 +3,7 @@
 // it would make it unreadable in one sitting.
 
 import { db } from "@/lib/db";
+import { contactOf, GUARDIAN_CONTACT_SELECT } from "@/lib/students/contact";
 import {
   buildMonthlyMatrix,
   type MatrixEnrollment,
@@ -55,7 +56,9 @@ export async function getCourseMonthlyMatrix(
       completedAt: true,
       removedAt: true,
       removedReason: true,
-      user: { select: { firstName: true, lastName: true, email: true } },
+      user: {
+        select: { firstName: true, lastName: true, email: true, guardian: GUARDIAN_CONTACT_SELECT },
+      },
       payments: {
         // Rejected payments are neither money received nor awaiting review,
         // so they say nothing about a month.
@@ -74,7 +77,13 @@ export async function getCourseMonthlyMatrix(
       enrolledAt: r.enrolledAt,
       completedAt: r.completedAt,
       removedAt: r.removedAt,
-      student: r.user,
+      student: {
+        firstName: r.user.firstName,
+        lastName: r.user.lastName,
+        ...(({ email, parentName, viaParent }) => ({ email, parentName, contactViaParent: viaParent }))(
+          contactOf(r.user),
+        ),
+      },
       payments: r.payments.map((p) => ({
         id: p.id,
         amount: p.amount.toNumber(),

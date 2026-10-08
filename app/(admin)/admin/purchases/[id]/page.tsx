@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
+import { KidNote } from "@/components/students/kid-note";
 import { getAdminPurchaseById } from "@/lib/purchases/queries";
 import { peso } from "@/lib/payments/balance";
 import { ProofImage } from "@/components/admin/proof-image";
@@ -25,6 +26,7 @@ export default async function PurchaseDetailPage({ params }: Props) {
         <div className="flex items-center justify-between">
           <p className="font-semibold">
             {purchase.student.firstName} {purchase.student.lastName}
+            <KidNote parentName={purchase.student.parentName} />
           </p>
           <div className="flex items-center gap-2">
             {purchase.payLater && (
@@ -48,10 +50,12 @@ export default async function PurchaseDetailPage({ params }: Props) {
         </div>
         <p className="text-muted-foreground text-sm">
           {purchase.student.email}
+          {purchase.student.contactViaParent && " (parent)"}
         </p>
         {purchase.student.contactNumber && (
           <p className="text-muted-foreground text-sm">
             {purchase.student.contactNumber}
+            {purchase.student.contactViaParent && " (parent)"}
           </p>
         )}
       </div>

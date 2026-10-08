@@ -1,8 +1,18 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { SignOutButton } from './sign-out-button'
+import { ProfileMenu } from './profile-menu'
 
-export function StudentNav() {
+type Props = {
+  self: { firstName: string }
+  kids: { id: string; firstName: string }[]
+  activeKidId: string | null
+  canManageKids: boolean
+}
+
+export function StudentNav({ self, kids, activeKidId, canManageKids }: Props) {
+  const viewing = kids.find((k) => k.id === activeKidId)
+
   return (
     <header className="sticky top-0 z-10 bg-sidebar border-b border-white/10">
       <div className="px-6 md:px-10 h-16 flex items-center justify-between">
@@ -19,9 +29,15 @@ export function StudentNav() {
           <Link href="/student/announcements" className="text-white/70 hover:text-white text-sm hidden sm:block">Announcements</Link>
           <Link href="/student/courses" className="text-white/70 hover:text-white text-sm hidden sm:block">Courses</Link>
           <Link href="/faq" className="text-white/70 hover:text-white text-sm hidden sm:block">FAQ</Link>
+          <ProfileMenu self={self} kids={kids} activeKidId={activeKidId} canManageKids={canManageKids} />
           <SignOutButton className="text-white/60 hover:text-white hover:bg-white/10" />
         </div>
       </div>
+      {viewing && (
+        <div className="border-t border-amber-200 bg-amber-100 px-6 py-2 text-sm text-amber-900 md:px-10">
+          You&apos;re viewing <strong>{viewing.firstName}</strong>&apos;s classes. Switch profiles from the menu above.
+        </div>
+      )}
     </header>
   )
 }

@@ -18,7 +18,8 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
   const user = await db.user.findUnique({ where: { email: email.trim().toLowerCase() } })
 
-  if (!user || !(await comparePassword(password, user.passwordHash))) {
+  // A kid profile has neither an email nor a password, so it can never match.
+  if (!user?.email || !user.passwordHash || !(await comparePassword(password, user.passwordHash))) {
     return { error: 'Invalid email or password.' }
   }
 

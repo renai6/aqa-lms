@@ -185,7 +185,7 @@ export type LessonRow = {
 export type TeacherRow = {
   userId: string;
   assignedAt: Date;
-  user: { id: string; firstName: string; lastName: string; email: string };
+  user: { id: string; firstName: string; lastName: string; email: string | null };
 };
 
 export type ScheduleRow = {
@@ -230,7 +230,7 @@ export type TeacherOption = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
 };
 
 export type CourseOption = { id: string; title: string };

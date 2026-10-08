@@ -9,6 +9,7 @@ import { pickRelevantAttempt } from '@/lib/assessments/grading'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { enrolleeGenderWhere } from '@/lib/subjects/visibility'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
+import { contactOf, GUARDIAN_CONTACT_SELECT } from '@/lib/students/contact'
 import { groupSubjectSchedules, type SubjectSchedule } from '@/lib/schedule/format'
 import type { Recording } from '@/lib/batches/drive-folder'
 import { resolveRecordings } from '@/lib/batches/recordings'
@@ -209,6 +210,9 @@ export type SubjectStudentRow = {
   firstName: string
   lastName: string
   email: string
+  parentName: string | null
+  // True when the email shown is the parent's.
+  contactViaParent: boolean
   enrolledAt: Date
 }
 
@@ -231,18 +235,29 @@ export async function getSubjectStudents(
     select: {
       enrolledAt: true,
       user: {
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          guardian: GUARDIAN_CONTACT_SELECT,
+        },
       },
     },
   })
 
-  return enrollments.map((e) => ({
-    id: e.user.id,
-    firstName: e.user.firstName,
-    lastName: e.user.lastName,
-    email: e.user.email,
-    enrolledAt: e.enrolledAt,
-  }))
+  return enrollments.map((e) => {
+    const contact = contactOf(e.user)
+    return {
+      id: e.user.id,
+      firstName: e.user.firstName,
+      lastName: e.user.lastName,
+      email: contact.email,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
+      enrolledAt: e.enrolledAt,
+    }
+  })
 }
 
 // ─── Class recordings of a subject ────────────────────────────────────────────

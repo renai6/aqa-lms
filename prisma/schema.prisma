@@ -124,8 +124,10 @@ enum PaymentSource {
 
 model User {
   id           String @id @default(cuid())
-  email        String @unique
-  passwordHash String
+  // Null for a kid profile, which never logs in. Postgres allows many nulls
+  // under the unique index.
+  email        String? @unique
+  passwordHash String?
 
   firstName   String
   lastName    String
@@ -143,6 +145,11 @@ model User {
   facebookName       String?
   facebookLink       String?
   studentType        StudentType?
+  // Set on a kid profile: the parent account that manages it. A kid is a
+  // regular STUDENT the parent studies as from their own login.
+  guardianId         String?
+  guardian           User?        @relation("Guardianship", fields: [guardianId], references: [id])
+  dependents         User[]       @relation("Guardianship")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -158,6 +165,8 @@ model User {
   reviewedPayments   Payment[]           @relation("ReviewedPayments")
   verificationTokens VerificationToken[]
   lessonCompletions  LessonCompletion[]
+
+  @@index([guardianId])
 }
 
 model VerificationToken {

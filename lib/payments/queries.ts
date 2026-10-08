@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { contactOf, GUARDIAN_CONTACT_SELECT } from "@/lib/students/contact";
 import type { EnrollmentStatus, PaymentFrequency, PaymentStatus } from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
 import { allocate } from "@/lib/purchases/allocation";
@@ -185,6 +186,9 @@ export type AdminPaymentRow = {
   createdAt: Date;
   studentName: string;
   studentEmail: string;
+  parentName: string | null;
+  // True when the email shown is the parent's.
+  contactViaParent: boolean;
   courseTitle: string;
   balance: Balance;
   // Set only on a MONTHLY course. When set, this - not `balance` - is what
@@ -219,7 +223,9 @@ export async function getAdminPaymentsByStatus(
           payments: {
             select: { status: true, amount: true, periodMonth: true },
           },
-          user: { select: { firstName: true, lastName: true, email: true } },
+          user: {
+            select: { firstName: true, lastName: true, email: true, guardian: GUARDIAN_CONTACT_SELECT },
+          },
           course: { select: { title: true, tuitionFee: true, paymentFrequency: true } },
         },
       },
@@ -230,13 +236,16 @@ export async function getAdminPaymentsByStatus(
     const approvedAmounts = r.enrollment.payments
       .filter((p) => p.status === "APPROVED")
       .map((p) => p.amount.toNumber());
+    const contact = contactOf(r.enrollment.user);
     return {
       id: r.id,
       status: r.status,
       amount: r.amount.toNumber(),
       createdAt: r.createdAt,
       studentName: `${r.enrollment.user.firstName} ${r.enrollment.user.lastName}`,
-      studentEmail: r.enrollment.user.email,
+      studentEmail: contact.email,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
       courseTitle: r.enrollment.course.title,
       balance: computeBalance(r.enrollment.totalDue?.toNumber() ?? null, approvedAmounts),
       monthlyLine: isMonthly
@@ -282,6 +291,9 @@ export type AdminPaymentDetail = {
     lastName: string;
     email: string;
     contactNumber: string | null;
+    parentName: string | null;
+    // True when the email and contact number shown are the parent's.
+    contactViaParent: boolean;
   };
   courseTitle: string;
   // The enrollment's balance as it stands now. This payment is PENDING, so it
@@ -347,6 +359,7 @@ export async function getAdminPaymentById(
               lastName: true,
               email: true,
               contactNumber: true,
+              guardian: GUARDIAN_CONTACT_SELECT,
             },
           },
           course: {
@@ -454,7 +467,17 @@ export async function getAdminPaymentById(
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
     enrollmentPaymentStatus: r.enrollment.paymentStatus,
-    student: r.enrollment.user,
+    student: (() => {
+      const contact = contactOf(r.enrollment.user);
+      return {
+        firstName: r.enrollment.user.firstName,
+        lastName: r.enrollment.user.lastName,
+        email: contact.email,
+        contactNumber: contact.contactNumber,
+        parentName: contact.parentName,
+        contactViaParent: contact.viaParent,
+      };
+    })(),
     courseTitle: r.enrollment.course.title,
     balance: computeBalance(totalDue, approvedAmounts),
     totalDue,

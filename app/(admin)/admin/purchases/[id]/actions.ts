@@ -17,6 +17,7 @@ import {
 import { peso } from "@/lib/payments/balance";
 import { ensureActiveBatchId } from "@/lib/batches/ensure";
 import { toMonthKey, monthKeyToDate } from "@/lib/time/manila";
+import { NOTIFY_SELECT, notificationTargets } from "@/lib/students/contact";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -54,7 +55,7 @@ export async function approvePurchaseAction(
       paymentType: true,
       amountPaid: true,
       paymentProofUrl: true,
-      user: { select: { id: true, email: true, firstName: true } },
+      user: { select: { id: true, ...NOTIFY_SELECT } },
       items: {
         select: {
           courseId: true,
@@ -259,11 +260,14 @@ export async function approvePurchaseAction(
   revalidatePath("/admin/purchases");
 
   try {
-    await sendPurchaseApprovalEmail({
-      to: purchase.user.email,
-      firstName: purchase.user.firstName,
-      courseNames: purchase.items.map((i) => i.course.title),
-    });
+    await Promise.all(
+      notificationTargets(purchase.user).map((target) =>
+        sendPurchaseApprovalEmail({
+          ...target,
+          courseNames: purchase.items.map((i) => i.course.title),
+        }),
+      ),
+    );
   } catch (err) {
     console.error("[approvePurchase] Email error:", err);
     return {
@@ -298,7 +302,7 @@ export async function rejectPurchaseAction(
 
   const purchase = await db.purchase.findUnique({
     where: { id },
-    select: { user: { select: { email: true, firstName: true } } },
+    select: { user: { select: NOTIFY_SELECT } },
   });
   if (!purchase) return { error: "Purchase not found." };
 
@@ -323,11 +327,11 @@ export async function rejectPurchaseAction(
   revalidatePath("/admin/purchases");
 
   try {
-    await sendPurchaseRejectionEmail({
-      to: purchase.user.email,
-      firstName: purchase.user.firstName,
-      reason,
-    });
+    await Promise.all(
+      notificationTargets(purchase.user).map((target) =>
+        sendPurchaseRejectionEmail({ ...target, reason }),
+      ),
+    );
   } catch (err) {
     console.error("[rejectPurchase] Email error:", err);
     return {

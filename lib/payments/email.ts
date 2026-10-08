@@ -1,10 +1,11 @@
 import { appUrl, escapeHtml, sendEmail } from "@/lib/email/client";
-import { button, note, p, renderEmail } from "@/lib/email/template";
+import { button, learnerLine, note, p, renderEmail } from "@/lib/email/template";
 
 export async function sendPaymentConfirmationEmail(params: {
   to: string;
   firstName: string;
   courseTitle: string;
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/dashboard");
   await sendEmail({
@@ -15,6 +16,7 @@ export async function sendPaymentConfirmationEmail(params: {
       heading: "We received your payment",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p(
           `We have received your payment and proof of payment for <strong>${escapeHtml(params.courseTitle)}</strong>. Our team will review it shortly.`,
         ) +
@@ -29,6 +31,7 @@ export async function sendPaymentApprovalEmail(params: {
   firstName: string;
   courseTitle: string;
   paymentStatus: "PARTIALLY_PAID" | "FULLY_PAID";
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/dashboard");
   const statusLine =
@@ -43,6 +46,7 @@ export async function sendPaymentApprovalEmail(params: {
       heading: "Your payment is approved",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p(
           `Your payment for <strong>${escapeHtml(params.courseTitle)}</strong> has been approved.`,
         ) +
@@ -58,6 +62,7 @@ export async function sendPaymentRejectionEmail(params: {
   firstName: string;
   courseTitle: string;
   reason: string;
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/dashboard");
   await sendEmail({
@@ -68,6 +73,7 @@ export async function sendPaymentRejectionEmail(params: {
       heading: "Update on your payment",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p(
           `Unfortunately, your recent payment for <strong>${escapeHtml(params.courseTitle)}</strong> could not be approved.`,
         ) +

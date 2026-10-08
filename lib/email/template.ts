@@ -7,6 +7,8 @@
  * fancier than colour and spacing belongs on the site, not in the inbox.
  */
 
+import { escapeHtml } from '@/lib/email/client'
+
 const MAROON = '#8a1933'
 const MAROON_DEEP = '#59081b'
 const GOLD = '#ffba70'
@@ -34,6 +36,16 @@ export function ul(items: string[]): string {
     )
     .join('')
   return `<ul style="margin:0 0 14px;padding-left:20px;">${rows}</ul>`
+}
+
+/**
+ * Emails about a kid's enrollment go to the parent. This names the kid, so a
+ * parent of several children knows which one the email is about. Empty when
+ * the student is acting for themselves.
+ */
+export function learnerLine(learnerFirstName: string | null | undefined): string {
+  if (!learnerFirstName) return ''
+  return p(`This update is about <strong>${escapeHtml(learnerFirstName)}</strong>'s enrollment.`)
 }
 
 /**

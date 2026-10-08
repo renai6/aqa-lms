@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
+import { KidNote } from "@/components/students/kid-note";
 import { ProofImage } from "@/components/admin/proof-image";
 import { BalanceSummary } from "@/components/admin/balance-summary";
 import { getAdminPaymentById } from "@/lib/payments/queries";
@@ -33,6 +34,7 @@ export default async function PaymentDetailPage({ params }: Props) {
         <div className="flex items-center justify-between">
           <p className="font-semibold">
             {payment.student.firstName} {payment.student.lastName}
+            <KidNote parentName={payment.student.parentName} />
           </p>
           {payment.status === "APPROVED" ? (
             <Badge className="border-green-200 bg-green-100 text-green-800">
@@ -44,10 +46,14 @@ export default async function PaymentDetailPage({ params }: Props) {
             <Badge variant="outline">Pending</Badge>
           )}
         </div>
-        <p className="text-muted-foreground text-sm">{payment.student.email}</p>
+        <p className="text-muted-foreground text-sm">
+          {payment.student.email}
+          {payment.student.contactViaParent && " (parent)"}
+        </p>
         {payment.student.contactNumber && (
           <p className="text-muted-foreground text-sm">
             {payment.student.contactNumber}
+            {payment.student.contactViaParent && " (parent)"}
           </p>
         )}
       </div>
