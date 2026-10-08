@@ -41,7 +41,8 @@ model User {
 
 - A kid has `role = STUDENT`, a non-null `guardianId`, and null `email` and `passwordHash`.
 - Postgres allows many null values under a unique index, so kids need no placeholder emails.
-- A kid stores only first name, last name and optional gender.
+- A kid stores only first name, last name and gender.
+Gender is required, as it is at registration: gender-restricted subjects fail closed for a student with no gender, so an optional gender would hide those subjects from the kid.
 Address, contact number and Facebook details come from the guardian wherever they are displayed.
 - No other table changes.
 Enrollments, purchases, payments, grades, attempts, lesson completions and certificates stay keyed by `userId`, which is the kid's id when the kid is the learner.
@@ -67,19 +68,15 @@ The database check below is the authority, so a forged value can only resolve to
 
 ### `getSession()`
 
-`getSession()` in `lib/auth/session.ts` returns:
+`lib/auth/session.ts` exposes two functions with the same return type, `{ userId: string; role: UserRole } | null`:
 
-```ts
-{ userId: string; role: UserRole; accountUserId: string }
-```
-
-- `accountUserId` is the logged-in user from the JWT.
-- `userId` is the active learner.
-It is the kid's id when all of these hold, and `accountUserId` otherwise:
+- `getAccountSession()` is today's `getSession()` body, unchanged: the logged-in user from the JWT, ignoring any selected profile.
+- `getSession()` returns the active learner.
+Its `userId` is the kid's id when all of these hold, and the account's id otherwise:
   1. the account role is `STUDENT`;
   2. the `active_profile` cookie is present;
-  3. a user with that id exists, has `guardianId === accountUserId`, and is active.
-- The `tokenVersion` check runs against `accountUserId`.
+  3. a user with that id exists, has `guardianId` equal to the account's id, and is active.
+- The `tokenVersion` check runs against the account, inside `getAccountSession()`.
 A password change on the parent still revokes every session, including while viewing a kid.
 - Resolution is wrapped in React `cache` so a render does at most one extra lookup.
 - An invalid cookie is ignored, not cleared, because server components cannot write cookies.
@@ -87,13 +84,15 @@ A password change on the parent still revokes every session, including while vie
 Every existing caller keeps reading `userId` and therefore works for the kid with no change.
 Server actions posted from student pages pass through `proxy.ts`, so they get the same identity.
 
-Callers that must act on the account holder switch to `accountUserId`:
+Callers that must act on the account holder switch to `getAccountSession()`:
 
 - change password;
 - managing kids (`/student/kids` and its actions);
 - the profile switch action itself.
 
-The student layout re-checks `isActive` for both `accountUserId` and `userId`.
+The student layout re-checks `isActive` for the account; `getSession()` already only resolves active kids.
+
+Two functions instead of a third `accountUserId` field keep the session type unchanged, so the ~35 existing test mocks of `getSession` stay valid, and account-level code has to opt in by name.
 
 ### Switch action
 
@@ -103,8 +102,9 @@ The student layout re-checks `isActive` for both `accountUserId` and `userId`.
 
 ### UI
 
-- The student nav shows "Viewing as: **Ana** ▾" once the account has at least one kid.
-The menu lists "Me", each kid, "+ Add a kid" and "Manage kids".
+- The student nav always shows a profile menu, labeled with the active profile's first name.
+The menu lists the account holder, each active kid, and "Manage kids", which is where kids are added.
+It is always visible, including on mobile, so a parent can add their first kid from any device.
 - While viewing a kid, a colored strip under the nav reads "You're viewing Ana's classes".
 This guards against taking a quiz or submitting a payment as the wrong person.
 - Checkout always runs for the active profile.
@@ -116,16 +116,18 @@ There is no learner picker inside checkout, so the checkout code path is unchang
 Shared logic lives in `lib/students/dependents.ts`:
 
 - `createDependent(guardianId, { firstName, lastName, gender })`
-- `updateDependent(kidId, { firstName, lastName, gender })`
-- `removeDependent(kidId)`
+- `updateDependent(guardianId, kidId, { firstName, lastName, gender })`
+- `removeDependent(guardianId, kidId)`
+
+Update and remove are scoped by `guardianId`, so a parent can only touch their own kids.
 
 Each validates the rules from the data model section and is used by both the parent and the admin surfaces.
 
 ### Parent: `/student/kids`
 
-- Always operates on `accountUserId`, even while viewing a kid.
-- Add: first name, last name, optional gender.
-After adding, the parent is switched to the new kid.
+- Always operates on the account from `getAccountSession()`, even while viewing a kid.
+- Add: first name, last name, gender.
+After adding, the parent is switched to the new kid and sent to the course catalog to enroll them.
 - Edit: names and gender, since names appear on certificates.
 - Remove: only while the kid has no purchases or enrollments.
 
@@ -155,7 +157,7 @@ Each flagged site is resolved either through `notificationTarget` or by displayi
 No code change, but tests lock it in.
 - Registration is unchanged and always creates an account with no guardian.
 - Admin Users lists only admins and teachers, so kids never appear there.
-- `changePasswordAction` and any other password path operate on `accountUserId`, which is never a kid.
+- `changePasswordAction` uses `getAccountSession()`, so it always acts on the account, never a kid.
 
 ## Admin and teacher display
 
@@ -168,7 +170,7 @@ This covers the student export CSV and the monthly payments view.
 
 Vitest:
 
-- `getSession()` resolution: own kid resolves to the kid; a stranger's kid, a deactivated kid, a missing user, and a non-student account all resolve to the account holder; a stale `tokenVersion` is rejected while viewing a kid.
+- `getSession()` resolution: own kid resolves to the kid; a stranger's kid, a deactivated kid, a missing user, and a non-student account all resolve to the account holder; a stale `tokenVersion` is rejected while viewing a kid; `getAccountSession()` ignores the cookie.
 - `createDependent` rejects a guardian that is a kid, is not a `STUDENT`, or is inactive.
 - `removeDependent` is refused once the kid has a purchase or an enrollment.
 - `notificationTarget` returns the guardian for a kid and the user for everyone else.
@@ -190,4 +192,4 @@ Screenshots of the switcher, the strip, the kids page and the admin cards at des
 ## Rollout
 
 - One migration, safe to deploy without backfill.
-- Existing students see no change: the switcher appears only once an account has a kid.
+- Existing students see one change: the profile menu with their own name, from which they can add a kid.
