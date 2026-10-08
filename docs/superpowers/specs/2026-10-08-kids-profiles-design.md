@@ -110,6 +110,7 @@ It is always visible, including on mobile, so a parent can add their first kid f
 This guards against taking a quiz or submitting a payment as the wrong person.
 - Checkout always runs for the active profile.
 When the active profile is a kid, checkout shows "Enrolling for Ana".
+The checkout form carries the id of the profile it was rendered for, and a purchase submitted after a profile switch in another tab is refused with a prompt to reload, so it never buys for someone the page did not name.
 There is no learner picker inside checkout, so the checkout code path is unchanged and each purchase belongs to exactly one learner.
 
 ## Managing kids

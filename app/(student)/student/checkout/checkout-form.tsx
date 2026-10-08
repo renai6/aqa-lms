@@ -9,9 +9,11 @@ import { AlertCircle } from "lucide-react";
 import { PaymentInstructions } from "@/components/payment-instructions";
 import type { CheckoutCourse } from "@/lib/purchases/queries";
 
-type Props = { courses: CheckoutCourse[] };
+// learnerId is the profile this page was rendered for, so the purchase is
+// refused if a switch in another tab changed the active profile since.
+type Props = { courses: CheckoutCourse[]; learnerId: string };
 
-export function CheckoutForm({ courses }: Props) {
+export function CheckoutForm({ courses, learnerId }: Props) {
   const [state, formAction, isPending] = useActionState(createPurchaseAction, {
     error: null,
   });
@@ -20,6 +22,7 @@ export function CheckoutForm({ courses }: Props) {
 
   return (
     <form action={formAction} className="space-y-6">
+      <input type="hidden" name="learnerId" value={learnerId} />
       {courses.map((c) => (
         <input key={c.id} type="hidden" name="courseIds" value={c.id} />
       ))}

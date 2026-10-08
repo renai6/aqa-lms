@@ -41,7 +41,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
         </p>
       )}
       <div className="mt-6">
-        <CheckoutForm courses={courses} />
+        <CheckoutForm courses={courses} learnerId={session.userId} />
       </div>
     </div>
   );

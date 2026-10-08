@@ -15,6 +15,12 @@ type ActionState = { error: string | null }
 export async function createPurchaseAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession()
   if (!session || session.role !== 'STUDENT') return { error: 'Unauthorized' }
+  // The form names the profile it was rendered for. A parent who switched
+  // profiles in another tab would otherwise buy for whoever is active now,
+  // not the learner the page said it was enrolling.
+  if (formData.get('learnerId') !== session.userId) {
+    return { error: 'You switched profiles in another tab. Reload this page to check out for the right person.' }
+  }
 
   const user = await db.user.findUnique({
     where: { id: session.userId },

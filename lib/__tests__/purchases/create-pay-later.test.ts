@@ -55,11 +55,34 @@ describe("createPurchaseAction pay later", () => {
     vi.mocked(db.purchase.delete).mockResolvedValue({ id: "p1" } as never);
   });
 
+  it("refuses a form rendered for another profile and writes nothing", async () => {
+    const result = await createPurchaseAction(
+      { error: null },
+      form({ learnerId: "k1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+    );
+
+    expect(result).toEqual({
+      error: "You switched profiles in another tab. Reload this page to check out for the right person.",
+    });
+    expect(db.purchase.create).not.toHaveBeenCalled();
+    expect(sendPurchaseConfirmationEmail).not.toHaveBeenCalled();
+  });
+
+  it("refuses a form with no learner", async () => {
+    const result = await createPurchaseAction(
+      { error: null },
+      form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+    );
+
+    expect(result.error).toContain("You switched profiles in another tab.");
+    expect(db.purchase.create).not.toHaveBeenCalled();
+  });
+
   it("records a zero amount and no proof, and never touches storage", async () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
@@ -80,7 +103,7 @@ describe("createPurchaseAction pay later", () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
@@ -97,7 +120,7 @@ describe("createPurchaseAction pay later", () => {
 
     const result = await createPurchaseAction(
       { error: null },
-      form({ courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
+      form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
     );
 
     expect(result.error).toBe("Please select a file to upload.");
@@ -117,7 +140,7 @@ describe("createPurchaseAction pay later", () => {
 
     const result = await createPurchaseAction(
       { error: null },
-      form({ courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
+      form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", amountPaid: "5000" }),
     );
 
     expect(result.error).toContain("could not be saved");
@@ -136,7 +159,7 @@ describe("createPurchaseAction pay later", () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
@@ -161,7 +184,7 @@ describe("createPurchaseAction pay later", () => {
     await expect(
       createPurchaseAction(
         { error: null },
-        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+        form({ learnerId: "u1", courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
 
