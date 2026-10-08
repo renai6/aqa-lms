@@ -174,7 +174,8 @@ No code change, but tests lock it in.
 ## Admin and teacher display
 
 - Kids appear as regular students in the admin Students list, course rosters, batch rosters and the teacher's students page, with a small "Kid" badge.
-- Wherever an email or contact column appears, a kid shows the guardian's details labeled "(parent)".
+- Wherever an email or contact column appears, a kid without their own email shows the guardian's details labeled "(parent)".
+A linked kid with their own email shows their own details, unlabeled, so staff can always tell whose contact they are reading.
 This covers the student export CSV and the monthly payments view.
 - Purchase and payment review pages show "Ana (parent: Raffi Muloc)".
 

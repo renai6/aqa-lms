@@ -150,6 +150,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
                   </td>
                   <td className="text-muted-foreground px-4 py-2">
                     {r.studentEmail}
+                    {r.contactViaParent && " (parent)"}
                   </td>
                   <td className="px-4 py-2">{r.courseCount}</td>
                   <td className="px-4 py-2">

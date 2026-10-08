@@ -80,7 +80,9 @@ export async function getCourseMonthlyMatrix(
       student: {
         firstName: r.user.firstName,
         lastName: r.user.lastName,
-        ...(({ email, parentName }) => ({ email, parentName }))(contactOf(r.user)),
+        ...(({ email, parentName, viaParent }) => ({ email, parentName, contactViaParent: viaParent }))(
+          contactOf(r.user),
+        ),
       },
       payments: r.payments.map((p) => ({
         id: p.id,

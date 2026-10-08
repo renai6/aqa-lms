@@ -67,7 +67,10 @@ export default async function TeacherSubjectStudentsPage({ params }: Props) {
                     {s.lastName}, {s.firstName}
                     <KidNote parentName={s.parentName} />
                   </td>
-                  <td className="text-muted-foreground px-4 py-3">{s.email}</td>
+                  <td className="text-muted-foreground px-4 py-3">
+                    {s.email}
+                    {s.contactViaParent && ' (parent)'}
+                  </td>
                   <td className="text-muted-foreground px-4 py-3">
                     {s.enrolledAt.toLocaleDateString()}
                   </td>

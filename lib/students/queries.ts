@@ -18,6 +18,8 @@ export type StudentRow = {
   lastName: string
   email: string
   parentName: string | null
+  // True when the email and contact number shown are the parent's.
+  contactViaParent: boolean
   gender: Gender | null
   isActive: boolean
   createdAt: Date
@@ -144,6 +146,7 @@ async function findStudents(
       email: contact.email,
       contactNumber: contact.contactNumber,
       parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
       enrollments: u.enrollments.map((e) => ({
         id: e.id,
         courseId: e.courseId,
@@ -218,6 +221,7 @@ export async function getAllStudents(
       email: contact.email,
       contactNumber: contact.contactNumber,
       parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
       enrollments: u.enrollments.map((e) => ({
         id: e.id,
         courseId: e.courseId,
@@ -338,6 +342,8 @@ export type RosterRow = {
   lastName: string
   email: string
   parentName: string | null
+  // True when the email shown is the parent's.
+  contactViaParent: boolean
   enrolledAt: Date
   paymentStatus: PaymentStatus
   removedAt: Date | null
@@ -390,7 +396,9 @@ export async function getCourseRoster(courseId: string): Promise<RosterRow[]> {
     studentId: e.user.id,
     firstName: e.user.firstName,
     lastName: e.user.lastName,
-    ...(({ email, parentName }) => ({ email, parentName }))(contactOf(e.user)),
+    ...(({ email, parentName, viaParent }) => ({ email, parentName, contactViaParent: viaParent }))(
+      contactOf(e.user),
+    ),
     enrolledAt: e.enrolledAt,
     paymentStatus: e.paymentStatus,
     removedAt: e.removedAt,

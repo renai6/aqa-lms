@@ -220,6 +220,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
                     <KidNote parentName={r.parentName} />
                     <p className="text-muted-foreground text-xs">
                       {r.studentEmail}
+                      {r.contactViaParent && " (parent)"}
                     </p>
                   </td>
                   <td className="px-4 py-2">{r.courseTitle}</td>

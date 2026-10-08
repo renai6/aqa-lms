@@ -122,6 +122,7 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                         row keeps room for its three action buttons. */}
                     <p className="text-muted-foreground text-xs font-normal">
                       {r.email}
+                      {r.contactViaParent && " (parent)"}
                     </p>
                   </td>
                   <td className="px-4 py-3">

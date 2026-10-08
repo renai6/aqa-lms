@@ -50,10 +50,12 @@ export default async function PurchaseDetailPage({ params }: Props) {
         </div>
         <p className="text-muted-foreground text-sm">
           {purchase.student.email}
+          {purchase.student.contactViaParent && " (parent)"}
         </p>
         {purchase.student.contactNumber && (
           <p className="text-muted-foreground text-sm">
             {purchase.student.contactNumber}
+            {purchase.student.contactViaParent && " (parent)"}
           </p>
         )}
       </div>

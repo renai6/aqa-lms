@@ -99,6 +99,8 @@ export type AdminPurchaseRow = {
   studentName: string;
   studentEmail: string;
   parentName: string | null;
+  // True when the email shown is the parent's.
+  contactViaParent: boolean;
   courseCount: number;
   payLater: boolean;
 };
@@ -122,17 +124,21 @@ export async function getAdminPurchasesByStatus(
       _count: { select: { items: true } },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status,
-    amountPaid: r.amountPaid.toNumber(),
-    createdAt: r.createdAt,
-    studentName: `${r.user.firstName} ${r.user.lastName}`,
-    studentEmail: contactOf(r.user).email,
-    parentName: contactOf(r.user).parentName,
-    courseCount: r._count.items,
-    payLater: isPayLater(r),
-  }));
+  return rows.map((r) => {
+    const contact = contactOf(r.user);
+    return {
+      id: r.id,
+      status: r.status,
+      amountPaid: r.amountPaid.toNumber(),
+      createdAt: r.createdAt,
+      studentName: `${r.user.firstName} ${r.user.lastName}`,
+      studentEmail: contact.email,
+      parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
+      courseCount: r._count.items,
+      payLater: isPayLater(r),
+    };
+  });
 }
 
 export type AdminPurchaseDetail = {
@@ -149,6 +155,8 @@ export type AdminPurchaseDetail = {
     email: string;
     contactNumber: string | null;
     parentName: string | null;
+    // True when the email and contact number shown are the parent's.
+    contactViaParent: boolean;
   };
   courses: {
     id: string;
@@ -242,6 +250,7 @@ export async function getAdminPurchaseById(
         email: contact.email,
         contactNumber: contact.contactNumber,
         parentName: contact.parentName,
+        contactViaParent: contact.viaParent,
       };
     })(),
     courses: r.items.map((i) => ({

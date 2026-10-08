@@ -46,10 +46,14 @@ export default async function PaymentDetailPage({ params }: Props) {
             <Badge variant="outline">Pending</Badge>
           )}
         </div>
-        <p className="text-muted-foreground text-sm">{payment.student.email}</p>
+        <p className="text-muted-foreground text-sm">
+          {payment.student.email}
+          {payment.student.contactViaParent && " (parent)"}
+        </p>
         {payment.student.contactNumber && (
           <p className="text-muted-foreground text-sm">
             {payment.student.contactNumber}
+            {payment.student.contactViaParent && " (parent)"}
           </p>
         )}
       </div>

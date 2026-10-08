@@ -1,5 +1,6 @@
-// Marks a kid profile wherever staff see a student, and names the parent whose
-// email and phone are shown in the kid's place.
+// Marks a kid profile wherever staff see a student, and names the parent. The
+// contact shown beside it may be the kid's own (a linked kid with their own
+// login) or the parent's, which the surface marks with "(parent)".
 export function KidNote({ parentName }: { parentName: string | null }) {
   if (!parentName) return null
   return (

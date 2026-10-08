@@ -42,7 +42,10 @@ export function StudentTable({ students, courseId }: Props) {
               <td className="px-4 py-3 font-medium">{s.firstName} {s.lastName}
                 <KidNote parentName={s.parentName} />
               </td>
-              <td className="px-4 py-3 text-muted-foreground">{s.email}</td>
+              <td className="px-4 py-3 text-muted-foreground">
+                {s.email}
+                {s.contactViaParent && ' (parent)'}
+              </td>
               <td className="px-4 py-3 text-muted-foreground">
                 {s.gender ? (s.gender === 'MALE' ? 'Male' : 'Female') : '—'}
               </td>

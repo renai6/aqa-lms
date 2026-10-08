@@ -169,7 +169,10 @@ export function MonthlyMatrixTable({
                   )}
                 </p>
                 <KidNote parentName={row.parentName} />
-                <p className="text-muted-foreground text-xs">{row.studentEmail}</p>
+                <p className="text-muted-foreground text-xs">
+                  {row.studentEmail}
+                  {row.contactViaParent && " (parent)"}
+                </p>
               </th>
               <td className="text-muted-foreground px-3 py-2 text-right text-xs">
                 {row.unassigned > 0 ? (

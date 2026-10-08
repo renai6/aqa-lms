@@ -211,6 +211,8 @@ export type SubjectStudentRow = {
   lastName: string
   email: string
   parentName: string | null
+  // True when the email shown is the parent's.
+  contactViaParent: boolean
   enrolledAt: Date
 }
 
@@ -252,6 +254,7 @@ export async function getSubjectStudents(
       lastName: e.user.lastName,
       email: contact.email,
       parentName: contact.parentName,
+      contactViaParent: contact.viaParent,
       enrolledAt: e.enrolledAt,
     }
   })
