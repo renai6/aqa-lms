@@ -148,4 +148,33 @@ describe("createPurchaseAction pay later", () => {
       }),
     );
   });
+
+  it("sends a linked kid's confirmation to the kid and the parent", async () => {
+    vi.mocked(db.user.findUnique).mockResolvedValue({
+      email: "ana@example.com",
+      firstName: "Ana",
+      guardian: { firstName: "Raffi", email: "raffi@example.com" },
+      studentType: "NEW",
+      isActive: true,
+    } as never);
+
+    await expect(
+      createPurchaseAction(
+        { error: null },
+        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledTimes(2);
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "ana@example.com", learnerFirstName: null }),
+    );
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "raffi@example.com",
+        firstName: "Raffi",
+        learnerFirstName: "Ana",
+      }),
+    );
+  });
 });

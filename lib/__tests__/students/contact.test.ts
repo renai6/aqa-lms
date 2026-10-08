@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { contactOf, notificationTarget } from '@/lib/students/contact'
+import { contactOf, notificationTargets } from '@/lib/students/contact'
 
 const parent = { firstName: 'Raffi', lastName: 'Muloc', email: 'raffi@example.com', contactNumber: '09171234567' }
 
@@ -41,22 +41,33 @@ describe('contactOf', () => {
   })
 })
 
-describe('notificationTarget', () => {
+describe('notificationTargets', () => {
   it('addresses a student with an email directly', () => {
-    expect(notificationTarget({ firstName: 'Sam', email: 's@example.com', guardian: null })).toEqual({
-      to: 's@example.com',
-      firstName: 'Sam',
-      learnerFirstName: null,
-    })
+    expect(notificationTargets({ firstName: 'Sam', email: 's@example.com', guardian: null })).toEqual([
+      { to: 's@example.com', firstName: 'Sam', learnerFirstName: null },
+    ])
   })
 
-  it('addresses a kid through the guardian and names the kid', () => {
+  it('addresses a kid without an email through the guardian and names the kid', () => {
     expect(
-      notificationTarget({ firstName: 'Ana', email: null, guardian: { firstName: 'Raffi', email: 'raffi@example.com' } }),
-    ).toEqual({ to: 'raffi@example.com', firstName: 'Raffi', learnerFirstName: 'Ana' })
+      notificationTargets({ firstName: 'Ana', email: null, guardian: { firstName: 'Raffi', email: 'raffi@example.com' } }),
+    ).toEqual([{ to: 'raffi@example.com', firstName: 'Raffi', learnerFirstName: 'Ana' }])
   })
 
-  it('returns null when nobody has an address', () => {
-    expect(notificationTarget({ firstName: 'Ana', email: null, guardian: null })).toBeNull()
+  it('addresses a linked kid and the guardian, kid first', () => {
+    expect(
+      notificationTargets({
+        firstName: 'Ana',
+        email: 'ana@example.com',
+        guardian: { firstName: 'Raffi', email: 'raffi@example.com' },
+      }),
+    ).toEqual([
+      { to: 'ana@example.com', firstName: 'Ana', learnerFirstName: null },
+      { to: 'raffi@example.com', firstName: 'Raffi', learnerFirstName: 'Ana' },
+    ])
+  })
+
+  it('returns nothing when nobody has an address', () => {
+    expect(notificationTargets({ firstName: 'Ana', email: null, guardian: null })).toEqual([])
   })
 })

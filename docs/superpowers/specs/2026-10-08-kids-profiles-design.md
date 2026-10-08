@@ -150,7 +150,9 @@ A linked kid does not see "Manage kids", and the kids page redirects them to the
 
 ## Notifications
 
-A helper `notificationTarget(user)` returns `{ email, firstName }` for the account holder: the user's own when it has an email, otherwise the guardian's.
+A helper `notificationTargets(user)` returns the addresses an email about a student goes to.
+Emails go to the student's own address and to the guardian's.
+A linked kid with their own email and their parent both receive them, and a kid without an email reaches only the parent.
 It is used by all six transactional emails:
 
 - purchase confirmation, approval and rejection;
@@ -159,7 +161,7 @@ It is used by all six transactional emails:
 When the learner is a kid, the email names the kid, for example "Ana's enrollment in Kids Arabic 1 was approved".
 
 Making `email` nullable makes TypeScript flag every place that assumes a student has an email.
-Each flagged site is resolved either through `notificationTarget` or by displaying the guardian's contact details.
+Each flagged site is resolved either through `notificationTargets` or by displaying the guardian's contact details.
 
 ## Auth flows
 
@@ -183,7 +185,7 @@ Vitest:
 - `getSession()` resolution: own kid resolves to the kid; a stranger's kid, a deactivated kid, a missing user, and a non-student account all resolve to the account holder; a stale `tokenVersion` is rejected while viewing a kid; `getAccountSession()` ignores the cookie.
 - `createDependent` rejects a guardian that is a kid, is not a `STUDENT`, or is inactive.
 - `removeDependent` is refused once the kid has a purchase or an enrollment.
-- `notificationTarget` returns the guardian for a kid and the user for everyone else.
+- `notificationTargets` returns the student's own address and the guardian's, skipping any that is missing.
 - Login and forgot-password never match a user without an email.
 
 End-to-end in the running app, using the repo-root tsx screenshot workflow:

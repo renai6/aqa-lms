@@ -17,7 +17,7 @@ import {
 import { peso } from "@/lib/payments/balance";
 import { ensureActiveBatchId } from "@/lib/batches/ensure";
 import { toMonthKey, monthKeyToDate } from "@/lib/time/manila";
-import { NOTIFY_SELECT, notificationTarget } from "@/lib/students/contact";
+import { NOTIFY_SELECT, notificationTargets } from "@/lib/students/contact";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -259,14 +259,15 @@ export async function approvePurchaseAction(
 
   revalidatePath("/admin/purchases");
 
-  const target = notificationTarget(purchase.user);
   try {
-    if (target) {
-      await sendPurchaseApprovalEmail({
-        ...target,
-        courseNames: purchase.items.map((i) => i.course.title),
-      });
-    }
+    await Promise.all(
+      notificationTargets(purchase.user).map((target) =>
+        sendPurchaseApprovalEmail({
+          ...target,
+          courseNames: purchase.items.map((i) => i.course.title),
+        }),
+      ),
+    );
   } catch (err) {
     console.error("[approvePurchase] Email error:", err);
     return {
@@ -325,9 +326,12 @@ export async function rejectPurchaseAction(
 
   revalidatePath("/admin/purchases");
 
-  const target = notificationTarget(purchase.user);
   try {
-    if (target) await sendPurchaseRejectionEmail({ ...target, reason });
+    await Promise.all(
+      notificationTargets(purchase.user).map((target) =>
+        sendPurchaseRejectionEmail({ ...target, reason }),
+      ),
+    );
   } catch (err) {
     console.error("[rejectPurchase] Email error:", err);
     return {

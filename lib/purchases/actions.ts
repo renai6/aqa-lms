@@ -8,7 +8,7 @@ import { validateImageUpload } from '@/lib/uploads/image'
 import { createPurchaseSchema } from '@/lib/purchases/schema'
 import { getPurchasableCourses } from '@/lib/purchases/queries'
 import { sendPurchaseConfirmationEmail } from '@/lib/purchases/email'
-import { NOTIFY_SELECT, notificationTarget } from '@/lib/students/contact'
+import { NOTIFY_SELECT, notificationTargets } from '@/lib/students/contact'
 
 type ActionState = { error: string | null }
 
@@ -93,9 +93,10 @@ export async function createPurchaseAction(_prev: ActionState, formData: FormDat
     }
   }
 
-  const target = notificationTarget(user)
   try {
-    if (target) await sendPurchaseConfirmationEmail({ ...target, purchaseId, payLater })
+    await Promise.all(
+      notificationTargets(user).map((target) => sendPurchaseConfirmationEmail({ ...target, purchaseId, payLater })),
+    )
   } catch (err) {
     console.error('[createPurchase] Email error:', err)
   }

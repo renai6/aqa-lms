@@ -12,7 +12,7 @@ import { getEnrollmentForPayment } from "@/lib/payments/queries";
 import { sendPaymentConfirmationEmail } from "@/lib/payments/email";
 import { payableMonths } from "@/lib/payments/monthly";
 import { monthKeyToDate } from "@/lib/time/manila";
-import { NOTIFY_SELECT, notificationTarget } from "@/lib/students/contact";
+import { NOTIFY_SELECT, notificationTargets } from "@/lib/students/contact";
 
 type ActionState = { error: string | null };
 
@@ -189,14 +189,15 @@ export async function createPaymentAction(
     };
   }
 
-  const target = notificationTarget(user);
   try {
-    if (target) {
-      await sendPaymentConfirmationEmail({
-        ...target,
-        courseTitle: enrollment.course.title,
-      });
-    }
+    await Promise.all(
+      notificationTargets(user).map((target) =>
+        sendPaymentConfirmationEmail({
+          ...target,
+          courseTitle: enrollment.course.title,
+        }),
+      ),
+    );
   } catch (err) {
     console.error("[createPayment] Email error:", err);
   }

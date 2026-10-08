@@ -43,21 +43,26 @@ export const NOTIFY_SELECT = {
   guardian: { select: { firstName: true, email: true } },
 } as const
 
+// One address an email about a student is sent to.
 export type NotificationTarget = {
   to: string
   firstName: string
-  // Set when the email is about a kid, so the parent knows which child it concerns.
+  // Set when the email goes to the guardian, so the parent knows which child it concerns.
   learnerFirstName: string | null
 }
 
-export function notificationTarget(user: {
+// Every address an email about this student goes to: the student's own, then
+// the guardian's. A linked kid with their own login and their parent both hear
+// about it; a kid without an email reaches only the parent.
+export function notificationTargets(user: {
   firstName: string
   email: string | null
   guardian?: { firstName: string; email: string | null } | null
-}): NotificationTarget | null {
-  if (user.email) return { to: user.email, firstName: user.firstName, learnerFirstName: null }
+}): NotificationTarget[] {
+  const targets: NotificationTarget[] = []
+  if (user.email) targets.push({ to: user.email, firstName: user.firstName, learnerFirstName: null })
   if (user.guardian?.email) {
-    return { to: user.guardian.email, firstName: user.guardian.firstName, learnerFirstName: user.firstName }
+    targets.push({ to: user.guardian.email, firstName: user.guardian.firstName, learnerFirstName: user.firstName })
   }
-  return null
+  return targets
 }
