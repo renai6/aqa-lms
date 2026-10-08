@@ -4,7 +4,7 @@ export type UserRow = {
   id: string
   firstName: string
   lastName: string
-  email: string
+  email: string | null
   isActive: boolean
   createdAt: Date
 }

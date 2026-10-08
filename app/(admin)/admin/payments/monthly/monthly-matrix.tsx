@@ -3,6 +3,7 @@ import { peso } from "@/lib/payments/balance";
 import { monthKeyShort, monthKeyLabel } from "@/lib/time/manila";
 import type { MonthlyMatrix, MonthCell } from "@/lib/payments/monthly";
 import { cn } from "@/lib/utils";
+import { KidNote } from "@/components/students/kid-note";
 
 // Wraps a cell's mark in a link to the payment behind it, when there is one.
 // A cell can hold more than one approved payment (a month paid across two
@@ -167,6 +168,7 @@ export function MonthlyMatrixTable({
                     </span>
                   )}
                 </p>
+                <KidNote parentName={row.parentName} />
                 <p className="text-muted-foreground text-xs">{row.studentEmail}</p>
               </th>
               <td className="text-muted-foreground px-3 py-2 text-right text-xs">

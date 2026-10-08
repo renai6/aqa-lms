@@ -13,6 +13,7 @@ import { getCourseMoveTargets } from "@/lib/enrollments/move-targets";
 import { courseMoveOptions } from "@/lib/enrollments/move-options";
 import { isMovedAway } from "@/lib/enrollments/moved";
 import { cn } from "@/lib/utils";
+import { KidNote } from "@/components/students/kid-note";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -105,6 +106,7 @@ export async function CourseRoster({ courseId, courseTitle }: Props) {
                     >
                       {r.firstName} {r.lastName}
                     </Link>
+                    <KidNote parentName={r.parentName} />
                     {r.removedAt && (
                       <>
                         <span className="bg-muted text-muted-foreground ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">

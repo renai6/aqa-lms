@@ -150,11 +150,11 @@ export default async function StudentDetailPage({ params }: Props) {
               <dd className="font-medium mt-0.5">{student.firstName} {student.lastName}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Email</dt>
+              <dt className="text-muted-foreground">Email{student.parentName && ' (parent)'}</dt>
               <dd className="mt-0.5 break-all">{student.email}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Contact number</dt>
+              <dt className="text-muted-foreground">Contact number{student.parentName && ' (parent)'}</dt>
               <dd className="mt-0.5">{student.contactNumber ?? '—'}</dd>
             </div>
             <div>

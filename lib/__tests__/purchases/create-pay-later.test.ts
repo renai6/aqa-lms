@@ -123,4 +123,29 @@ describe("createPurchaseAction pay later", () => {
     expect(result.error).toContain("could not be saved");
     expect(db.purchase.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
   });
+
+  it("sends a kid's confirmation to the parent and names the kid", async () => {
+    vi.mocked(db.user.findUnique).mockResolvedValue({
+      email: null,
+      firstName: "Ana",
+      guardian: { firstName: "Raffi", email: "raffi@example.com" },
+      studentType: "NEW",
+      isActive: true,
+    } as never);
+
+    await expect(
+      createPurchaseAction(
+        { error: null },
+        form({ courseIds: "c1", paymentType: "PARTIAL", payLater: "on" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "raffi@example.com",
+        firstName: "Raffi",
+        learnerFirstName: "Ana",
+      }),
+    );
+  });
 });

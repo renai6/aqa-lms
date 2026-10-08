@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/session'
 import { getTeacherSubject, getSubjectStudents } from '@/lib/teacher/queries'
 import { PageHeader } from '@/components/admin/page-header'
+import { KidNote } from '@/components/students/kid-note'
 import { SubjectTabs } from '../subject-tabs'
 
 type Props = { params: Promise<{ sid: string }> }
@@ -64,6 +65,7 @@ export default async function TeacherSubjectStudentsPage({ params }: Props) {
                 <tr key={s.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3 font-medium">
                     {s.lastName}, {s.firstName}
+                    <KidNote parentName={s.parentName} />
                   </td>
                   <td className="text-muted-foreground px-4 py-3">{s.email}</td>
                   <td className="text-muted-foreground px-4 py-3">

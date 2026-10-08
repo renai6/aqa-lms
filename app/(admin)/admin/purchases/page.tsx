@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Inbox, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
+import { KidNote } from "@/components/students/kid-note";
 import {
   getAdminPurchasesByStatus,
   getPurchaseStatusCounts,
@@ -143,7 +144,10 @@ export default async function PurchasesPage({ searchParams }: Props) {
             <tbody className="divide-y">
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-2 font-medium">{r.studentName}</td>
+                  <td className="px-4 py-2 font-medium">
+                    {r.studentName}
+                    <KidNote parentName={r.parentName} />
+                  </td>
                   <td className="text-muted-foreground px-4 py-2">
                     {r.studentEmail}
                   </td>

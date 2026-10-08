@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Inbox, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
+import { KidNote } from "@/components/students/kid-note";
 import {
   getAdminPaymentsByStatus,
   getPaymentStatusCounts,
@@ -216,6 +217,7 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
                 <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-2">
                     <p className="font-medium">{r.studentName}</p>
+                    <KidNote parentName={r.parentName} />
                     <p className="text-muted-foreground text-xs">
                       {r.studentEmail}
                     </p>

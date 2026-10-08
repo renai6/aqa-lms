@@ -44,7 +44,7 @@ export async function changePasswordAction(
     where: { id: session.userId },
     select: { email: true, isActive: true },
   })
-  if (!user) return { error: 'User not found.' }
+  if (!user?.email) return { error: 'User not found.' }
   if (!user.isActive) return { error: 'Your account is inactive.' }
 
   // Bumping tokenVersion strands every other session issued for this user;

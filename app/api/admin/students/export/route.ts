@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   const students = await getAllStudents({ courseId: course, gender })
 
   const header =
-    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Course Type,Amount Paid,Last Payment Date,Enrolled Date,Status\r\n'
+    'Name,Email,Mobile Number,Facebook Name,Facebook Link,Gender,Course,Course Type,Amount Paid,Last Payment Date,Enrolled Date,Status,Parent\r\n'
   const rows = students.map((s) => {
     const name = csvField(`${s.firstName} ${s.lastName}`)
     const email = csvField(s.email)
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
       ? toManilaDateKey(s.enrollments[0].enrolledAt)
       : ''
     const status = s.isActive ? 'Active' : 'Inactive'
+    const parent = csvField(s.parentName ?? '')
     return [
       name,
       email,
@@ -73,6 +74,7 @@ export async function GET(request: NextRequest) {
       lastPaymentDates,
       enrolledDate,
       status,
+      parent,
     ].join(',')
   })
 
