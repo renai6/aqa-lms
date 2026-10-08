@@ -1,3 +1,5 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
 const mockHeaders = vi.hoisted(() => new Map<string, string>())
 const cookieJar = vi.hoisted(() => ({
   values: new Map<string, string>(),
@@ -93,7 +95,7 @@ describe('getSession active kid profile', () => {
 
     expect(await getSession()).toEqual({ userId: 'k1', role: 'STUDENT' })
     expect(db.user.findFirst).toHaveBeenCalledWith({
-      where: { id: 'k1', guardianId: 'u1', isActive: true },
+      where: { id: 'k1', guardianId: 'u1', isActive: true, role: 'STUDENT', guardian: { isActive: true } },
       select: { id: true },
     })
   })
@@ -104,6 +106,17 @@ describe('getSession active kid profile', () => {
     vi.mocked(db.user.findFirst).mockResolvedValue(null as never)
 
     expect(await getSession()).toEqual({ userId: 'u1', role: 'STUDENT' })
+  })
+
+  it('falls back to the account when the guardian is inactive', async () => {
+    asStudent()
+    cookieJar.values.set('active_profile', 'k1')
+    vi.mocked(db.user.findFirst).mockResolvedValue(null as never)
+
+    expect(await getSession()).toEqual({ userId: 'u1', role: 'STUDENT' })
+    expect(db.user.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ guardian: { isActive: true } }) }),
+    )
   })
 
   it('is the account when no profile is selected, without an extra lookup', async () => {

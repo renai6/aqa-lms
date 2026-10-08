@@ -72,14 +72,15 @@ export async function getAccountSession(): Promise<Session | null> {
 // One lookup per request, like currentTokenVersion.
 const activeDependentId = cache(async (guardianId: string, kidId: string): Promise<string | null> => {
   const kid = await db.user.findFirst({
-    where: { id: kidId, guardianId, isActive: true },
+    where: { id: kidId, guardianId, isActive: true, role: 'STUDENT', guardian: { isActive: true } },
     select: { id: true },
   })
   return kid?.id ?? null
 })
 
 // The learner the student portal is acting as: the kid the parent selected,
-// when that kid belongs to this account and is active, otherwise the account.
+// when that kid belongs to this account and is active and the account itself
+// is active, otherwise the account.
 // Every student page and action reads its user from here, which is what makes
 // them all work for a kid unchanged. Account-level actions (password, managing
 // kids, switching) use getAccountSession instead.
