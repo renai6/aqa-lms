@@ -4,6 +4,7 @@ import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 import { isPayLater } from "@/lib/purchases/payment";
 import type {
   CourseType,
+  CourseStatus,
   EnrollmentStatus,
   PaymentType,
   PaymentFrequency,
@@ -16,6 +17,7 @@ export type PurchasableCourse = {
   imageUrl: string | null;
   tuitionFee: number | null;
   courseType: CourseType;
+  courseStatus: CourseStatus | null;
   paymentFrequency: PaymentFrequency | null;
   groupName: string | null;
   level: number | null;
@@ -36,6 +38,7 @@ export async function getPurchasableCourses(
         imageUrl: true,
         tuitionFee: true,
         courseType: true,
+        courseStatus: true,
         paymentFrequency: true,
         groupName: true,
         level: true,

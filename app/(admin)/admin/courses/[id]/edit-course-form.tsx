@@ -121,6 +121,54 @@ export function EditCourseForm({ course, affectedCount }: Props) {
               </label>
             </div>
           </div>
+          <div className="space-y-2">
+            <Label>Course Status</Label>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseStatus"
+                  value=""
+                  defaultChecked={!course.courseStatus}
+                  className="accent-primary"
+                />
+                Not specified
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseStatus"
+                  value="ENROLLMENT_ONGOING"
+                  defaultChecked={course.courseStatus === "ENROLLMENT_ONGOING"}
+                  className="accent-primary"
+                />
+                Enrollment Ongoing
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseStatus"
+                  value="CLASSES_ONGOING"
+                  defaultChecked={course.courseStatus === "CLASSES_ONGOING"}
+                  className="accent-primary"
+                />
+                Classes Ongoing
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="courseStatus"
+                  value="SEMESTER_ENDED"
+                  defaultChecked={course.courseStatus === "SEMESTER_ENDED"}
+                  className="accent-primary"
+                />
+                Semester Ended
+              </label>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Shown as a badge on the course. Leave as &ldquo;Not specified&rdquo; to hide it.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="edit-groupName">Group Name</Label>

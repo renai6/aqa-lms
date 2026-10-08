@@ -1,6 +1,8 @@
 import { getCourses } from '@/lib/courses/queries'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { COURSE_STATUS_SOFT_COLORS } from '@/components/courses/course-status-badge'
+import { COURSE_STATUS_LABEL } from '@/lib/courses/format'
 import { Button } from '@/components/ui/button'
 import { BookOpen, ChevronRight } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
@@ -77,9 +79,16 @@ export default async function CoursesPage({
                     </Badge>
                   </td>
                   <td className="px-4 py-2">
-                    {course.isPublished
-                      ? <Badge className="bg-green-100 text-green-800 border-green-200">Published</Badge>
-                      : <Badge variant="outline">Draft</Badge>}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {course.isPublished
+                        ? <Badge className="bg-green-100 text-green-800 border-green-200">Published</Badge>
+                        : <Badge variant="outline">Draft</Badge>}
+                      {course.courseStatus && (
+                        <Badge className={COURSE_STATUS_SOFT_COLORS[course.courseStatus]}>
+                          {COURSE_STATUS_LABEL[course.courseStatus]}
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2">{course._count.subjects}</td>
                   <td className="px-4 py-2">{course.passingGrade}%</td>
