@@ -1,11 +1,12 @@
 import { appUrl, escapeHtml, sendEmail } from "@/lib/email/client";
-import { button, note, p, renderEmail, ul } from "@/lib/email/template";
+import { button, learnerLine, note, p, renderEmail, ul } from "@/lib/email/template";
 
 export async function sendPurchaseConfirmationEmail(params: {
   to: string;
   firstName: string;
   purchaseId: string;
   payLater: boolean;
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/dashboard");
   const received = params.payLater
@@ -19,6 +20,7 @@ export async function sendPurchaseConfirmationEmail(params: {
       heading: "We received your course purchase",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p(received) +
         button("Track its status", url) +
         p("Best regards,<br>Al-Qur'an Academy Team"),
@@ -30,6 +32,7 @@ export async function sendPurchaseApprovalEmail(params: {
   to: string;
   firstName: string;
   courseNames: string[];
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/dashboard");
   await sendEmail({
@@ -40,6 +43,7 @@ export async function sendPurchaseApprovalEmail(params: {
       heading: "Your course purchase is approved",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p("Your purchase has been approved. You now have access to:") +
         ul(params.courseNames.map((c) => escapeHtml(c))) +
         button("Start learning", url) +
@@ -52,6 +56,7 @@ export async function sendPurchaseRejectionEmail(params: {
   to: string;
   firstName: string;
   reason: string;
+  learnerFirstName?: string | null;
 }): Promise<void> {
   const url = appUrl("/student/courses");
   await sendEmail({
@@ -62,6 +67,7 @@ export async function sendPurchaseRejectionEmail(params: {
       heading: "Update on your course purchase",
       body:
         p(`Assalamualaykum ${escapeHtml(params.firstName)},`) +
+        learnerLine(params.learnerFirstName) +
         p("Unfortunately, your recent course purchase could not be approved.") +
         note(`<strong>Reason:</strong> ${escapeHtml(params.reason)}`) +
         p("You're welcome to submit a new purchase.") +
