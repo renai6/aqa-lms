@@ -5,11 +5,15 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import {
   createDependent,
+  findEligibleGuardian,
   linkDependent,
   parseDependentForm,
   removeDependent,
+  unlinkDependent,
   updateDependent,
+  type FindParentState,
   type KidActionState,
+  type LinkParentState,
 } from '@/lib/students/dependents'
 
 type ActionState = { error: string | null }
@@ -105,7 +109,26 @@ export async function removeKidAdminAction(_prev: KidActionState, formData: Form
   return { error: null, success: true }
 }
 
-export async function linkToParentAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+// The first step of linking: names the parent that email matches, so the
+// admin confirms who they are linking before a typo hands a student account to
+// another family. Writes nothing.
+export async function findParentForLinkAdminAction(_prev: FindParentState, formData: FormData): Promise<FindParentState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const kidId = String(formData.get('kidId') ?? '')
+  const parentEmail = String(formData.get('parentEmail') ?? '').trim()
+  if (!parentEmail) return { error: "Enter the parent's email." }
+
+  try {
+    const found = await findEligibleGuardian(kidId, parentEmail)
+    if (!found.ok) return { error: found.error }
+    return { error: null, parent: found.parent }
+  } catch (err) {
+    console.error('[findParentForLink]', err)
+    return { error: 'A database error occurred. Please try again.' }
+  }
+}
+
+export async function linkToParentAdminAction(_prev: LinkParentState, formData: FormData): Promise<LinkParentState> {
   if (!(await isAdmin())) return { error: 'Forbidden' }
   const kidId = String(formData.get('kidId') ?? '')
   const parentEmail = String(formData.get('parentEmail') ?? '').trim()
@@ -114,7 +137,28 @@ export async function linkToParentAdminAction(_prev: KidActionState, formData: F
   const result = await linkDependent(kidId, parentEmail)
   if (!result.ok) return { error: result.error }
 
-  const linked = await db.user.findUnique({ where: { id: kidId }, select: { guardianId: true } })
+  const linked = await db.user.findUnique({
+    where: { id: kidId },
+    select: { guardianId: true, guardian: { select: { firstName: true, lastName: true } } },
+  })
   if (linked?.guardianId) revalidateFamily(linked.guardianId, kidId)
+  const parentName = linked?.guardian ? `${linked.guardian.firstName} ${linked.guardian.lastName}` : undefined
+  return { error: null, success: true, parentName }
+}
+
+// Undoes a mistaken link. Only for a student with their own login, who keeps
+// it and all their records; a kid created by a parent cannot be unlinked.
+export async function unlinkFromParentAdminAction(_prev: KidActionState, formData: FormData): Promise<KidActionState> {
+  if (!(await isAdmin())) return { error: 'Forbidden' }
+  const kidId = String(formData.get('kidId') ?? '')
+
+  // Read before the update clears it, so the old parent's page can be refreshed.
+  const before = await db.user.findUnique({ where: { id: kidId }, select: { guardianId: true } })
+  const result = await unlinkDependent(kidId)
+  if (!result.ok) return { error: result.error }
+
+  revalidatePath('/admin/students')
+  revalidatePath('/admin/students/' + kidId)
+  if (before?.guardianId) revalidatePath('/admin/students/' + before.guardianId)
   return { error: null, success: true }
 }

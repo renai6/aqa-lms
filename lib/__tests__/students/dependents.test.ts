@@ -15,9 +15,11 @@ vi.mock('@/lib/db', () => ({
 import { db } from '@/lib/db'
 import {
   createDependent,
+  findEligibleGuardian,
   linkDependent,
   parseDependentForm,
   removeDependent,
+  unlinkDependent,
   updateDependent,
 } from '@/lib/students/dependents'
 
@@ -142,14 +144,51 @@ describe('removeDependent', () => {
   })
 })
 
-describe('linkDependent', () => {
-  const parent = { id: 'p1', role: 'STUDENT', isActive: true, guardianId: null }
-  const student = { id: 'k1', role: 'STUDENT', guardianId: null, _count: { dependents: 0 } }
+const parent = {
+  id: 'p1',
+  role: 'STUDENT',
+  isActive: true,
+  guardianId: null,
+  firstName: 'Raffi',
+  lastName: 'Muloc',
+  email: 'parent@example.com',
+}
+const student = { id: 'k1', role: 'STUDENT', guardianId: null, _count: { dependents: 0 } }
 
-  function mockUsers(guardian: unknown, kid: unknown) {
-    vi.mocked(db.user.findUnique).mockImplementation((async (args: { where: { id?: string; email?: string } }) =>
-      args.where.email ? guardian : kid) as never)
-  }
+function mockUsers(guardian: unknown, kid: unknown) {
+  vi.mocked(db.user.findUnique).mockImplementation((async (args: { where: { id?: string; email?: string } }) =>
+    args.where.email ? guardian : kid) as never)
+}
+
+const ineligibleGuardians = [
+  ['missing', null, 'No eligible parent account has that email.'],
+  ['a teacher', { ...parent, role: 'TEACHER' }, 'No eligible parent account has that email.'],
+  ['a kid themselves', { ...parent, guardianId: 'x' }, 'No eligible parent account has that email.'],
+  ['inactive', { ...parent, isActive: false }, 'That parent account is inactive.'],
+  ['the student themselves', { ...parent, id: 'k1' }, 'A student cannot be linked to their own account.'],
+] as const
+
+describe('findEligibleGuardian', () => {
+  it('names the parent found by trimmed lowercase email, without linking', async () => {
+    mockUsers(parent, student)
+
+    expect(await findEligibleGuardian('k1', ' Parent@Example.com ')).toEqual({
+      ok: true,
+      parent: { id: 'p1', name: 'Raffi Muloc', email: 'parent@example.com' },
+    })
+    expect(db.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { email: 'parent@example.com' } }),
+    )
+    expect(db.user.updateMany).not.toHaveBeenCalled()
+  })
+
+  it.each(ineligibleGuardians)('refuses a parent that is %s', async (_n, guardian, error) => {
+    mockUsers(guardian, student)
+    expect(await findEligibleGuardian('k1', 'p@example.com')).toEqual({ ok: false, error })
+  })
+})
+
+describe('linkDependent', () => {
 
   it('links an eligible student, looking the parent up by trimmed lowercase email', async () => {
     mockUsers(parent, student)
@@ -165,20 +204,15 @@ describe('linkDependent', () => {
     })
   })
 
-  const ineligible = 'No eligible parent account has that email.'
-  it.each([
-    ['missing', null],
-    ['a teacher', { ...parent, role: 'TEACHER' }],
-    ['a kid themselves', { ...parent, guardianId: 'x' }],
-  ])('refuses a parent that is %s', async (_n, guardian) => {
+  // The same guardian checks as findEligibleGuardian, so the confirm step and
+  // the link itself never disagree on a message.
+  it.each(ineligibleGuardians)('refuses a parent that is %s', async (_n, guardian, error) => {
     mockUsers(guardian, student)
-    expect(await linkDependent('k1', 'p@example.com')).toEqual({ ok: false, error: ineligible })
+    expect(await linkDependent('k1', 'p@example.com')).toEqual({ ok: false, error })
     expect(db.user.updateMany).not.toHaveBeenCalled()
   })
 
   it.each([
-    ['an inactive parent', { ...parent, isActive: false }, student, 'That parent account is inactive.'],
-    ['linking to self', { ...parent, id: 'k1' }, student, 'A student cannot be linked to their own account.'],
     ['a missing student', parent, null, 'Student not found.'],
     ['a non-student', parent, { ...student, role: 'TEACHER' }, 'Student not found.'],
     ['an already linked student', parent, { ...student, guardianId: 'p2' }, 'This student is already linked to a parent.'],
@@ -207,5 +241,31 @@ describe('linkDependent', () => {
     mockUsers(parent, student)
     vi.mocked(db.user.updateMany).mockRejectedValue(new Error('boom'))
     expect((await linkDependent('k1', 'p@example.com')).ok).toBe(false)
+  })
+})
+
+describe('unlinkDependent', () => {
+  it('clears the guardian of a linked student with their own login', async () => {
+    vi.mocked(db.user.updateMany).mockResolvedValue({ count: 1 })
+
+    expect(await unlinkDependent('k1')).toEqual({ ok: true, id: 'k1' })
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 'k1', guardianId: { not: null }, email: { not: null } },
+      data: { guardianId: null },
+    })
+  })
+
+  it('refuses a kid without their own login, or a student with no parent', async () => {
+    vi.mocked(db.user.updateMany).mockResolvedValue({ count: 0 })
+
+    expect(await unlinkDependent('k1')).toEqual({
+      ok: false,
+      error: 'Only a student with their own login can be unlinked from a parent.',
+    })
+  })
+
+  it('reports a database error', async () => {
+    vi.mocked(db.user.updateMany).mockRejectedValue(new Error('boom'))
+    expect(await unlinkDependent('k1')).toEqual({ ok: false, error: 'A database error occurred. Please try again.' })
   })
 })

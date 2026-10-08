@@ -5,6 +5,7 @@ import { KidForm } from '@/components/students/kid-form'
 import { KidList } from '@/components/students/kid-list'
 import { addKidAdminAction, removeKidAdminAction, updateKidAdminAction } from '../actions'
 import { LinkParentForm } from './link-parent-form'
+import { UnlinkParentButton } from './unlink-parent-button'
 import { getStudentById } from '@/lib/students/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { DeactivateStudentButton } from '../deactivate-student-button'
@@ -228,15 +229,33 @@ export default async function StudentDetailPage({ params }: Props) {
         </div>
 
           {student.guardian ? (
-            <div className="border rounded-lg p-4 space-y-2">
+            <div className="border rounded-lg p-4 space-y-3">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Guardian</h2>
-              <p className="text-sm">
-                Kid profile managed by{' '}
-                <Link href={`/admin/students/${student.guardian.id}`} className="text-primary font-medium hover:underline">
-                  {student.guardian.firstName} {student.guardian.lastName}
-                </Link>
-                .
-              </p>
+              {student.contactViaParent ? (
+                <p className="text-sm">
+                  Kid profile managed by{' '}
+                  <Link href={`/admin/students/${student.guardian.id}`} className="text-primary font-medium hover:underline">
+                    {student.guardian.firstName} {student.guardian.lastName}
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm">
+                    Linked to{' '}
+                    <Link href={`/admin/students/${student.guardian.id}`} className="text-primary font-medium hover:underline">
+                      {student.guardian.firstName} {student.guardian.lastName}
+                    </Link>
+                    &apos;s account. This student also has their own login.
+                  </p>
+                  {/* Only a student with their own login can be unlinked: a kid
+                      created by a parent would be left with no way to log in. */}
+                  <UnlinkParentButton
+                    kidId={student.id}
+                    parentName={`${student.guardian.firstName} ${student.guardian.lastName}`}
+                  />
+                </>
+              )}
             </div>
           ) : (
             <div className="border rounded-lg p-4 space-y-3">

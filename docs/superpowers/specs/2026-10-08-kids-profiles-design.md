@@ -51,7 +51,7 @@ Enrollments, purchases, payments, grades, attempts, lesson completions and certi
 Rules enforced in application code:
 
 1. A guardian must be an active `STUDENT` whose own `guardianId` is null.
-2. A kid's `guardianId` is set once, at creation or when an admin links an existing student to a parent, and never changes after that.
+2. A kid's `guardianId` is set at creation or by an admin link, and only an admin can clear it, and only for a kid with their own login.
 3. A kid can be removed only while it has no purchases, no enrollments and no login of its own.
 After that, the parent is told to contact the admin.
 
@@ -143,6 +143,10 @@ Admins cannot create student accounts today (admin Users only creates admins and
 
 An admin can link an existing student account to a parent by the parent's email, from the student's page, using `linkDependent(kidId, guardianEmail)`.
 The parent must be an active `STUDENT` with no guardian, the student must have no guardian and no kids of their own, and the two cannot be the same account.
+Linking takes two steps: the email is first looked up without writing anything, and the admin confirms the matched parent by name and email before the link is made.
+Both steps check the parent through `findEligibleGuardian`, so they report the same messages.
+An admin can undo a link with `unlinkDependent(kidId)` from the student's Guardian card.
+Only a kid with their own login can be unlinked, since a kid created by a parent would be left as an account nobody can log into.
 The student keeps their own email and password and logs in as themselves.
 A kid with an email cannot be removed, since that would delete a real login account.
 Contact details prefer the kid's own email, and only a kid without an email is contacted through the parent.

@@ -7,6 +7,12 @@ import { db } from '@/lib/db'
 
 export type KidActionState = { error: string | null; success?: boolean }
 
+// The parent account an admin is about to link a student to, shown for
+// confirmation before anything is written.
+export type ParentMatch = { id: string; name: string; email: string }
+export type FindParentState = { error: string | null; parent?: ParentMatch }
+export type LinkParentState = KidActionState & { parentName?: string }
+
 // One kid as the parent's kids page and the admin student page list it.
 export type KidListItem = {
   id: string
@@ -104,20 +110,37 @@ export async function removeDependent(guardianId: string, kidId: string): Promis
   }
 }
 
+// The parent account a student would be linked to by that email, checked
+// against the guardian rules without writing anything. The admin's confirm
+// step and linkDependent both go through here, so their messages never differ.
+export async function findEligibleGuardian(
+  kidId: string,
+  guardianEmail: string,
+): Promise<{ ok: true; parent: ParentMatch } | { ok: false; error: string }> {
+  const email = guardianEmail.trim().toLowerCase()
+  const guardian = await db.user.findUnique({
+    where: { email },
+    select: { id: true, role: true, isActive: true, guardianId: true, firstName: true, lastName: true, email: true },
+  })
+  if (!guardian || guardian.role !== 'STUDENT' || guardian.guardianId) {
+    return { ok: false, error: 'No eligible parent account has that email.' }
+  }
+  if (!guardian.isActive) return { ok: false, error: 'That parent account is inactive.' }
+  if (guardian.id === kidId) return { ok: false, error: 'A student cannot be linked to their own account.' }
+  return {
+    ok: true,
+    parent: { id: guardian.id, name: `${guardian.firstName} ${guardian.lastName}`, email: guardian.email ?? email },
+  }
+}
+
 // An admin turns an existing student account into a kid of another account.
 // The student keeps their own email and password; only guardianId is set.
 export async function linkDependent(kidId: string, guardianEmail: string): Promise<DependentResult> {
   const alreadyLinked = 'This student is already linked to a parent.'
   try {
-    const guardian = await db.user.findUnique({
-      where: { email: guardianEmail.trim().toLowerCase() },
-      select: { id: true, role: true, isActive: true, guardianId: true },
-    })
-    if (!guardian || guardian.role !== 'STUDENT' || guardian.guardianId) {
-      return { ok: false, error: 'No eligible parent account has that email.' }
-    }
-    if (!guardian.isActive) return { ok: false, error: 'That parent account is inactive.' }
-    if (guardian.id === kidId) return { ok: false, error: 'A student cannot be linked to their own account.' }
+    const found = await findEligibleGuardian(kidId, guardianEmail)
+    if (!found.ok) return found
+    const guardian = found.parent
 
     const kid = await db.user.findUnique({
       where: { id: kidId },
@@ -138,6 +161,23 @@ export async function linkDependent(kidId: string, guardianEmail: string): Promi
     return { ok: true, id: kidId }
   } catch (err) {
     console.error('[linkDependent]', err)
+    return { ok: false, error: 'A database error occurred. Please try again.' }
+  }
+}
+
+// Undoes an admin link. Only a kid with their own login can be unlinked: a kid
+// created by a parent has no email or password, so unlinking it would leave an
+// account nobody can log into.
+export async function unlinkDependent(kidId: string): Promise<DependentResult> {
+  try {
+    const { count } = await db.user.updateMany({
+      where: { id: kidId, guardianId: { not: null }, email: { not: null } },
+      data: { guardianId: null },
+    })
+    if (count === 0) return { ok: false, error: 'Only a student with their own login can be unlinked from a parent.' }
+    return { ok: true, id: kidId }
+  } catch (err) {
+    console.error('[unlinkDependent]', err)
     return { ok: false, error: 'A database error occurred. Please try again.' }
   }
 }
