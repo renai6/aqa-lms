@@ -8,6 +8,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SubmittedFile } from '@/components/assessments/submitted-file'
+import {
+  QUESTION_TYPE_LABELS,
+  isManuallyGraded,
+} from '@/lib/assessments/question-types'
 import type { AttemptForGrading } from '@/lib/teacher/queries'
 
 type Props = {
@@ -39,36 +44,35 @@ export function GradingForm({ attempt, subjectId, basePath }: Props) {
       <input type="hidden" name="basePath" value={basePath} />
 
       {attempt.questions.map((q, i) => {
-        const isEssay = q.type === 'ESSAY'
+        const isManual = isManuallyGraded(q.type)
         return (
           <Card key={q.id}>
             <CardContent className="space-y-3 pt-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                    Question {i + 1} ·{' '}
-                    {q.type === 'MULTIPLE_CHOICE'
-                      ? 'Multiple Choice'
-                      : q.type === 'TRUE_FALSE'
-                        ? 'True / False'
-                        : 'Essay'}{' '}
-                    · {q.points} pts
+                    Question {i + 1} · {QUESTION_TYPE_LABELS[q.type]} ·{' '}
+                    {q.points} pts
                   </p>
                   <p className="mt-1 font-medium">{q.questionText}</p>
                 </div>
               </div>
 
-              {isEssay ? (
+              {isManual ? (
                 <div className="space-y-3">
-                  <div className="bg-muted/40 rounded-md border px-3 py-2 text-sm whitespace-pre-wrap">
-                    {q.answer && q.answer.trim() !== '' ? (
-                      q.answer
-                    ) : (
-                      <span className="text-muted-foreground italic">
-                        (no answer)
-                      </span>
-                    )}
-                  </div>
+                  {q.type === 'FILE_UPLOAD' ? (
+                    <SubmittedFile url={q.answer} />
+                  ) : (
+                    <div className="bg-muted/40 rounded-md border px-3 py-2 text-sm whitespace-pre-wrap">
+                      {q.answer && q.answer.trim() !== '' ? (
+                        q.answer
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          (no answer)
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr]">
                     <div className="space-y-1.5">
                       <Label htmlFor={'points_' + q.id}>

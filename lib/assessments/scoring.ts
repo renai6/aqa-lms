@@ -1,9 +1,10 @@
 import type { QuestionType, AttemptStatus } from '@prisma/client'
+import { isManuallyGraded } from '@/lib/assessments/question-types'
 
 // Pure auto-scoring logic for a submitted attempt.
 // Objective questions (MULTIPLE_CHOICE, TRUE_FALSE) are scored against the
-// option flagged isCorrect. Essays are left ungraded (null) for a later
-// teacher-grading slice.
+// option flagged isCorrect. Essays and file uploads are left ungraded (null)
+// for the teacher to score.
 
 export type ScorableOption = {
   value: string
@@ -31,10 +32,10 @@ export type ScoredAnswer = {
 
 export type ScoredAttempt = {
   answers: ScoredAnswer[]
-  hasEssay: boolean
+  needsManualGrading: boolean
   totalPoints: number
   earnedPoints: number
-  // Percentage 0-100, or null when the attempt awaits essay grading.
+  // Percentage 0-100, or null when the attempt awaits manual grading.
   score: number | null
   status: AttemptStatus
 }
@@ -43,7 +44,7 @@ export function scoreOneAnswer(
   question: ScorableQuestion,
   answer: string,
 ): { isCorrect: boolean | null; pointsEarned: number | null } {
-  if (question.type === 'ESSAY') {
+  if (isManuallyGraded(question.type)) {
     return { isCorrect: null, pointsEarned: null }
   }
   const correct = question.options.find(o => o.isCorrect)
@@ -57,20 +58,20 @@ export function scoreAttempt(
 ): ScoredAttempt {
   const answerMap = new Map(submitted.map(s => [s.questionId, s.answer]))
 
-  let hasEssay = false
+  let needsManualGrading = false
   let totalPoints = 0
   let earnedPoints = 0
 
   const answers: ScoredAnswer[] = questions.map(q => {
     totalPoints += q.points
     const raw = answerMap.get(q.id) ?? ''
-    if (q.type === 'ESSAY') hasEssay = true
+    if (isManuallyGraded(q.type)) needsManualGrading = true
     const { isCorrect, pointsEarned } = scoreOneAnswer(q, raw)
     if (pointsEarned != null) earnedPoints += pointsEarned
     return { questionId: q.id, answer: raw, isCorrect, pointsEarned }
   })
 
-  const score = hasEssay
+  const score = needsManualGrading
     ? null
     : totalPoints > 0
       ? (earnedPoints / totalPoints) * 100
@@ -78,10 +79,10 @@ export function scoreAttempt(
 
   return {
     answers,
-    hasEssay,
+    needsManualGrading,
     totalPoints,
     earnedPoints,
     score,
-    status: hasEssay ? 'SUBMITTED' : 'GRADED',
+    status: needsManualGrading ? 'SUBMITTED' : 'GRADED',
   }
 }

@@ -60,8 +60,8 @@ export default async function TeacherAssessmentPage({ params }: Props) {
         <div>
           <h2 className="text-lg font-semibold">Submissions</h2>
           <p className="text-muted-foreground text-sm">
-            {queue && queue.hasEssay
-              ? 'Essay answers need manual grading. Open a submission to score it.'
+            {queue && queue.needsManualGrading
+              ? 'Essay and file upload answers need manual grading. Open a submission to score it.'
               : 'This assessment is auto-graded; submissions are shown for reference.'}
           </p>
         </div>

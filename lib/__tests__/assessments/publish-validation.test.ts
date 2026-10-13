@@ -94,6 +94,7 @@ const mc = {
   options: [{ isCorrect: true }, { isCorrect: false }],
 }
 const essay = { type: 'ESSAY', options: [] }
+const upload = { type: 'FILE_UPLOAD', options: [] }
 
 describe('getPublishBlockers gate rules', () => {
   it('leaves non-gate assessments unchanged when the gate argument is omitted', () => {
@@ -110,6 +111,17 @@ describe('getPublishBlockers gate rules', () => {
     expect(blockers).toContain(
       'Question 2: a lesson gate cannot contain essay questions, because it must score instantly.',
     )
+  })
+
+  it('blocks a gate containing a file upload question, naming its position', () => {
+    const blockers = getPublishBlockers([mc, upload], { isGate: true, passingScore: 75 })
+    expect(blockers).toContain(
+      'Question 2: a lesson gate cannot contain file upload questions, because it must score instantly.',
+    )
+  })
+
+  it('passes a file upload question on a subject-level assessment', () => {
+    expect(getPublishBlockers([mc, upload])).toEqual([])
   })
 
   it('passes a valid gate', () => {

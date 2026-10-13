@@ -48,8 +48,8 @@ export function DeleteAssessmentButton({
         </Button>
         <p className="text-muted-foreground text-xs">
           Cannot delete - {attemptCount} student{' '}
-          {attemptCount === 1 ? 'attempt' : 'attempts'} exist. Unpublish
-          instead.
+          {attemptCount === 1 ? 'attempt exists' : 'attempts exist'}.
+          Unpublish instead.
         </p>
       </div>
     )

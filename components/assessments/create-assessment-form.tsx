@@ -80,7 +80,7 @@ export function CreateAssessmentForm({ subjectId, basePath, lessons, canManageGa
               </select>
               <p className="text-xs text-muted-foreground">
                 Students must pass this assessment before the lessons after it open. Gates
-                cannot contain essay questions and need a passing score.
+                cannot contain essay or file upload questions and need a passing score.
               </p>
             </div>
           )}

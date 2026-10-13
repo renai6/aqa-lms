@@ -1,3 +1,6 @@
+import type { QuestionType } from '@prisma/client'
+import { QUESTION_TYPE_LABELS, isManuallyGraded } from '@/lib/assessments/question-types'
+
 type QuestionForValidation = {
   type: string
   options: { isCorrect: boolean }[]
@@ -36,9 +39,9 @@ export function getPublishBlockers(
       if (correctCount !== 1) {
         blockers.push(`Question ${num}: must have a correct answer set.`)
       }
-    } else if (q.type === 'ESSAY' && gate.isGate) {
+    } else if (isManuallyGraded(q.type) && gate.isGate) {
       blockers.push(
-        `Question ${num}: a lesson gate cannot contain essay questions, because it must score instantly.`,
+        `Question ${num}: a lesson gate cannot contain ${QUESTION_TYPE_LABELS[q.type as QuestionType].toLowerCase()} questions, because it must score instantly.`,
       )
     }
   })

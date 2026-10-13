@@ -13,6 +13,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { QuestionMedia } from '@/components/assessments/question-media'
 import { extractDriveFileId } from '@/lib/assessments/media'
+import { parseDriveFolderId } from '@/lib/batches/drive'
+import {
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+} from '@/lib/assessments/question-types'
 import type { QuestionDetail } from '@/lib/assessments/queries'
 
 type Props = {
@@ -58,10 +63,14 @@ export function QuestionForm({
     question?.mediaType ?? 'NONE',
   )
   const [mediaUrl, setMediaUrl] = useState(question?.mediaUrl ?? '')
+  const [uploadFolderUrl, setUploadFolderUrl] = useState(
+    question?.uploadFolderUrl ?? '',
+  )
 
   // Preview only once the link parses, so a half-typed URL does not flash a
   // broken frame at the admin on every keystroke.
   const mediaLinkValid = extractDriveFileId(mediaUrl) !== null
+  const uploadFolderValid = parseDriveFolderId(uploadFolderUrl) !== null
 
   const [state, formAction, isPending] = useActionState(
     isEdit ? updateQuestionAction : createQuestionAction,
@@ -104,29 +113,23 @@ export function QuestionForm({
           <div className="space-y-2">
             <Label>Question Type</Label>
             <div className="flex flex-wrap gap-4">
-              {(['MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY'] as const).map(
-                (t) => (
-                  <label
-                    key={t}
-                    className="flex cursor-pointer items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="radio"
-                      name="_typeDisplay"
-                      value={t}
-                      checked={type === t}
-                      onChange={() => setType(t)}
-                      disabled={locked}
-                      className="accent-primary"
-                    />
-                    {t === 'MULTIPLE_CHOICE'
-                      ? 'Multiple Choice'
-                      : t === 'TRUE_FALSE'
-                        ? 'True / False'
-                        : 'Essay'}
-                  </label>
-                ),
-              )}
+              {QUESTION_TYPES.map((t) => (
+                <label
+                  key={t}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <input
+                    type="radio"
+                    name="_typeDisplay"
+                    value={t}
+                    checked={type === t}
+                    onChange={() => setType(t)}
+                    disabled={locked}
+                    className="accent-primary"
+                  />
+                  {QUESTION_TYPE_LABELS[t]}
+                </label>
+              ))}
             </div>
           </div>
 
@@ -311,6 +314,36 @@ export function QuestionForm({
             </p>
           )}
 
+          {type === 'FILE_UPLOAD' && (
+            <div className="space-y-2">
+              <Label htmlFor="q-upload-folder">
+                Google Drive upload folder <span aria-hidden="true">*</span>
+              </Label>
+              <Input
+                id="q-upload-folder"
+                name="uploadFolderUrl"
+                type="url"
+                required
+                disabled={locked}
+                value={uploadFolderUrl}
+                onChange={(e) => setUploadFolderUrl(e.target.value)}
+                placeholder="https://drive.google.com/drive/folders/..."
+              />
+              {uploadFolderUrl.trim() !== '' && !uploadFolderValid && (
+                <p className="text-destructive text-sm">
+                  That is not a Google Drive folder link.
+                </p>
+              )}
+              <p className="text-muted-foreground text-xs">
+                Students open this folder in a new tab, upload their video or
+                image, and paste the file&rsquo;s link as their answer. Share
+                the folder so students can add files to it. Anyone who can add
+                files can also see and delete the other files in it. Graded
+                manually.
+              </p>
+            </div>
+          )}
+
           {state.error && (
             <p className="text-destructive text-sm">{state.error}</p>
           )}
@@ -320,7 +353,11 @@ export function QuestionForm({
           {!locked && (
             <Button
               type="submit"
-              disabled={isPending || (mediaType !== 'NONE' && !mediaLinkValid)}
+              disabled={
+                isPending ||
+                (mediaType !== 'NONE' && !mediaLinkValid) ||
+                (type === 'FILE_UPLOAD' && !uploadFolderValid)
+              }
             >
               {isPending
                 ? isEdit
