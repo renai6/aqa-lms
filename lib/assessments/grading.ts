@@ -14,7 +14,7 @@ export function pickRelevantAttempt<T extends { status: AttemptStatus }>(
 export type AttemptQuestion = { id: string; points: number }
 
 // Recompute an attempt's percentage score (0-100) from the points earned on
-// every question. Objective points are stored at submit time; essay points are
+// every question. Objective points are stored at submit time; essay and upload points are
 // added by the teacher at grading time. Missing entries count as 0.
 export function recomputeAttemptScore(
   questions: AttemptQuestion[],

@@ -4,6 +4,8 @@ import { ArrowLeft, Check, X, Clock } from 'lucide-react'
 import { getSession } from '@/lib/auth/session'
 import { getStudentAttempt } from '@/lib/student/queries'
 import { Badge } from '@/components/ui/badge'
+import { SubmittedFile } from '@/components/assessments/submitted-file'
+import { isManuallyGraded } from '@/lib/assessments/question-types'
 import { AttemptForm } from './attempt-form'
 import { RetakeButton } from './retake-button'
 
@@ -44,6 +46,7 @@ export default async function AttemptPage({ params }: Props) {
       order: q.order,
       mediaType: q.mediaType,
       mediaUrl: q.mediaUrl,
+      uploadFolderUrl: q.uploadFolderUrl,
       options: q.options.map(o => ({ id: o.id, label: o.label, value: o.value })),
     }))
 
@@ -112,8 +115,8 @@ export default async function AttemptPage({ params }: Props) {
         )}
         {awaiting && (
           <p className="text-xs text-muted-foreground">
-            This assessment contains essay questions. Your final score will appear once a teacher
-            has graded them.
+            This assessment has essay or file upload questions. Your final score will appear once
+            a teacher has graded them.
           </p>
         )}
       </div>
@@ -158,9 +161,9 @@ export default async function AttemptPage({ params }: Props) {
         {attempt.questions.map((q, i) => {
           const correctOption = q.options.find(o => o.isCorrect)
           const keyWithheld = correctOption == null && q.options.some(o => o.isCorrect === null)
-          const isEssay = q.type === 'ESSAY'
-          // An essay stays ungraded until a teacher awards points, and only
-          // then does its score - and any feedback - become real.
+          const isManual = isManuallyGraded(q.type)
+          // An essay or upload stays ungraded until a teacher awards points,
+          // and only then does its score - and any feedback - become real.
           const isGraded = q.pointsEarned != null
           return (
             <div key={q.id} className="rounded-xl border border-border bg-white p-5 space-y-3">
@@ -173,15 +176,19 @@ export default async function AttemptPage({ params }: Props) {
                 </span>
               </div>
 
-              {isEssay ? (
+              {isManual ? (
                 <div className="space-y-2">
-                  <div className="rounded-md bg-muted/60 border border-border p-3 text-sm text-foreground whitespace-pre-wrap">
-                    {q.answer && q.answer.length > 0 ? (
-                      q.answer
-                    ) : (
-                      <span className="text-muted-foreground">No answer submitted.</span>
-                    )}
-                  </div>
+                  {q.type === 'FILE_UPLOAD' ? (
+                    <SubmittedFile url={q.answer} />
+                  ) : (
+                    <div className="rounded-md bg-muted/60 border border-border p-3 text-sm text-foreground whitespace-pre-wrap">
+                      {q.answer && q.answer.length > 0 ? (
+                        q.answer
+                      ) : (
+                        <span className="text-muted-foreground">No answer submitted.</span>
+                      )}
+                    </div>
+                  )}
                   {isGraded ? (
                     q.feedback && (
                       <div className="rounded-md border border-border bg-white p-3">

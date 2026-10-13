@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getPublishBlockers } from '@/lib/assessments/publish-validation'
+import { isManuallyGraded } from '@/lib/assessments/question-types'
+import type { QuestionType } from '@prisma/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EditAssessmentForm } from './edit-assessment-form'
@@ -8,11 +10,19 @@ import { DeleteAssessmentButton } from './delete-assessment-button'
 import { QuestionRowActions } from './question-row-actions'
 import type { AssessmentDetail } from '@/lib/assessments/queries'
 
+// Compact badge text for the questions table.
+const TYPE_BADGE: Record<QuestionType, string> = {
+  MULTIPLE_CHOICE: 'MC',
+  TRUE_FALSE: 'TF',
+  ESSAY: 'Essay',
+  FILE_UPLOAD: 'Upload',
+}
+
 function correctAnswerSummary(q: {
   type: string
   options: { label: string; isCorrect: boolean }[]
 }): string {
-  if (q.type === 'ESSAY') return 'Manual'
+  if (isManuallyGraded(q.type)) return 'Manual'
   const correct = q.options.find((o) => o.isCorrect)
   return correct ? correct.label : '—'
 }
@@ -166,11 +176,7 @@ export function AssessmentEditor({
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="outline">
-                        {q.type === 'MULTIPLE_CHOICE'
-                          ? 'MC'
-                          : q.type === 'TRUE_FALSE'
-                            ? 'TF'
-                            : 'Essay'}
+                        {TYPE_BADGE[q.type]}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">{q.points}</td>

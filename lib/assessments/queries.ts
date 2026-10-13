@@ -159,6 +159,7 @@ export type QuestionDetail = {
   order: number
   mediaType: QuestionMediaType | null
   mediaUrl: string | null
+  uploadFolderUrl: string | null
   options: QuestionOptionRow[]
   assessment: {
     id: string
@@ -181,6 +182,7 @@ export async function getQuestionById(qid: string): Promise<QuestionDetail | nul
       order: true,
       mediaType: true,
       mediaUrl: true,
+      uploadFolderUrl: true,
       options: {
         select: { id: true, label: true, value: true, isCorrect: true },
       },

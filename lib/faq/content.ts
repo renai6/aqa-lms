@@ -183,8 +183,8 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       {
         question: 'Why does my score say "Awaiting grading"?',
         answer: [
-          'Your assessment has essay questions, which your teacher checks by hand.',
-          'Multiple choice and true or false questions are scored right away, and your final score appears once the essays are graded.',
+          'Your assessment has essay or file upload questions, which your teacher checks by hand.',
+          'Multiple choice and true or false questions are scored right away, and your final score appears once the rest are graded.',
         ],
       },
       {

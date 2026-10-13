@@ -38,6 +38,7 @@ enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
   ESSAY
+  FILE_UPLOAD
 }
 
 enum QuestionMediaType {
@@ -563,6 +564,10 @@ model Question {
   // or both left null; see lib/assessments/media.ts for the link parsing.
   mediaType QuestionMediaType?
   mediaUrl  String?
+
+  // Google Drive folder a FILE_UPLOAD question sends the student to; null for
+  // every other type. The student's answer is the link to the file they put there.
+  uploadFolderUrl String?
 
   options QuestionOption[]
   answers StudentAnswer[]

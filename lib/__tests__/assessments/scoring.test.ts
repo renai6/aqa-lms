@@ -29,6 +29,13 @@ const essay: ScorableQuestion = {
   options: [],
 }
 
+const upload: ScorableQuestion = {
+  id: 'q4',
+  type: 'FILE_UPLOAD',
+  points: 4,
+  options: [],
+}
+
 describe('scoreOneAnswer', () => {
   it('scores a correct MC answer', () => {
     expect(scoreOneAnswer(mc, 'Paris')).toEqual({ isCorrect: true, pointsEarned: 2 })
@@ -52,6 +59,12 @@ describe('scoreOneAnswer', () => {
       pointsEarned: null,
     })
   })
+
+  it('leaves a file upload ungraded for the teacher', () => {
+    expect(
+      scoreOneAnswer(upload, 'https://drive.google.com/file/d/1AbC/view'),
+    ).toEqual({ isCorrect: null, pointsEarned: null })
+  })
 })
 
 describe('scoreAttempt', () => {
@@ -63,7 +76,7 @@ describe('scoreAttempt', () => {
         { questionId: 'q2', answer: 'true' },
       ],
     )
-    expect(result.hasEssay).toBe(false)
+    expect(result.needsManualGrading).toBe(false)
     expect(result.totalPoints).toBe(3)
     expect(result.earnedPoints).toBe(2)
     expect(result.score).toBeCloseTo((2 / 3) * 100)
@@ -90,7 +103,7 @@ describe('scoreAttempt', () => {
         { questionId: 'q3', answer: 'my essay' },
       ],
     )
-    expect(result.hasEssay).toBe(true)
+    expect(result.needsManualGrading).toBe(true)
     expect(result.score).toBeNull()
     expect(result.status).toBe('SUBMITTED')
     // Objective answers are still scored underneath.
@@ -99,6 +112,19 @@ describe('scoreAttempt', () => {
     const essayAnswer = result.answers.find(a => a.questionId === 'q3')
     expect(essayAnswer?.pointsEarned).toBeNull()
     expect(essayAnswer?.isCorrect).toBeNull()
+  })
+
+  it('leaves score null and status SUBMITTED when a file upload is present', () => {
+    const result = scoreAttempt(
+      [mc, upload],
+      [
+        { questionId: 'q1', answer: 'Paris' },
+        { questionId: 'q4', answer: 'https://drive.google.com/file/d/1AbC/view' },
+      ],
+    )
+    expect(result.needsManualGrading).toBe(true)
+    expect(result.score).toBeNull()
+    expect(result.status).toBe('SUBMITTED')
   })
 
   it('records missing answers as empty and incorrect', () => {

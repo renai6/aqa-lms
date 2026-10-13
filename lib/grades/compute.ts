@@ -1,7 +1,7 @@
 export type WeightedGradeItem = { weight: number; score: number | null }
 
 // Weighted average of assessment scores by Assessment.weight.
-// Assessments with no score yet (unattempted or awaiting essay grading) are
+// Assessments with no score yet (unattempted or awaiting manual grading) are
 // excluded, and their weight is not counted, so the result reflects the work
 // graded so far. Returns null when no assessment has a score.
 // Used for both the student-facing subject average and the teacher's final-grade

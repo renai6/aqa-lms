@@ -6,6 +6,7 @@ import type {
   QuestionType,
 } from '@prisma/client'
 import { pickRelevantAttempt } from '@/lib/assessments/grading'
+import { isManuallyGraded } from '@/lib/assessments/question-types'
 import { weightedSubjectGrade } from '@/lib/grades/compute'
 import { enrolleeGenderWhere } from '@/lib/subjects/visibility'
 import { ACTIVE_ENROLLMENT } from '@/lib/enrollments/active'
@@ -325,7 +326,7 @@ export type AssessmentGradingQueue = {
   assessmentId: string
   title: string
   subjectId: string
-  hasEssay: boolean
+  needsManualGrading: boolean
   attempts: GradingQueueAttempt[]
 }
 
@@ -358,7 +359,7 @@ export async function getAssessmentGradingQueue(
     assessmentId: assessment.id,
     title: assessment.title,
     subjectId: assessment.subjectId,
-    hasEssay: assessment.questions.some((q) => q.type === 'ESSAY'),
+    needsManualGrading: assessment.questions.some((q) => isManuallyGraded(q.type)),
     attempts: assessment.attempts.map((a) => ({
       attemptId: a.id,
       studentId: a.user.id,

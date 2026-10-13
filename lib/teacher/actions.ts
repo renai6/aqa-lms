@@ -7,11 +7,12 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { canManageSubject } from '@/lib/auth/capabilities'
 import { recomputeAttemptScore } from '@/lib/assessments/grading'
+import { isManuallyGraded } from '@/lib/assessments/question-types'
 
 type ActionState = { error: string | null; success?: boolean }
 
-// Finalize essay grading for one attempt (D6). Reads a points + feedback field
-// per essay question, requires every essay to be scored, recomputes the
+// Finalize manual grading for one attempt (D6). Reads a points + feedback field
+// per essay or file upload question, requires each to be scored, recomputes the
 // attempt's percentage, and transitions it to GRADED (stamping gradedBy/gradedAt).
 // Re-finalizing an already-GRADED attempt updates points/feedback/score.
 export async function finalizeAttemptGradingAction(
@@ -61,26 +62,26 @@ export async function finalizeAttemptGradingAction(
   const answerByQuestion = new Map(
     attempt.answers.map((a) => [a.questionId, a]),
   )
-  const essayQuestions = attempt.assessment.questions.filter(
-    (q) => q.type === 'ESSAY',
+  const manualQuestions = attempt.assessment.questions.filter((q) =>
+    isManuallyGraded(q.type),
   )
 
-  // Parse + validate each essay's points; collect feedback.
+  // Parse + validate each manually graded answer's points; collect feedback.
   const grades: Array<{
     answerId: string
     questionId: string
     points: number
     feedback: string | null
   }> = []
-  for (const q of essayQuestions) {
+  for (const q of manualQuestions) {
     const raw = formData.get('points_' + q.id)
     if (raw === null || String(raw).trim() === '') {
-      return { error: 'Please score every essay answer before finalizing.' }
+      return { error: 'Please score every essay and file upload answer before finalizing.' }
     }
     const points = Number(raw)
     if (!Number.isFinite(points) || points < 0 || points > q.points) {
       return {
-        error: 'Points for each essay must be between 0 and its maximum.',
+        error: 'Points for each answer must be between 0 and its maximum.',
       }
     }
     const feedbackRaw = formData.get('feedback_' + q.id)
@@ -91,12 +92,12 @@ export async function finalizeAttemptGradingAction(
 
     const answer = answerByQuestion.get(q.id)
     if (!answer)
-      return { error: 'Missing answer record for an essay question.' }
+      return { error: 'Missing answer record for a manually graded question.' }
     grades.push({ answerId: answer.id, questionId: q.id, points, feedback })
   }
 
   // Recompute the percentage from objective points (already stored) + the new
-  // essay points.
+  // manually graded points.
   const pointsEarnedById = new Map<string, number>()
   for (const a of attempt.answers) {
     if (a.pointsEarned != null)

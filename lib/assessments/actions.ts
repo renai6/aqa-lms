@@ -9,6 +9,13 @@ import { getSession } from '@/lib/auth/session'
 import { canManageSubject, isAdmin } from '@/lib/auth/capabilities'
 import { getPublishBlockers } from '@/lib/assessments/publish-validation'
 import { parseMedia } from '@/lib/assessments/media'
+import { parseUploadFolder } from '@/lib/assessments/upload'
+import {
+  MANUALLY_GRADED_TYPES,
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+  isManuallyGraded,
+} from '@/lib/assessments/question-types'
 import type { UserRole } from '@/lib/auth/types'
 
 // Neutral assessment + question authoring actions shared by the admin and
@@ -32,7 +39,7 @@ const assessmentSchema = z.object({
 
 const questionSchema = z.object({
   questionText: z.string().min(1, 'Question text is required.'),
-  type: z.enum(['MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY']),
+  type: z.enum(QUESTION_TYPES),
   points: z.coerce.number().int().min(1, 'Points must be at least 1.'),
 })
 
@@ -86,7 +93,7 @@ async function authorize(
 type OptionRow = { label: string; value: string; isCorrect: boolean }
 
 function parseOptions(type: string, formData: FormData): OptionRow[] | string {
-  if (type === 'ESSAY') return []
+  if (isManuallyGraded(type)) return []
 
   if (type === 'TRUE_FALSE') {
     const tfCorrect = formData.get('tfCorrect')
@@ -270,19 +277,19 @@ export async function updateAssessmentAction(
     })
     if (!lesson) return { error: 'Invalid lesson.' }
 
-    // Attaching a lesson to an assessment that already holds an essay would
-    // create a gate that cannot score without a teacher, so it is refused here
-    // rather than at publish time when the admin has forgotten why.
-    const essays = await db.question.findMany({
-      where: { assessmentId: id, type: 'ESSAY' },
+    // Attaching a lesson to an assessment that already holds an essay or file
+    // upload would create a gate that cannot score without a teacher, so it is
+    // refused here rather than at publish time when the admin has forgotten why.
+    const manual = await db.question.findMany({
+      where: { assessmentId: id, type: { in: [...MANUALLY_GRADED_TYPES] } },
       orderBy: { order: 'asc' },
       select: { order: true },
     })
-    if (essays.length > 0) {
+    if (manual.length > 0) {
       return {
         error:
-          'Remove the essay question(s) at position ' +
-          essays.map((e) => e.order).join(', ') +
+          'Remove the essay or file upload question(s) at position ' +
+          manual.map((q) => q.order).join(', ') +
           ' before this assessment can gate a lesson.',
       }
     }
@@ -448,7 +455,7 @@ export async function createQuestionAction(
   if (typeof assessmentId !== 'string' || !assessmentId)
     return { error: 'Invalid assessment ID.' }
 
-  // One lookup serves both the admin-only rule and the essay rule below.
+  // One lookup serves both the admin-only rule and the manual-grading rule below.
   const gate = await db.assessment.findUnique({
     where: { id: assessmentId },
     select: { lessonId: true },
@@ -475,10 +482,12 @@ export async function createQuestionAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  if (result.data.type === 'ESSAY' && gate?.lessonId != null) {
+  if (isManuallyGraded(result.data.type) && gate?.lessonId != null) {
     return {
       error:
-        'A lesson gate cannot contain essay questions, because it must score instantly.',
+        'A lesson gate cannot contain ' +
+        QUESTION_TYPE_LABELS[result.data.type].toLowerCase() +
+        ' questions, because it must score instantly.',
     }
   }
 
@@ -487,6 +496,9 @@ export async function createQuestionAction(
 
   const mediaOrError = parseMedia(formData)
   if (typeof mediaOrError === 'string') return { error: mediaOrError }
+
+  const uploadOrError = parseUploadFolder(result.data.type, formData)
+  if (typeof uploadOrError === 'string') return { error: uploadOrError }
 
   try {
     const maxOrder = await db.question.aggregate({
@@ -505,6 +517,7 @@ export async function createQuestionAction(
           order,
           mediaType: mediaOrError.mediaType,
           mediaUrl: mediaOrError.mediaUrl,
+          uploadFolderUrl: uploadOrError.uploadFolderUrl,
         },
         select: { id: true },
       })
@@ -538,7 +551,7 @@ export async function updateQuestionAction(
   if (typeof assessmentId !== 'string' || !assessmentId)
     return { error: 'Invalid assessment ID.' }
 
-  // One lookup serves both the admin-only rule and the essay rule below.
+  // One lookup serves both the admin-only rule and the manual-grading rule below.
   const gate = await db.assessment.findUnique({
     where: { id: assessmentId },
     select: { lessonId: true },
@@ -565,10 +578,12 @@ export async function updateQuestionAction(
     return { error: result.error.issues[0]?.message ?? 'Validation failed.' }
   }
 
-  if (result.data.type === 'ESSAY' && gate?.lessonId != null) {
+  if (isManuallyGraded(result.data.type) && gate?.lessonId != null) {
     return {
       error:
-        'A lesson gate cannot contain essay questions, because it must score instantly.',
+        'A lesson gate cannot contain ' +
+        QUESTION_TYPE_LABELS[result.data.type].toLowerCase() +
+        ' questions, because it must score instantly.',
     }
   }
 
@@ -577,6 +592,9 @@ export async function updateQuestionAction(
 
   const mediaOrError = parseMedia(formData)
   if (typeof mediaOrError === 'string') return { error: mediaOrError }
+
+  const uploadOrError = parseUploadFolder(result.data.type, formData)
+  if (typeof uploadOrError === 'string') return { error: uploadOrError }
 
   try {
     await db.$transaction(async (tx) => {
@@ -588,6 +606,7 @@ export async function updateQuestionAction(
           points: result.data.points,
           mediaType: mediaOrError.mediaType,
           mediaUrl: mediaOrError.mediaUrl,
+          uploadFolderUrl: uploadOrError.uploadFolderUrl,
         },
       })
       await tx.questionOption.deleteMany({ where: { questionId: id } })

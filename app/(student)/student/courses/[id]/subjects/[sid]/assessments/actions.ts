@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
 import { isActiveStudent } from '@/lib/auth/capabilities'
 import { scoreAttempt, type SubmittedAnswer } from '@/lib/assessments/scoring'
+import { uploadAnswerError } from '@/lib/assessments/upload'
 import { canSeeSubject } from '@/lib/subjects/visibility'
 import { getUserGender } from '@/lib/subjects/access'
 import { ACTIVE_COURSE } from '@/lib/courses/archive'
@@ -155,6 +156,7 @@ export async function submitAttemptAction(
           passingScore: true,
           subject: { select: { courseId: true, gender: true } },
           questions: {
+            orderBy: { order: 'asc' },
             select: {
               id: true,
               type: true,
@@ -196,6 +198,9 @@ export async function submitAttemptAction(
     questionId: q.id,
     answer: String(formData.get('answer_' + q.id) ?? '').trim(),
   }))
+
+  const uploadError = uploadAnswerError(attempt.assessment.questions, submitted)
+  if (uploadError) return { error: uploadError }
 
   const scored = scoreAttempt(attempt.assessment.questions, submitted)
 

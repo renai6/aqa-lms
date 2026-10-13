@@ -612,12 +612,13 @@ export type AttemptQuestion = {
   order: number
   mediaType: QuestionMediaType | null
   mediaUrl: string | null
+  uploadFolderUrl: string | null
   options: AttemptOption[]
   // The student's answer for this question (null while in progress / unanswered).
   answer: string | null
   isCorrect: boolean | null
   pointsEarned: number | null
-  // Teacher's per-question note, written at essay grading time.
+  // Teacher's per-question note, written at manual grading time.
   feedback: string | null
 }
 
@@ -678,6 +679,7 @@ export async function getStudentAttempt(
               order: true,
               mediaType: true,
               mediaUrl: true,
+              uploadFolderUrl: true,
               options: { select: { id: true, label: true, value: true, isCorrect: true } },
             },
           },
@@ -728,6 +730,7 @@ export async function getStudentAttempt(
       order: q.order,
       mediaType: q.mediaType,
       mediaUrl: q.mediaUrl,
+      uploadFolderUrl: q.uploadFolderUrl,
       options: revealKey ? q.options : q.options.map(o => ({ ...o, isCorrect: null })),
       answer: a?.answer ?? null,
       isCorrect: a?.isCorrect ?? null,

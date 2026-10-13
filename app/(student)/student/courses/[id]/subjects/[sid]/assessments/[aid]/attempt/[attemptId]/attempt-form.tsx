@@ -1,21 +1,24 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
+import { startTransition, useActionState, useEffect, useRef, useState } from 'react'
+import type { QuestionType } from '@prisma/client'
 import { Clock } from 'lucide-react'
 import { submitAttemptAction } from '../../../actions'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { QuestionMedia } from '@/components/assessments/question-media'
+import { UploadAnswer } from './upload-answer'
 
 type TakeOption = { id: string; label: string; value: string }
 type TakeQuestion = {
   id: string
   questionText: string
-  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'ESSAY'
+  type: QuestionType
   points: number
   order: number
   mediaType: 'AUDIO' | 'IMAGE' | null
   mediaUrl: string | null
+  uploadFolderUrl: string | null
   options: TakeOption[]
 }
 
@@ -60,7 +63,18 @@ export function AttemptForm({ attemptId, assessmentTitle, questions, deadline }:
   }, [deadlineMs])
 
   return (
-    <form ref={formRef} action={action} className="space-y-6">
+    // Submitted by hand rather than through <form action>: React resets every
+    // uncontrolled field once a form action returns, error or not, so a
+    // refused submit (e.g. a bad upload link) would wipe all of the answers.
+    <form
+      ref={formRef}
+      onSubmit={e => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        startTransition(() => action(formData))
+      }}
+      className="space-y-6"
+    >
       <input type="hidden" name="attemptId" value={attemptId} />
 
       {/* Sticky header with title + timer */}
@@ -96,7 +110,13 @@ export function AttemptForm({ attemptId, assessmentTitle, questions, deadline }:
 
             <QuestionMedia type={q.mediaType} url={q.mediaUrl} />
 
-            {q.type === 'ESSAY' ? (
+            {q.type === 'FILE_UPLOAD' ? (
+              <UploadAnswer
+                questionId={q.id}
+                folderUrl={q.uploadFolderUrl}
+                disabled={pending}
+              />
+            ) : q.type === 'ESSAY' ? (
               <Textarea
                 name={'answer_' + q.id}
                 rows={5}
