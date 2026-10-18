@@ -11,7 +11,12 @@ import type {
   CourseDuration,
   CourseStatus,
   PaymentFrequency,
+  Prisma,
 } from "@prisma/client";
+import {
+  applyLumpSumConversion,
+  billingChange,
+} from "@/lib/payments/billing-change";
 
 type ActionState = { error: string | null; success?: boolean };
 
@@ -222,25 +227,46 @@ export async function updateCourseAction(
     sequentialLessons,
   } = result.data;
 
+  // A change across the monthly line touches the balance of every student
+  // already enrolled, so it is decided against the course as it stands.
+  const current = await db.course.findUnique({
+    where: { id },
+    select: {
+      paymentFrequency: true,
+      _count: { select: { enrollments: { where: { removedAt: null } } } },
+    },
+  });
+  if (!current) return { error: "Course not found." };
+  const change = billingChange(current.paymentFrequency, paymentFrequency ?? null, {
+    activeEnrollments: current._count.enrollments,
+    tuitionFee: tuitionFee ?? null,
+  });
+  if (change.kind === "refuse") return { error: change.reason };
+
   try {
-    await db.course.update({
-      where: { id },
-      data: {
-        title,
-        description: description || null,
-        courseType: courseType as CourseType,
-        passingGrade,
-        tuitionFee: tuitionFee ?? null,
-        meetLink: meetLink ?? null,
-        courseDuration: (courseDuration ?? null) as CourseDuration | null,
-        courseStatus: (courseStatus ?? null) as CourseStatus | null,
-        paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
-        miscFeeNote: miscFeeNote || null,
-        groupName: groupName || null,
-        level: level ?? null,
-        courseAlias: courseAlias ?? null,
-        sequentialLessons,
-      },
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.course.update({
+        where: { id },
+        data: {
+          title,
+          description: description || null,
+          courseType: courseType as CourseType,
+          passingGrade,
+          tuitionFee: tuitionFee ?? null,
+          meetLink: meetLink ?? null,
+          courseDuration: (courseDuration ?? null) as CourseDuration | null,
+          courseStatus: (courseStatus ?? null) as CourseStatus | null,
+          paymentFrequency: (paymentFrequency ?? null) as PaymentFrequency | null,
+          miscFeeNote: miscFeeNote || null,
+          groupName: groupName || null,
+          level: level ?? null,
+          courseAlias: courseAlias ?? null,
+          sequentialLessons,
+        },
+      });
+      // After the update, so the conversion reads the new fee.
+      if (change.kind === "convert" && tuitionFee !== undefined)
+        await applyLumpSumConversion(tx, { id, tuitionFee }, session.userId);
     });
   } catch (err) {
     console.error("[updateCourse]", err);
@@ -249,6 +275,11 @@ export async function updateCourseAction(
 
   revalidatePath("/admin/courses");
   revalidatePath("/admin/courses/" + id);
+  if (change.kind === "convert") {
+    revalidatePath("/admin/students", "layout");
+    revalidatePath("/admin/payments", "layout");
+    revalidatePath("/student", "layout");
+  }
   return { error: null, success: true };
 }
 

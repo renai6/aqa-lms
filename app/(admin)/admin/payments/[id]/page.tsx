@@ -64,7 +64,9 @@ export default async function PaymentDetailPage({ params }: Props) {
           <span className="font-medium">{payment.courseTitle}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Submitted</span>
+          <span className="text-muted-foreground">
+            {payment.source === "ADMIN" ? "Logged" : "Submitted"}
+          </span>
           <span className="font-medium">
             {dateFormatter.format(payment.createdAt)}
           </span>
@@ -104,12 +106,23 @@ export default async function PaymentDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border p-4">
-        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-          Proof of payment
-        </p>
-        <ProofImage src={`/api/admin/payments/${payment.id}/proof`} />
-      </div>
+      {payment.source === "ADMIN" ? (
+        <div className="bg-card space-y-1 rounded-xl border p-4">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            Logged by an admin
+          </p>
+          <p className="text-sm">
+            {payment.adminRemarks ?? "No note was left with this payment."}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-xl border p-4">
+          <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+            Proof of payment
+          </p>
+          <ProofImage src={`/api/admin/payments/${payment.id}/proof`} />
+        </div>
+      )}
 
       {payment.status === "REJECTED" && payment.adminRemarks && (
         <p className="text-destructive text-sm">

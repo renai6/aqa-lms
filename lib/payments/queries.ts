@@ -1,8 +1,13 @@
 import { db } from "@/lib/db";
 import { contactOf, GUARDIAN_CONTACT_SELECT } from "@/lib/students/contact";
-import type { EnrollmentStatus, PaymentFrequency, PaymentStatus } from "@prisma/client";
+import type {
+  EnrollmentStatus,
+  PaymentFrequency,
+  PaymentSource,
+  PaymentStatus,
+} from "@prisma/client";
 import { computeBalance, type Balance } from "@/lib/payments/balance";
-import { allocate } from "@/lib/purchases/allocation";
+import { catchUpPrefill, type CatchUpPrefill } from "@/lib/payments/catch-up";
 import { ACTIVE_ENROLLMENT } from "@/lib/enrollments/active";
 import { dateToMonthKey, monthKeyLabel, type MonthKey } from "@/lib/time/manila";
 import { payableMonths, describeMonthlyStanding } from "@/lib/payments/monthly";
@@ -282,6 +287,8 @@ export async function getPaymentStatusCounts(): Promise<
 export type AdminPaymentDetail = {
   id: string;
   status: EnrollmentStatus;
+  // ADMIN rows were logged by hand from the student page and carry no proof.
+  source: PaymentSource;
   amount: number;
   adminRemarks: string | null;
   createdAt: Date;
@@ -308,14 +315,8 @@ export type AdminPaymentDetail = {
   approvedPaid: number;
   // Non-null only when the enrollment has no total yet AND the course is not
   // billed monthly, in which case the approve form offers to start tracking
-  // it. A monthly enrollment has no single agreed total by design, so a
-  // lifetime ledger there would contradict the month matrix rather than
-  // complement it. `alreadyPaid` is itself
-  // nullable: null means "do not render this field", which is the case when
-  // an APPROVED CHECKOUT payment already exists for the enrollment - that
-  // money is already in the ledger, so prefilling and re-submitting it would
-  // double-count it.
-  catchUpPrefill: { totalDue: string; alreadyPaid: string | null } | null;
+  // it. See `catchUpPrefill`.
+  catchUpPrefill: CatchUpPrefill | null;
   // Monthly courses only. `periodMonth` is what the student picked, null for
   // a historical row predating the field; `monthOptions` is what the admin
   // may change it to.
@@ -338,6 +339,7 @@ export async function getAdminPaymentById(
     select: {
       id: true,
       status: true,
+      source: true,
       amount: true,
       adminRemarks: true,
       createdAt: true,
@@ -386,48 +388,27 @@ export async function getAdminPaymentById(
   const totalDue = r.enrollment.totalDue?.toNumber() ?? null;
   const approvedAmounts = r.enrollment.payments.map((p) => p.amount.toNumber());
   const amount = r.amount.toNumber();
-  // An APPROVED CHECKOUT row means the enrollment's checkout money is
-  // already in the ledger, whether or not `totalDue` happens to be null
-  // (a MONTHLY/YEARLY course, or one an admin cleared, leaves the total
-  // blank while still writing that row at purchase approval). Offering the
-  // already-paid figure again in that case would write a second CHECKOUT
-  // row for money already recorded.
-  const hasCheckoutPayment = r.enrollment.payments.some(
-    (p) => p.source === "CHECKOUT",
-  );
   const isMonthly = r.enrollment.course.paymentFrequency === "MONTHLY";
-  // Never offered on a monthly course. A monthly enrollment has no single
-  // agreed total - the spec's "No change to Enrollment.totalDue" - so a total
-  // typed here would create a lifetime ledger that never grows with monthly
-  // accrual, and the dashboard would read "fully paid" while the matrix reads
-  // months behind. The two ledgers must not be able to disagree.
-  const catchUpPrefill =
-    r.enrollment.totalDue === null && !isMonthly
-      ? {
-          totalDue:
-            r.enrollment.course.tuitionFee !== null &&
-            r.enrollment.course.paymentFrequency !== "MONTHLY" &&
-            r.enrollment.course.paymentFrequency !== "YEARLY"
-              ? String(r.enrollment.course.tuitionFee.toNumber())
-              : "",
-          alreadyPaid: hasCheckoutPayment
-            ? null
-            : r.enrollment.purchase
-              ? String(
-                  allocate(
-                    r.enrollment.purchase.amountPaid.toNumber(),
-                    r.enrollment.purchase.items.map(
-                      (i) => i.course.tuitionFee?.toNumber() ?? null,
-                    ),
-                  )[
-                    r.enrollment.purchase.items.findIndex(
-                      (i) => i.course.id === r.enrollment.course.id,
-                    )
-                  ] ?? 0,
-                )
-              : "",
-        }
-      : null;
+  const catchUp = catchUpPrefill({
+    totalDue,
+    // An APPROVED CHECKOUT row means the enrollment's checkout money is
+    // already in the ledger, whether or not `totalDue` happens to be null.
+    hasCheckoutPayment: r.enrollment.payments.some(
+      (p) => p.source === "CHECKOUT",
+    ),
+    course: {
+      id: r.enrollment.course.id,
+      tuitionFee: r.enrollment.course.tuitionFee?.toNumber() ?? null,
+      paymentFrequency: r.enrollment.course.paymentFrequency,
+    },
+    purchase: r.enrollment.purchase && {
+      amountPaid: r.enrollment.purchase.amountPaid.toNumber(),
+      items: r.enrollment.purchase.items.map((i) => ({
+        courseId: i.course.id,
+        tuitionFee: i.course.tuitionFee?.toNumber() ?? null,
+      })),
+    },
+  });
   const monthOptions = isMonthly
     ? payableMonths(
         {
@@ -463,6 +444,7 @@ export async function getAdminPaymentById(
   return {
     id: r.id,
     status: r.status,
+    source: r.source,
     amount,
     adminRemarks: r.adminRemarks,
     createdAt: r.createdAt,
@@ -483,7 +465,7 @@ export async function getAdminPaymentById(
     totalDue,
     approvedPaid:
       approvedAmounts.reduce((sum, a) => sum + Math.round(a * 100), 0) / 100,
-    catchUpPrefill,
+    catchUpPrefill: catchUp,
     isMonthly,
     periodMonth,
     monthOptions,

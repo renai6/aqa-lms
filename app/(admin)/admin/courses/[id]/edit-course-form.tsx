@@ -329,6 +329,9 @@ export function EditCourseForm({ course, affectedCount }: Props) {
             </div>
             <p className="text-muted-foreground text-xs">
               Shown next to the price, e.g. &ldquo;₱2,000 / month&rdquo;.
+              Once students are enrolled, moving off Monthly gives each of them
+              the tuition fee as their total, and switching to Monthly is not
+              allowed.
             </p>
           </div>
           <div className="space-y-2">

@@ -18,7 +18,9 @@ const enrollmentRow = {
   removedAt: new Date("2026-08-01"),
   removedReason: "Transferred to Marhala 2",
   totalDue: null,
-  course: { title: "Marhala 1", paymentFrequency: "ONE_TIME" },
+  course: { title: "Marhala 1", paymentFrequency: "ONE_TIME", tuitionFee: null },
+  payments: [],
+  purchase: null,
 };
 
 // Removal is an admin correction, so admins keep seeing the row - badged and
@@ -116,6 +118,7 @@ describe("admin student queries expose removed enrollments", () => {
       totalDue: null,
       hasCertificate: true,
       paymentFrequency: "ONE_TIME",
+      billing: expect.objectContaining({ balance: { kind: "untracked" } }),
     });
   });
 });

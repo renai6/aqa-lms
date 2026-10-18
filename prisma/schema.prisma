@@ -111,12 +111,16 @@ enum Gender {
 }
 
 // Whether a Payment row is something a student submitted for review, or a
-// record of money an admin logged (the checkout payment, or a catch-up row
-// written when an existing enrollment starts being balance-tracked).
+// record of money an admin logged. CHECKOUT is the money that arrived with the
+// purchase (the checkout payment, or a catch-up row written when an existing
+// enrollment starts being balance-tracked); code checks for one to know the
+// checkout money is already in the ledger. ADMIN is any later money an admin
+// records by hand from the student page, such as cash at the front desk.
 // The admin review queue shows only SUBMITTED rows.
 enum PaymentSource {
   SUBMITTED
   CHECKOUT
+  ADMIN
 }
 
 //

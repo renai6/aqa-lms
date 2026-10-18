@@ -1,8 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/db", () => ({
-  db: { course: { update: vi.fn() } },
-}));
+// The save runs in a transaction; handing the callback `db` itself keeps the
+// assertions on `db.course.update`. The course is unchanged billing-wise, so
+// no enrollment is touched.
+vi.mock("@/lib/db", () => {
+  const db = {
+    course: {
+      update: vi.fn(),
+      findUnique: vi.fn(async () => ({
+        paymentFrequency: null,
+        _count: { enrollments: 0 },
+      })),
+    },
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(db)),
+  };
+  return { db };
+});
 vi.mock("@/lib/auth/session", () => ({ getSession: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
