@@ -26,6 +26,17 @@ export function computeBalance(
   return { kind: "tracked", totalDue, paid, remaining };
 }
 
+// The status an admin edit writes back, so the Fully/Partially Paid badge
+// cannot drift from the numbers beside it. Null for an untracked balance:
+// with no agreed total there is nothing to derive it from, and the manual
+// status stands.
+export function paymentStatusFromBalance(
+  balance: Balance,
+): "FULLY_PAID" | "PARTIALLY_PAID" | null {
+  if (balance.kind === "untracked") return null;
+  return balance.remaining > 0 ? "PARTIALLY_PAID" : "FULLY_PAID";
+}
+
 export function describeBalance(balance: Balance): string {
   if (balance.kind === "untracked") return "Balance not tracked";
   const { totalDue, paid, remaining } = balance;

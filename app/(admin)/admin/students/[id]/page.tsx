@@ -15,6 +15,9 @@ import { getCourseMoveTargets } from '@/lib/enrollments/move-targets'
 import { courseMoveOptions } from '@/lib/enrollments/move-options'
 import { isMovedAway } from '@/lib/enrollments/moved'
 import { cn } from '@/lib/utils'
+import { EnrollmentPaymentButton } from '@/components/admin/enrollment-payment-button'
+import { describeBalance } from '@/lib/payments/balance'
+import { balanceTone } from '@/components/admin/balance-summary'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -62,7 +65,7 @@ export default async function StudentDetailPage({ params }: Props) {
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Course</th>
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Enrolled</th>
                     <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Progress</th>
-                    <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Payment</th>
+                    <th scope="col" className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Balance</th>
                     <th scope="col" className="px-4 py-3">
                       <span className="sr-only">Actions</span>
                     </th>
@@ -91,11 +94,11 @@ export default async function StudentDetailPage({ params }: Props) {
                           </>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {dateFormatter.format(e.enrolledAt)}
                       </td>
                       <td className="px-4 py-3">{e.progress}%</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 space-y-1">
                         <span className={cn(
                           'inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded text-xs font-medium',
                           e.removedAt
@@ -106,12 +109,27 @@ export default async function StudentDetailPage({ params }: Props) {
                         )}>
                           {e.paymentStatus === 'FULLY_PAID' ? 'Fully Paid' : 'Partially Paid'}
                         </span>
+                        {/* A moved-away row's payments left with the student,
+                            so any figure here would describe an empty ledger. */}
+                        {!(e.removedAt && isMovedAway(e.removedReason)) && (
+                          <p className={cn('text-xs max-w-56', !e.removedAt && balanceTone(e.billing.balance, e.billing.monthlyLine))}>
+                            {e.billing.monthlyLine ?? describeBalance(e.billing.balance)}
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {/* Stacked, not side by side: this table shares the page
                             with the profile sidebar, and two buttons in a row
                             push the last one past the table's clipped edge. */}
                         <div className="flex flex-col items-end gap-2">
+                          {!e.removedAt && (
+                            <EnrollmentPaymentButton
+                              enrollmentId={e.id}
+                              studentName={`${student.firstName} ${student.lastName}`}
+                              courseTitle={e.courseTitle}
+                              billing={e.billing}
+                            />
+                          )}
                           {!e.removedAt && !e.hasCertificate && (
                             <MoveEnrollmentCourseButton
                               enrollmentId={e.id}
@@ -291,3 +309,4 @@ export default async function StudentDetailPage({ params }: Props) {
     </div>
   )
 }
+

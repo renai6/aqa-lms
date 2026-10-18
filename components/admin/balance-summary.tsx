@@ -17,17 +17,7 @@ export function BalanceSummary({
   monthly: string | null;
 }) {
   const text = monthly ?? describeBalance(balance);
-
-  const tone =
-    monthly !== null
-      ? monthlyTone(monthly)
-      : balance.kind === "untracked"
-        ? "text-muted-foreground"
-        : balance.remaining > 0
-          ? "text-amber-600"
-          : balance.remaining < 0
-            ? "text-destructive"
-            : "text-green-700";
+  const tone = balanceTone(balance, monthly);
 
   return (
     <div className="flex items-baseline justify-between gap-4 text-sm">
@@ -35,6 +25,15 @@ export function BalanceSummary({
       <span className={`font-medium ${tone}`}>{text}</span>
     </div>
   );
+}
+
+// The colour a balance line renders in, shared with the admin student page.
+export function balanceTone(balance: Balance, monthly: string | null): string {
+  if (monthly !== null) return monthlyTone(monthly);
+  if (balance.kind === "untracked") return "text-muted-foreground";
+  if (balance.remaining > 0) return "text-amber-600";
+  if (balance.remaining < 0) return "text-destructive";
+  return "text-green-700";
 }
 
 // Settled reads positive, outstanding (or nothing to score) reads amber - the

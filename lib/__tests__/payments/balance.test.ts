@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeBalance, describeBalance, peso } from "@/lib/payments/balance";
+import {
+  computeBalance,
+  describeBalance,
+  paymentStatusFromBalance,
+  peso,
+} from "@/lib/payments/balance";
 
 describe("computeBalance", () => {
   it("is untracked when no total has been agreed", () => {
@@ -100,5 +105,31 @@ describe("peso", () => {
 
   it("rounds a sub-centavo value rather than showing a third decimal", () => {
     expect(peso(1234.567)).toBe("₱1,234.57");
+  });
+});
+
+// The status an admin edit writes back to the enrollment. Derived, so the
+// Fully/Partially Paid badge cannot drift from the numbers beside it.
+describe("paymentStatusFromBalance", () => {
+  it("leaves an untracked balance to the admin's manual status", () => {
+    expect(paymentStatusFromBalance(computeBalance(null, [5000]))).toBeNull();
+  });
+
+  it("is partially paid while anything remains", () => {
+    expect(paymentStatusFromBalance(computeBalance(20000, [19999.99]))).toBe(
+      "PARTIALLY_PAID",
+    );
+  });
+
+  it("is fully paid on exact settlement", () => {
+    expect(paymentStatusFromBalance(computeBalance(20000, [20000]))).toBe(
+      "FULLY_PAID",
+    );
+  });
+
+  it("is fully paid when overpaid", () => {
+    expect(paymentStatusFromBalance(computeBalance(20000, [20500]))).toBe(
+      "FULLY_PAID",
+    );
   });
 });

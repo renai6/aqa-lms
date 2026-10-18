@@ -11,6 +11,8 @@ import {
 import { db } from '@/lib/db'
 import type { KidListItem } from '@/lib/students/dependents'
 import { contactOf, GUARDIAN_CONTACT_SELECT } from '@/lib/students/contact'
+import { enrollmentBilling, type EnrollmentBilling } from '@/lib/payments/enrollment-billing'
+import { dateToMonthKey } from '@/lib/time/manila'
 
 export type StudentRow = {
   id: string
@@ -79,6 +81,7 @@ export type StudentDetail = {
     totalDue: number | null
     hasCertificate: boolean
     paymentFrequency: PaymentFrequency | null
+    billing: EnrollmentBilling
   }[]
 }
 
@@ -284,7 +287,21 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
           removedAt: true,
           removedReason: true,
           totalDue: true,
-          course: { select: { title: true, paymentFrequency: true } },
+          course: {
+            select: { title: true, paymentFrequency: true, tuitionFee: true },
+          },
+          payments: {
+            where: { status: 'APPROVED' },
+            select: { amount: true, source: true, periodMonth: true },
+          },
+          purchase: {
+            select: {
+              amountPaid: true,
+              items: {
+                select: { course: { select: { id: true, tuitionFee: true } } },
+              },
+            },
+          },
         },
         orderBy: { enrolledAt: 'desc' },
       },
@@ -295,6 +312,7 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
 
   const contact = contactOf(user)
   const certified = new Set(user.certificates.map((c) => c.courseId))
+  const now = new Date()
 
   return {
     id: user.id,
@@ -331,6 +349,32 @@ export async function getStudentById(id: string): Promise<StudentDetail | null> 
       totalDue: e.totalDue?.toNumber() ?? null,
       hasCertificate: certified.has(e.courseId),
       paymentFrequency: e.course.paymentFrequency,
+      billing: enrollmentBilling(
+        {
+          enrolledAt: e.enrolledAt,
+          completedAt: e.completedAt,
+          removedAt: e.removedAt,
+          totalDue: e.totalDue?.toNumber() ?? null,
+          payments: e.payments.map((p) => ({
+            amount: p.amount.toNumber(),
+            source: p.source,
+            periodMonth: p.periodMonth ? dateToMonthKey(p.periodMonth) : null,
+          })),
+          course: {
+            id: e.courseId,
+            tuitionFee: e.course.tuitionFee?.toNumber() ?? null,
+            paymentFrequency: e.course.paymentFrequency,
+          },
+          purchase: e.purchase && {
+            amountPaid: e.purchase.amountPaid.toNumber(),
+            items: e.purchase.items.map((i) => ({
+              courseId: i.course.id,
+              tuitionFee: i.course.tuitionFee?.toNumber() ?? null,
+            })),
+          },
+        },
+        now,
+      ),
     })),
   }
 }
