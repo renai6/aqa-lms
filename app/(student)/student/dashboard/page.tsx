@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import {
   getStudentDashboard,
   getStudentRecentResults,
+  getStudentTodoAssessments,
   DASHBOARD_ANNOUNCEMENTS,
   type DashboardEnrollment,
 } from "@/lib/student/queries";
@@ -18,6 +19,7 @@ import { isSettled } from "@/lib/payments/guards";
 import { db } from "@/lib/db";
 import { ScheduleStrip } from "@/components/schedule/schedule-strip";
 import { AnnouncementCard } from "@/components/student/announcement-card";
+import { TodoList } from "@/components/student/todo-list";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock } from "lucide-react";
 
@@ -68,12 +70,14 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
   const [
     { enrollments, schedules, announcements, pendingPurchases },
+    todos,
     recentResults,
     user,
     paymentStates,
     balances,
   ] = await Promise.all([
     getStudentDashboard(session.userId),
+    getStudentTodoAssessments(session.userId),
     getStudentRecentResults(session.userId),
     db.user.findUnique({
       where: { id: session.userId },
@@ -217,6 +221,15 @@ export default async function StudentDashboardPage({ searchParams }: Props) {
 
           {/* Schedules strip */}
           <ScheduleStrip schedules={schedules} />
+
+          {/* To do. Above My Courses because an unattempted exam otherwise
+              sits three clicks away with nothing pointing at it. */}
+          {todos.length > 0 && (
+            <section className="space-y-3">
+              <h2 className={SECTION_LABEL}>To do</h2>
+              <TodoList items={todos} />
+            </section>
+          )}
 
           {/* My Courses */}
           <section className="space-y-4">
