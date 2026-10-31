@@ -759,6 +759,76 @@ export async function getStudentAttempt(
   }
 }
 
+// ─── Dashboard to-do ──────────────────────────────────────────────────────────
+
+export type TodoAssessment = {
+  assessmentId: string
+  title: string
+  type: AssessmentType
+  courseId: string
+  subjectId: string
+  subjectTitle: string
+  courseTitle: string
+  inProgress: boolean
+}
+
+// Subject-level quizzes and exams the student can still take. Lesson gates stay
+// out: they already sit inside their lesson, and listing them here would bury
+// the exams this exists to surface. Same access rules as
+// getStudentAssessmentLaunch, so nothing listed here leads to a 404.
+//
+// The order matters because the dashboard caps the list: work already started
+// comes first (a timed attempt is running), then exams, then quizzes, newest
+// first within each so old unattempted quizzes cannot push out a new exam.
+export async function getStudentTodoAssessments(userId: string): Promise<TodoAssessment[]> {
+  const userGender = await getUserGender(userId)
+  const assessments = await db.assessment.findMany({
+    where: {
+      isPublished: true,
+      lessonId: null,
+      // The launch page has nothing to start on an assessment with no questions.
+      questions: { some: {} },
+      attempts: { none: { userId, status: { in: ['SUBMITTED', 'GRADED'] } } },
+      subject: {
+        ...subjectGenderFilter(userGender),
+        course: {
+          ...ACTIVE_COURSE,
+          enrollments: { some: { userId, ...ACTIVE_ENROLLMENT } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      subjectId: true,
+      subject: {
+        select: { title: true, courseId: true, course: { select: { title: true } } },
+      },
+      attempts: {
+        where: { userId, status: 'IN_PROGRESS' },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  })
+
+  const todos = assessments.map(a => ({
+    assessmentId: a.id,
+    title: a.title,
+    type: a.type,
+    courseId: a.subject.courseId,
+    subjectId: a.subjectId,
+    subjectTitle: a.subject.title,
+    courseTitle: a.subject.course.title,
+    inProgress: a.attempts.length > 0,
+  }))
+
+  const rank = (t: TodoAssessment) => (t.inProgress ? 0 : t.type === 'EXAM' ? 1 : 2)
+  return todos.sort((a, b) => rank(a) - rank(b))
+}
+
 // ─── Dashboard recent results ─────────────────────────────────────────────────
 
 export type RecentResult = {
