@@ -11,6 +11,17 @@ import { listFolderRecordings } from './drive-folder'
 
 type ActionState = { error: string | null; success?: boolean }
 
+const BATCH_NAME_MAX = 60
+
+// A typed batch name, trimmed. Empty means the admin left it to the default.
+function readBatchName(value: FormDataEntryValue | null): { name: string } | { error: string } {
+  const name = typeof value === 'string' ? value.trim() : ''
+  if (name.length > BATCH_NAME_MAX) {
+    return { error: 'Batch name must be ' + BATCH_NAME_MAX + ' characters or fewer.' }
+  }
+  return { name }
+}
+
 async function requireAdmin() {
   const session = await getSession()
   if (!session) return { ok: false as const, error: 'Unauthorized' }
@@ -30,6 +41,9 @@ export async function startNewBatchAction(
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
 
+  const typed = readBatchName(formData.get('name'))
+  if ('error' in typed) return { error: typed.error }
+
   try {
     const maxNumber = await getMaxBatchNumber(courseId)
     const newNumber = nextBatchNumber(maxNumber)
@@ -47,7 +61,7 @@ export async function startNewBatchAction(
           courseId,
           number: newNumber,
           isActive: true,
-          name: generateBatchName(course?.courseAlias ?? null, new Date()),
+          name: typed.name || generateBatchName(course?.courseAlias ?? null, new Date()),
         },
       })
     })
@@ -58,6 +72,35 @@ export async function startNewBatchAction(
 
   revalidatePath('/admin/courses/' + courseId)
   revalidatePath('/admin/courses/' + courseId + '/batches')
+  return { error: null, success: true }
+}
+
+export async function renameBatchAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const batchId = formData.get('batchId')
+  const courseId = formData.get('courseId')
+  if (typeof batchId !== 'string' || !batchId) return { error: 'Invalid batch ID.' }
+  if (typeof courseId !== 'string' || !courseId) return { error: 'Invalid course ID.' }
+
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
+  const typed = readBatchName(formData.get('name'))
+  if ('error' in typed) return { error: typed.error }
+  if (!typed.name) return { error: 'Batch name is required.' }
+
+  try {
+    await db.batch.update({ where: { id: batchId, courseId }, data: { name: typed.name } })
+  } catch (err) {
+    console.error('[renameBatch]', err)
+    return { error: 'A database error occurred.' }
+  }
+
+  revalidatePath('/admin/courses/' + courseId)
+  revalidatePath('/admin/courses/' + courseId + '/batches')
+  revalidatePath('/admin/courses/' + courseId + '/batches/' + batchId)
   return { error: null, success: true }
 }
 

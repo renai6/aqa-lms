@@ -7,6 +7,7 @@ vi.mock('@/lib/db', () => ({
     },
     batch: {
       aggregate: vi.fn(),
+      update: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -22,7 +23,11 @@ vi.mock('next/cache', () => ({
 
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
-import { upsertBatchLessonContentAction, startNewBatchAction } from '@/lib/batches/actions'
+import {
+  upsertBatchLessonContentAction,
+  startNewBatchAction,
+  renameBatchAction,
+} from '@/lib/batches/actions'
 
 function form(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -149,11 +154,37 @@ describe('startNewBatchAction', () => {
     vi.useRealTimers()
   })
 
-  const start = () => {
+  const start = (name?: string) => {
     const fd = new FormData()
     fd.set('courseId', 'c1')
+    if (name !== undefined) fd.set('name', name)
     return startNewBatchAction(initial, fd)
   }
+
+  it('uses the name the admin typed, trimmed', async () => {
+    tx.course.findUnique.mockResolvedValue({ courseAlias: 'MM01' })
+
+    const result = await start('  Summer Intensive  ')
+    expect(result.error).toBeNull()
+    expect(tx.batch.create).toHaveBeenCalledWith({
+      data: { courseId: 'c1', number: 35, isActive: true, name: 'Summer Intensive' },
+    })
+  })
+
+  it('falls back to the generated name when the typed name is blank', async () => {
+    tx.course.findUnique.mockResolvedValue({ courseAlias: 'MM01' })
+
+    await start('   ')
+    expect(tx.batch.create).toHaveBeenCalledWith({
+      data: { courseId: 'c1', number: 35, isActive: true, name: '0926MM01' },
+    })
+  })
+
+  it('rejects a name over 60 characters without opening a batch', async () => {
+    const result = await start('x'.repeat(61))
+    expect(result.error).toBe('Batch name must be 60 characters or fewer.')
+    expect(db.$transaction).not.toHaveBeenCalled()
+  })
 
   it('names the new batch from the course alias and the Manila month', async () => {
     tx.course.findUnique.mockResolvedValue({ courseAlias: 'MM01' })
@@ -173,5 +204,48 @@ describe('startNewBatchAction', () => {
     expect(tx.batch.create).toHaveBeenCalledWith({
       data: { courseId: 'c1', number: 35, isActive: true, name: null },
     })
+  })
+})
+
+describe('renameBatchAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getSession).mockResolvedValue({ userId: 'a1', role: 'ADMIN' } as never)
+  })
+
+  const rename = (name: string) => {
+    const fd = new FormData()
+    fd.set('batchId', 'b1')
+    fd.set('courseId', 'c1')
+    fd.set('name', name)
+    return renameBatchAction(initial, fd)
+  }
+
+  it('saves the trimmed name, scoped to the course', async () => {
+    const result = await rename('  Batch Alpha ')
+    expect(result).toEqual({ error: null, success: true })
+    expect(db.batch.update).toHaveBeenCalledWith({
+      where: { id: 'b1', courseId: 'c1' },
+      data: { name: 'Batch Alpha' },
+    })
+  })
+
+  it('rejects a blank name', async () => {
+    const result = await rename('   ')
+    expect(result.error).toBe('Batch name is required.')
+    expect(db.batch.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects a name over 60 characters', async () => {
+    const result = await rename('x'.repeat(61))
+    expect(result.error).toBe('Batch name must be 60 characters or fewer.')
+    expect(db.batch.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects non-admins', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 't1', role: 'TEACHER' } as never)
+    const result = await rename('Batch Alpha')
+    expect(result.error).toBe('Forbidden')
+    expect(db.batch.update).not.toHaveBeenCalled()
   })
 })

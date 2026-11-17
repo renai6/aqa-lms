@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { BatchLessonForm } from './batch-lesson-form'
 import { BatchSubjectCard } from './batch-subject-card'
 import { BatchRecordingsPanel } from './batch-recordings-panel'
+import { RenameBatchButton } from './rename-batch-button'
 
 type Props = { params: Promise<{ id: string; bid: string }> }
 
@@ -43,9 +44,13 @@ export default async function BatchDetailPage({ params }: Props) {
         ]}
         title={batchLabel(batch)}
         action={
-          batch.isActive
-            ? <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
-            : <Badge variant="outline">Inactive</Badge>
+          <div className="flex items-center gap-2">
+            {batch.isActive
+              ? <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>
+              : <Badge variant="outline">Inactive</Badge>
+            }
+            <RenameBatchButton batchId={bid} courseId={id} currentName={batchLabel(batch)} />
+          </div>
         }
       />
 
