@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCourseById } from '@/lib/courses/queries'
-import { getActiveBatch, batchLabel } from '@/lib/batches/queries'
+import { getActiveBatch, getMaxBatchNumber, nextBatchNumber, batchLabel } from '@/lib/batches/queries'
+import { generateBatchName } from '@/lib/batches/name'
 import { countStudentsAffectedByGating } from '@/lib/lessons/queries'
 import { PageHeader } from '@/components/admin/page-header'
 import { getSession } from '@/lib/auth/session'
@@ -32,7 +33,15 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseById(id)
   if (!course) notFound()
 
-  const activeBatch = await getActiveBatch(course.id)
+  const [activeBatch, maxBatchNumber] = await Promise.all([
+    getActiveBatch(course.id),
+    getMaxBatchNumber(course.id),
+  ])
+  // What startNewBatchAction names the batch when the admin leaves the name empty.
+  const defaultBatchName = batchLabel({
+    name: generateBatchName(course.courseAlias, new Date()),
+    number: nextBatchNumber(maxBatchNumber),
+  })
   // The count only feeds the confirmation shown when gating is switched ON, so
   // a course that already has it on never needs the scan.
   const affectedCount = course.sequentialLessons
@@ -85,7 +94,7 @@ export default async function CourseDetailPage({ params }: Props) {
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
-                <StartBatchButton courseId={course.id} />
+                <StartBatchButton courseId={course.id} defaultName={defaultBatchName} />
                 <Button asChild variant="ghost" size="sm">
                   <Link href={'/admin/courses/' + course.id + '/batches'}>View all batches</Link>
                 </Button>
